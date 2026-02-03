@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ACTIVITY_DATA, CURRENT_USER } from '../constants';
-import { Shield, Target, Flame, Medal } from 'lucide-react';
+import { Shield, Target, Flame, Medal, Bug } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   return (
@@ -91,6 +91,3 @@ export const Profile: React.FC = () => {
     </div>
   );
 };
-
-// Simple Bug icon import fix for this specific file scope since Lucide imports are usually top-level
-import { Bug } from 'lucide-react';

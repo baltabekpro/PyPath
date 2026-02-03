@@ -6,6 +6,8 @@ import { Dashboard } from './components/Dashboard';
 import { Editor } from './components/Editor';
 import { Courses } from './components/Courses';
 import { Profile } from './components/Profile';
+import { Settings } from './components/Settings';
+import { Community } from './components/Community';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
@@ -21,6 +23,10 @@ const App: React.FC = () => {
       case View.PROFILE:
       case View.ACHIEVEMENTS:
         return <Profile />;
+      case View.SETTINGS:
+        return <Settings />;
+      case View.COMMUNITY:
+        return <Community />;
       default:
         return <Dashboard />;
     }

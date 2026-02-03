@@ -14,7 +14,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
     { view: View.PRACTICE, label: 'Практика', icon: Code2 },
     { view: View.COMMUNITY, label: 'Сообщество', icon: Users },
     { view: View.ACHIEVEMENTS, label: 'Достижения', icon: Trophy },
-    { view: View.PROFILE, label: 'Настройки', icon: Settings },
+    { view: View.SETTINGS, label: 'Настройки', icon: Settings },
   ];
 
   return (
