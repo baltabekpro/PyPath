@@ -12,21 +12,32 @@
           extend: {
             colors: {
               py: {
-                green: '#0df259',     // The neon green accent
-                dark: '#102216',      // Main background
-                surface: '#1a2e21',   // Card background
-                accent: '#28392e',    // Borders/Secondary
-                text: '#e2e8f0',      // Primary text
-                muted: '#9cbaa6',     // Secondary text
+                green: '#0df259',     // Primary Action / Success
+                secondary: '#8b5cf6', // Secondary Accent (Purple) for AI/Magic
+                dark: '#0a0f0b',      // Deepest background
+                surface: '#111813',   // Card background
+                accent: '#1f2e25',    // Borders/Secondary background
+                text: '#f1f5f9',      // Primary text (Lighter for better contrast)
+                muted: '#94a3b8',     // Secondary text (Blue-ish grey for readability)
               },
               editor: {
-                bg: '#0a0f0b',
-                sidebar: '#111813'
+                bg: '#050806',
+                sidebar: '#0c120e'
               }
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
               mono: ['Fira Code', 'monospace'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
             }
           }
         }
@@ -51,7 +62,7 @@
 }
 </script>
 </head>
-  <body class="bg-py-dark text-py-text font-sans antialiased overflow-hidden">
+  <body class="bg-py-dark text-py-text font-sans antialiased overflow-hidden selection:bg-py-green/30 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

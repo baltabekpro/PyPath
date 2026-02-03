@@ -21,17 +21,18 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
        <div className="flex flex-col gap-2">
            <h1 className="text-3xl font-bold text-white">Каталог курсов</h1>
-           <p className="text-gray-400">Прокачай навыки Python с нашими курируемыми курсами.</p>
+           <p className="text-py-muted">Прокачай навыки Python с нашими курируемыми курсами.</p>
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           {COURSES.map(course => {
+           {COURSES.map((course, index) => {
                const completedLessons = Math.round((course.progress / 100) * course.totalLessons);
-               
+               const isPrimary = index === 0;
+
                return (
-               <div key={course.id} className="bg-py-surface border border-py-accent rounded-2xl overflow-hidden hover:border-py-green/50 transition-all group flex flex-col shadow-lg">
+               <div key={course.id} className="bg-py-surface border border-py-accent rounded-2xl overflow-hidden hover:border-py-green/30 transition-all group flex flex-col shadow-lg">
                    {/* Card Header Gradient */}
-                   <div className="h-32 bg-gradient-to-br from-[#131f17] to-[#0c140e] p-6 relative flex flex-col justify-between border-b border-white/5">
+                   <div className="h-32 bg-gradient-to-br from-[#1f2e25] to-[#0c140e] p-6 relative flex flex-col justify-between border-b border-white/5">
                        <div className="flex justify-between items-start">
                            <div className={`size-12 rounded-xl bg-[#0a0f0b] flex items-center justify-center ${course.color} shadow-lg border border-white/10`}>
                                {getIcon(course.icon)}
@@ -44,7 +45,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                    
                    <div className="p-6 flex-1 flex flex-col">
                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-py-green transition-colors leading-tight">{course.title}</h3>
-                       <p className="text-sm text-gray-300 mb-6 leading-relaxed flex-1">{course.description}</p>
+                       <p className="text-sm text-py-muted mb-6 leading-relaxed flex-1">{course.description}</p>
                        
                        {/* Progress Info */}
                        <div className="space-y-3 mb-6">
@@ -53,7 +54,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                    {course.progress === 100 ? <CheckCircle2 size={14} className="text-py-green"/> : null}
                                    {course.progress}% Завершено
                                </span>
-                               <span className="text-gray-400 font-mono">
+                               <span className="text-gray-500 font-mono">
                                    {completedLessons}/{course.totalLessons} Уроков
                                </span>
                            </div>
@@ -65,9 +66,9 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                        <button 
                          onClick={() => setView(View.PRACTICE)}
                          className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 border ${
-                             course.progress > 0 
-                             ? 'bg-py-green text-py-dark hover:bg-white border-transparent' 
-                             : 'bg-transparent text-white border-py-accent hover:border-py-green hover:text-py-green'
+                             isPrimary && course.progress > 0
+                             ? 'bg-py-green text-py-dark hover:bg-white border-transparent shadow-lg shadow-py-green/10' 
+                             : 'bg-transparent text-gray-300 border-py-accent hover:border-py-green hover:text-py-green'
                          }`}
                         >
                            {course.progress > 0 ? (
@@ -91,7 +92,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                 <div className="relative z-10 max-w-[80%]">
                     <h3 className="text-lg font-bold text-gray-300 mb-2">Машинное обучение</h3>
                     <p className="text-xs text-gray-500 mb-4 leading-relaxed">Продвинутый курс по нейронным сетям и Deep Learning.</p>
-                    <div className="inline-flex items-center gap-2 bg-py-accent/50 text-gray-400 px-4 py-2 rounded-full text-xs font-bold border border-white/5">
+                    <div className="inline-flex items-center gap-2 bg-py-accent text-gray-400 px-4 py-2 rounded-full text-xs font-bold border border-white/5">
                         <Lock size={12} />
                         Откроется на 20 уровне
                     </div>
