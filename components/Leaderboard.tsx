@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Crown, TrendingUp, ChevronUp, ChevronDown, Minus } from 'lucide-react';
-import { CURRENT_USER } from '../constants';
 
 const MOCK_LEADERS = [
   { rank: 1, name: "CyberNinja", xp: 45200, level: 42, avatar: "https://i.pravatar.cc/150?u=1", streak: 150, change: "up" },
