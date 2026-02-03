@@ -25,7 +25,7 @@ export const Leaderboard: React.FC = () => {
       <div className="flex flex-col md:flex-row items-end justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-white mb-2">Таблица лидеров</h1>
-          <p className="text-gray-400 max-w-md text-base leading-relaxed">
+          <p className="text-py-muted max-w-md text-base leading-relaxed">
             Соревнуйтесь с лучшими разработчиками, повышайте ранг и получайте награды.
           </p>
         </div>

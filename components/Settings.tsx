@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Bell, Lock, Globe, Moon, LogOut, CreditCard, Key, Shield, Smartphone } from 'lucide-react';
+import { User, Bell, Lock, Globe, Moon, AlertTriangle, CreditCard, Key, Shield, Smartphone } from 'lucide-react';
 import { CURRENT_USER } from '../constants';
 
 export const Settings: React.FC = () => {
@@ -114,15 +114,21 @@ export const Settings: React.FC = () => {
                   </div>
               </div>
 
-              {/* Danger Zone */}
+              {/* Danger Zone - Real Danger Only */}
               <div className="border border-red-500/20 rounded-2xl p-6 bg-red-500/5">
-                  <h2 className="text-lg font-bold text-red-400 mb-2">Опасная зона</h2>
-                  <p className="text-sm text-gray-400 mb-6">Действия в этой зоне необратимы. Пожалуйста, будьте осторожны.</p>
+                  <h2 className="text-lg font-bold text-red-400 mb-2 flex items-center gap-2">
+                      <AlertTriangle size={20}/>
+                      Опасная зона
+                  </h2>
+                  <p className="text-sm text-gray-400 mb-6">Действия в этой зоне необратимы. Будьте осторожны.</p>
                   
-                  <div className="flex justify-end gap-4">
-                      <button className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors text-sm font-bold">
-                          <LogOut size={16} />
-                          Выйти
+                  <div className="flex items-center justify-between">
+                      <div>
+                          <p className="text-white font-bold text-sm">Удалить аккаунт</p>
+                          <p className="text-xs text-gray-500">Все данные будут потеряны безвозвратно</p>
+                      </div>
+                      <button className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold">
+                          Удалить навсегда
                       </button>
                   </div>
               </div>

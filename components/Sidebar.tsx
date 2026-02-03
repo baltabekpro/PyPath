@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { LayoutDashboard, BookOpen, Code2, Settings, Trophy, BarChart2, Bot, Terminal } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Code2, Settings, Trophy, BarChart2, Bot, Terminal, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   currentView: View;
@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
       {/* Footer Area */}
       <div className="flex flex-col gap-6">
         
-        {/* Integrated Level Status - Simplified visual */}
+        {/* Integrated Level Status */}
         <div className="px-5 py-4 rounded-2xl bg-[#111913]/50 border border-white/5 hover:border-white/10 transition-colors group cursor-pointer">
           <div className="flex justify-between items-center mb-3">
               <span className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">Младший Профи</span>
@@ -79,8 +79,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           <p className="text-[10px] text-gray-500 text-right font-medium tracking-wide">750 XP до уровня 15</p>
         </div>
 
-        {/* Secondary CTA - Changed to Outline/Calmer style */}
-        {!shouldHideCTA && (
+        {/* Secondary CTA or Logout */}
+        {!shouldHideCTA ? (
             <button 
             onClick={() => setView(View.PRACTICE)}
             className="w-full py-3.5 rounded-xl flex items-center justify-center gap-3 text-sm font-bold text-py-green border border-py-green/30 bg-[#0d1f14] hover:bg-py-green hover:text-py-dark hover:border-py-green transition-all duration-300 group shadow-lg shadow-black/20"
@@ -88,6 +88,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
             <Code2 size={20} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform"/>
             <span>Песочница</span>
             </button>
+        ) : (
+             <button 
+             className="w-full py-3.5 rounded-xl flex items-center justify-center gap-3 text-sm font-bold text-gray-400 border border-white/5 hover:bg-white/5 hover:text-white transition-all duration-300"
+             >
+             <LogOut size={18} />
+             <span>Выйти</span>
+             </button>
         )}
       </div>
     </aside>

@@ -27,6 +27,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            {COURSES.map((course, index) => {
                const completedLessons = Math.round((course.progress / 100) * course.totalLessons);
+               // Only the first course (presumably most active/recommended) gets the primary CTA
                const isPrimary = index === 0;
 
                return (
@@ -66,9 +67,9 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                        <button 
                          onClick={() => setView(View.PRACTICE)}
                          className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 border ${
-                             isPrimary && course.progress > 0
+                             isPrimary
                              ? 'bg-py-green text-py-dark hover:bg-white border-transparent shadow-lg shadow-py-green/10' 
-                             : 'bg-transparent text-gray-300 border-py-accent hover:border-py-green hover:text-py-green'
+                             : 'bg-transparent text-gray-300 border-white/10 hover:border-py-green hover:text-py-green'
                          }`}
                         >
                            {course.progress > 0 ? (

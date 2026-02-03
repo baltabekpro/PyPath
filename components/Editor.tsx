@@ -338,7 +338,8 @@ export const EditorComponent: React.FC = () => {
              {isSidebarCollapsed ? <PanelLeftOpen size={16}/> : <PanelLeftClose size={16}/>}
           </button>
 
-          <div className="flex-1 flex overflow-x-auto custom-scrollbar-hide">
+          {/* Scrollable Tabs */}
+          <div className="flex overflow-x-auto custom-scrollbar-hide">
              {openFiles.map(fid => {
                const file = files.find(f => f.id === fid);
                if (!file) return null;
@@ -369,6 +370,11 @@ export const EditorComponent: React.FC = () => {
                )
              })}
           </div>
+
+          {/* Spacer to push actions to right, but allow them to sit next to tabs if plenty of space */}
+          <div className="flex-1"></div>
+
+          {/* Actions Bar - Moved closer */}
           <div className="flex items-center gap-2 px-3 border-l border-py-accent bg-[#0a0f0b]">
              <button className="p-2 text-gray-500 hover:text-white rounded-lg hover:bg-white/5 transition-colors"><Search size={16}/></button>
              <button 
