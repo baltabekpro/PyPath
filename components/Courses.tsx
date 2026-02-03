@@ -1,8 +1,13 @@
 import React from 'react';
 import { COURSES, getIcon } from '../constants';
 import { Lock, Star, Clock } from 'lucide-react';
+import { View } from '../types';
 
-export const Courses: React.FC = () => {
+interface CoursesProps {
+  setView: (view: View) => void;
+}
+
+export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
        <div className="flex flex-col gap-2">
@@ -34,28 +39,4 @@ export const Courses: React.FC = () => {
                                <span className="text-py-green">12/25 Уроков</span>
                            </div>
                            <div className="h-1.5 w-full bg-py-dark rounded-full overflow-hidden">
-                               <div className={`h-full ${course.color.replace('text', 'bg')} rounded-full`} style={{ width: `${course.progress}%` }}></div>
-                           </div>
-                       </div>
-
-                       <button className="w-full py-3 rounded-xl font-bold text-sm bg-py-accent text-white hover:bg-py-green hover:text-py-dark transition-all flex items-center justify-center gap-2">
-                           {course.progress > 0 ? 'Продолжить' : 'Начать курс'}
-                       </button>
-                   </div>
-               </div>
-           ))}
-
-           {/* Locked Course Placeholder */}
-           <div className="bg-py-surface/20 border border-py-accent border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 opacity-60">
-                <div className="size-16 rounded-full bg-py-accent flex items-center justify-center text-py-muted">
-                    <Lock size={24} />
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-white">Машинное обучение (Продвинутый)</h3>
-                    <p className="text-sm text-py-muted">Откроется на 20 уровне</p>
-                </div>
-           </div>
-       </div>
-    </div>
-  );
-};
+                               <div className={`h-full ${course.color.replace('text', 'bg')} rounded-full`} style={{ width: `${course.progress}%

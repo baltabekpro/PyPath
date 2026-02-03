@@ -2,8 +2,13 @@ import React from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ACTIVITY_DATA, CURRENT_USER } from '../constants';
 import { Shield, Target, Flame, Medal, Bug } from 'lucide-react';
+import { View } from '../types';
 
-export const Profile: React.FC = () => {
+interface ProfileProps {
+  setView: (view: View) => void;
+}
+
+export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 animate-fade-in">
         {/* Header Profile Card */}
@@ -67,7 +72,12 @@ export const Profile: React.FC = () => {
             <div className="bg-py-surface border border-py-accent rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-white">Недавние награды</h3>
-                    <span className="text-xs text-py-green cursor-pointer">Смотреть все</span>
+                    <span 
+                        onClick={() => setView(View.ACHIEVEMENTS)}
+                        className="text-xs text-py-green cursor-pointer hover:underline"
+                    >
+                        Смотреть все
+                    </span>
                 </div>
                 <div className="space-y-4">
                     {[

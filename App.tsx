@@ -8,6 +8,8 @@ import { Courses } from './components/Courses';
 import { Profile } from './components/Profile';
 import { Settings } from './components/Settings';
 import { Community } from './components/Community';
+import { Leaderboard } from './components/Leaderboard';
+import { Achievements } from './components/Achievements';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
@@ -15,20 +17,23 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case View.DASHBOARD:
-        return <Dashboard />;
+        return <Dashboard setView={setCurrentView} />;
       case View.PRACTICE:
         return <Editor />;
       case View.COURSES:
-        return <Courses />;
+        return <Courses setView={setCurrentView} />;
       case View.PROFILE:
+        return <Profile setView={setCurrentView} />;
       case View.ACHIEVEMENTS:
-        return <Profile />;
+        return <Achievements />;
+      case View.LEADERBOARD:
+        return <Leaderboard />;
       case View.SETTINGS:
         return <Settings />;
       case View.COMMUNITY:
         return <Community />;
       default:
-        return <Dashboard />;
+        return <Dashboard setView={setCurrentView} />;
     }
   };
 

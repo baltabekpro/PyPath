@@ -1,8 +1,13 @@
 import React from 'react';
 import { TrendingUp, Bot, ChevronRight, Zap, Bug, PlayCircle } from 'lucide-react';
 import { COURSES, getIcon, CURRENT_USER } from '../constants';
+import { View } from '../types';
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  setView: (view: View) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in">
       {/* Welcome Section */}
@@ -35,7 +40,10 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* AI Recommendation */}
-        <div className="col-span-1 md:col-span-2 relative overflow-hidden bg-py-green rounded-2xl p-6 text-py-dark group cursor-pointer transition-transform hover:scale-[1.01]">
+        <div 
+          onClick={() => setView(View.PRACTICE)}
+          className="col-span-1 md:col-span-2 relative overflow-hidden bg-py-green rounded-2xl p-6 text-py-dark group cursor-pointer transition-transform hover:scale-[1.01]"
+        >
           <div className="relative z-10 flex h-full items-center justify-between">
             <div className="max-w-md">
               <span className="bg-py-dark/90 text-py-green text-[10px] font-bold uppercase px-2 py-1 rounded-md mb-2 inline-block shadow-lg">Рекомендация ИИ</span>
@@ -55,11 +63,15 @@ export const Dashboard: React.FC = () => {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Решено задач', value: '154', sub: '+12 сегодня', subColor: 'text-py-green' },
-          { label: 'Мировой рейтинг', value: `#${CURRENT_USER.rank}`, sub: '↑ 3 позиции', subColor: 'text-py-green' },
-          { label: 'Всего XP', value: CURRENT_USER.xp.toLocaleString(), sub: 'Уровень 14', subColor: 'text-py-muted' }
+          { label: 'Решено задач', value: '154', sub: '+12 сегодня', subColor: 'text-py-green', view: View.PROFILE },
+          { label: 'Мировой рейтинг', value: `#${CURRENT_USER.rank}`, sub: '↑ 3 позиции', subColor: 'text-py-green', view: View.LEADERBOARD },
+          { label: 'Всего XP', value: CURRENT_USER.xp.toLocaleString(), sub: 'Уровень 14', subColor: 'text-py-muted', view: View.PROFILE }
         ].map((stat, i) => (
-          <div key={i} className="bg-py-accent/30 border border-py-accent p-5 rounded-xl hover:bg-py-accent/50 transition-colors">
+          <div 
+            key={i} 
+            onClick={() => stat.view && setView(stat.view)}
+            className="bg-py-accent/30 border border-py-accent p-5 rounded-xl hover:bg-py-accent/50 transition-colors cursor-pointer"
+          >
             <p className="text-py-muted text-sm mb-1">{stat.label}</p>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-white">{stat.value}</span>
@@ -74,11 +86,20 @@ export const Dashboard: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-white">Текущие курсы</h2>
-            <button className="text-py-green text-sm font-bold hover:underline">Все</button>
+            <button 
+              onClick={() => setView(View.COURSES)}
+              className="text-py-green text-sm font-bold hover:underline"
+            >
+              Все
+            </button>
           </div>
           <div className="space-y-4">
             {COURSES.slice(0, 2).map((course) => (
-              <div key={course.id} className="bg-py-surface/40 border border-white/5 p-5 rounded-2xl flex items-center gap-5 hover:bg-white/5 transition-all cursor-pointer group">
+              <div 
+                key={course.id} 
+                onClick={() => setView(View.PRACTICE)}
+                className="bg-py-surface/40 border border-white/5 p-5 rounded-2xl flex items-center gap-5 hover:bg-white/5 transition-all cursor-pointer group"
+              >
                 <div className={`size-16 rounded-xl bg-py-dark flex items-center justify-center ${course.color} bg-opacity-20`}>
                   {getIcon(course.icon)}
                 </div>
@@ -111,7 +132,11 @@ export const Dashboard: React.FC = () => {
                 { title: 'Найди баг', desc: 'Отладка скрипта скрапинга', icon: Bug },
                 { title: 'Ежедневный вызов', desc: 'Алгоритм сортировки (Средний)', icon: PlayCircle },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-4 group cursor-pointer">
+                <div 
+                  key={i} 
+                  onClick={() => setView(View.PRACTICE)}
+                  className="flex items-start gap-4 group cursor-pointer"
+                >
                   <div className="mt-1 size-8 rounded-lg bg-py-green/10 flex items-center justify-center text-py-green group-hover:bg-py-green group-hover:text-py-dark transition-colors">
                     <item.icon size={18} />
                   </div>
@@ -121,7 +146,10 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
-              <button className="w-full mt-4 py-3 border border-py-green/40 text-py-green rounded-xl text-sm font-bold hover:bg-py-green hover:text-py-dark transition-colors">
+              <button 
+                onClick={() => setView(View.PRACTICE)}
+                className="w-full mt-4 py-3 border border-py-green/40 text-py-green rounded-xl text-sm font-bold hover:bg-py-green hover:text-py-dark transition-colors"
+              >
                 Открыть песочницу
               </button>
             </div>

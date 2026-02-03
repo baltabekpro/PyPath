@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { LayoutDashboard, BookOpen, Code2, Users, Settings, Trophy, Terminal } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Code2, Users, Settings, Trophy, Terminal, BarChart2 } from 'lucide-react';
 
 interface SidebarProps {
   currentView: View;
@@ -12,6 +12,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
     { view: View.DASHBOARD, label: 'Главная', icon: LayoutDashboard },
     { view: View.COURSES, label: 'Курсы', icon: BookOpen },
     { view: View.PRACTICE, label: 'Практика', icon: Code2 },
+    { view: View.LEADERBOARD, label: 'Рейтинг', icon: BarChart2 },
     { view: View.COMMUNITY, label: 'Сообщество', icon: Users },
     { view: View.ACHIEVEMENTS, label: 'Достижения', icon: Trophy },
     { view: View.SETTINGS, label: 'Настройки', icon: Settings },
