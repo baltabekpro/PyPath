@@ -10,41 +10,41 @@ interface ProfileProps {
 
 export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-fade-in">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in pt-6">
         {/* Header Profile Card */}
-        <div className="bg-py-surface border border-py-accent rounded-3xl p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+        <div className="bg-py-surface border border-py-accent rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 relative overflow-hidden">
              <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-py-green/10 to-transparent pointer-events-none" />
              
-             <div className="relative">
-                 <div className="size-32 rounded-full p-1 border-4 border-py-green/30">
+             <div className="relative shrink-0">
+                 <div className="size-24 md:size-32 rounded-full p-1 border-4 border-py-green/30">
                      <img src={CURRENT_USER.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                  </div>
-                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-py-green text-py-dark font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-py-green text-py-dark font-black text-[10px] md:text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg whitespace-nowrap">
                     Уровень {CURRENT_USER.levelNum}
                  </div>
              </div>
 
-             <div className="flex-1 text-center md:text-left z-10">
-                 <h1 className="text-3xl font-bold text-white mb-1">{CURRENT_USER.name}</h1>
+             <div className="flex-1 text-center md:text-left z-10 w-full">
+                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">{CURRENT_USER.name}</h1>
                  <p className="text-py-green font-medium mb-4">{CURRENT_USER.level}</p>
-                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                     <div className="bg-py-dark/50 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-2">
-                         <Flame className="text-orange-500" size={18} />
+                 <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
+                     <div className="bg-py-dark/50 px-3 md:px-4 py-2 rounded-xl border border-white/5 flex items-center gap-2 text-sm">
+                         <Flame className="text-orange-500" size={16} md:size={18} />
                          <span className="text-white font-bold">{CURRENT_USER.streak} Дней подряд</span>
                      </div>
-                     <div className="bg-py-dark/50 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-2">
-                         <Target className="text-blue-500" size={18} />
+                     <div className="bg-py-dark/50 px-3 md:px-4 py-2 rounded-xl border border-white/5 flex items-center gap-2 text-sm">
+                         <Target className="text-blue-500" size={16} md:size={18} />
                          <span className="text-white font-bold">98% Точность</span>
                      </div>
                  </div>
              </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             {/* Learning Activity Chart */}
-            <div className="lg:col-span-2 bg-py-surface border border-py-accent rounded-2xl p-6">
+            <div className="lg:col-span-2 bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6">
                 <h3 className="text-lg font-bold text-white mb-6">Активность обучения</h3>
-                <div className="h-64 w-full">
+                <div className="h-56 md:h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={ACTIVITY_DATA}>
                             <XAxis 
@@ -69,7 +69,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             </div>
 
             {/* Achievements */}
-            <div className="bg-py-surface border border-py-accent rounded-2xl p-6">
+            <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-white">Недавние награды</h3>
                     <span 

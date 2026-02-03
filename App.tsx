@@ -10,22 +10,29 @@ import { Settings } from './components/Settings';
 import { Leaderboard } from './components/Leaderboard';
 import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
+import { Menu } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleViewChange = (view: View) => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false); // Close menu on navigation
+  };
 
   const renderView = () => {
     switch (currentView) {
       case View.DASHBOARD:
-        return <Dashboard setView={setCurrentView} />;
+        return <Dashboard setView={handleViewChange} />;
       case View.PRACTICE:
         return <Editor />;
       case View.AI_CHAT:
         return <AIChatPage />;
       case View.COURSES:
-        return <Courses setView={setCurrentView} />;
+        return <Courses setView={handleViewChange} />;
       case View.PROFILE:
-        return <Profile setView={setCurrentView} />;
+        return <Profile setView={handleViewChange} />;
       case View.ACHIEVEMENTS:
         return <Achievements />;
       case View.LEADERBOARD:
@@ -33,17 +40,46 @@ const App: React.FC = () => {
       case View.SETTINGS:
         return <Settings />;
       default:
-        return <Dashboard setView={setCurrentView} />;
+        return <Dashboard setView={handleViewChange} />;
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-py-dark font-sans text-py-text selection:bg-py-green/30 selection:text-white">
-      <Sidebar currentView={currentView} setView={setCurrentView} />
+    <div className="flex min-h-screen bg-py-dark font-sans text-py-text selection:bg-py-green/30 selection:text-white relative">
       
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Hide header for immersive views like Practice and AI Chat */}
-        {currentView !== View.PRACTICE && currentView !== View.AI_CHAT && <Header />}
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Responsive */}
+      <Sidebar 
+        currentView={currentView} 
+        setView={handleViewChange} 
+        isMobileOpen={isMobileMenuOpen} 
+        closeMobileMenu={() => setIsMobileMenuOpen(false)}
+      />
+      
+      <main className="flex-1 flex flex-col h-screen overflow-hidden w-full transition-all duration-300">
+        {/* Mobile Header Toggle for Immersive Views */}
+        {(currentView === View.PRACTICE || currentView === View.AI_CHAT) && (
+           <div className="md:hidden absolute top-4 left-4 z-20">
+               <button 
+                 onClick={() => setIsMobileMenuOpen(true)}
+                 className="p-2 bg-py-surface border border-py-accent rounded-lg text-gray-400 hover:text-white"
+               >
+                 <Menu size={20} />
+               </button>
+           </div>
+        )}
+
+        {/* Main Header */}
+        {currentView !== View.PRACTICE && currentView !== View.AI_CHAT && (
+            <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+        )}
         
         <div className={`flex-1 ${
             currentView !== View.PRACTICE && currentView !== View.AI_CHAT 

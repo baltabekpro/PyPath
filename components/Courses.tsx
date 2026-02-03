@@ -18,13 +18,13 @@ const getDifficultyStyle = (level: string) => {
 
 export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-fade-in pt-6">
        <div className="flex flex-col gap-2">
-           <h1 className="text-3xl font-bold text-white">Каталог курсов</h1>
-           <p className="text-py-muted">Прокачай навыки Python с нашими курируемыми курсами.</p>
+           <h1 className="text-2xl md:text-3xl font-bold text-white">Каталог курсов</h1>
+           <p className="text-py-muted text-sm md:text-base">Прокачай навыки Python с нашими курируемыми курсами.</p>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
            {COURSES.map((course, index) => {
                const completedLessons = Math.round((course.progress / 100) * course.totalLessons);
                // Only the first course (presumably most active/recommended) gets the primary CTA

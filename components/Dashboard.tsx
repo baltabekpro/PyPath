@@ -9,12 +9,12 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in pt-10">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 md:space-y-10 animate-fade-in pt-6 md:pt-10">
       {/* Welcome Section */}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold mb-2 text-white tracking-tight">С возвращением, {CURRENT_USER.name.split(' ')[0]}!</h1>
-          <p className="text-py-muted text-base">Ваш код компилируется, а навыки растут.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-white tracking-tight">С возвращением, {CURRENT_USER.name.split(' ')[0]}!</h1>
+          <p className="text-py-muted text-sm md:text-base">Ваш код компилируется, а навыки растут.</p>
         </div>
         <div className="hidden md:block text-right">
              <p className="text-xs text-py-muted font-mono mb-1 bg-py-surface px-3 py-1.5 rounded-lg border border-py-accent">
@@ -29,26 +29,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         {/* Next Lesson Card (Primary Focus - 2/3 Width) */}
         <div 
           onClick={() => setView(View.PRACTICE)}
-          className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-[#0f1912] to-[#050806] border border-py-accent hover:border-py-green/30 rounded-[2rem] p-8 group cursor-pointer shadow-xl transition-all flex flex-col justify-center"
+          className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-[#0f1912] to-[#050806] border border-py-accent hover:border-py-green/30 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 group cursor-pointer shadow-xl transition-all flex flex-col justify-center"
         >
             {/* Background Pattern */}
             <div className="absolute top-0 right-0 w-64 h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
             <div className="absolute -right-10 -bottom-20 size-64 bg-py-green/10 blur-[100px] rounded-full pointer-events-none"></div>
 
-            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-                 <div className="size-20 rounded-2xl bg-[#1a2e21] flex items-center justify-center text-py-green shadow-lg border border-white/5 shrink-0 group-hover:scale-105 transition-transform">
-                     <Play size={32} fill="currentColor" className="ml-1"/>
+            <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center">
+                 <div className="size-16 md:size-20 rounded-2xl bg-[#1a2e21] flex items-center justify-center text-py-green shadow-lg border border-white/5 shrink-0 group-hover:scale-105 transition-transform">
+                     <Play size={28} md:size={32} fill="currentColor" className="ml-1"/>
                  </div>
                  <div className="flex-1 text-center md:text-left">
                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 mb-3">
                          <span className="size-2 bg-py-green rounded-full animate-pulse"></span>
                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Текущий урок</span>
                      </div>
-                     <h2 className="text-3xl font-bold text-white mb-2 leading-tight">Асинхронность в Python</h2>
-                     <p className="text-py-muted mb-6 max-w-md">Продолжите с места, где остановились: <span className="text-white font-medium">Урок 5: Event Loop</span></p>
+                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">Асинхронность в Python</h2>
+                     <p className="text-py-muted mb-6 max-w-md text-sm md:text-base">Продолжите с места, где остановились: <span className="text-white font-medium">Урок 5: Event Loop</span></p>
                      
-                     <div className="flex items-center justify-center md:justify-start gap-6">
-                        <button className="bg-py-green text-py-dark px-8 py-3.5 rounded-xl font-bold hover:bg-white transition-colors shadow-lg shadow-py-green/10 flex items-center gap-2">
+                     <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 md:gap-6">
+                        <button className="w-full md:w-auto bg-py-green text-py-dark px-8 py-3.5 rounded-xl font-bold hover:bg-white transition-colors shadow-lg shadow-py-green/10 flex items-center justify-center gap-2">
                             Продолжить
                             <ChevronRight size={18} />
                         </button>
@@ -62,7 +62,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
 
         {/* Daily Streak Card (Compact) */}
-        <div className="bg-py-surface border border-py-accent rounded-[2rem] p-6 flex flex-col justify-between relative overflow-hidden group hover:border-py-green/20 transition-colors">
+        <div className="bg-py-surface border border-py-accent rounded-[1.5rem] md:rounded-[2rem] p-6 flex flex-col justify-between relative overflow-hidden group hover:border-py-green/20 transition-colors min-h-[180px]">
              <div className="flex justify-between items-start mb-4">
                  <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -90,19 +90,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       </div>
 
       {/* Stats Row - Mixed Colors */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
               { label: 'XP сегодня', value: '450', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
               { label: 'Задач решено', value: '12', icon: Bug, color: 'text-red-400', bg: 'bg-red-400/10' },
               { label: 'Часов учебы', value: '2.5', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
               { label: 'Рейтинг', value: `#${CURRENT_USER.rank}`, icon: Award, color: 'text-py-secondary', bg: 'bg-py-secondary/10' },
           ].map((stat, i) => (
-              <div key={i} className="bg-py-surface border border-py-accent p-5 rounded-2xl flex flex-col items-start hover:border-white/10 transition-colors group">
+              <div key={i} className="bg-py-surface border border-py-accent p-4 md:p-5 rounded-2xl flex flex-col items-start hover:border-white/10 transition-colors group">
                   <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color} mb-3 group-hover:scale-110 transition-transform`}>
                       <stat.icon size={20} />
                   </div>
-                  <span className="text-2xl font-black text-white mb-0.5">{stat.value}</span>
-                  <span className="text-[10px] font-bold text-py-muted uppercase tracking-wider">{stat.label}</span>
+                  <span className="text-xl md:text-2xl font-black text-white mb-0.5">{stat.value}</span>
+                  <span className="text-[9px] md:text-[10px] font-bold text-py-muted uppercase tracking-wider">{stat.label}</span>
               </div>
           ))}
       </div>
@@ -119,19 +119,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               <div className="space-y-3">
                   {COURSES.slice(0, 3).map((course, idx) => (
                       <div key={course.id} className="bg-py-surface border border-py-accent p-4 rounded-2xl flex items-center gap-5 hover:border-white/10 transition-all cursor-pointer group" onClick={() => setView(View.COURSES)}>
-                          <div className={`size-12 rounded-xl bg-[#0a0f0b] flex items-center justify-center ${course.color} border border-white/5`}>
+                          <div className={`size-12 rounded-xl bg-[#0a0f0b] flex items-center justify-center ${course.color} border border-white/5 shrink-0`}>
                               {getIcon(course.icon)}
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                               <div className="flex justify-between mb-1">
-                                  <h4 className="font-bold text-white text-sm group-hover:text-py-green transition-colors">{course.title}</h4>
-                                  <span className="text-xs font-bold text-py-muted">{course.progress}%</span>
+                                  <h4 className="font-bold text-white text-sm group-hover:text-py-green transition-colors truncate pr-2">{course.title}</h4>
+                                  <span className="text-xs font-bold text-py-muted shrink-0">{course.progress}%</span>
                               </div>
                               <div className="w-full h-1.5 bg-[#0a0f0b] rounded-full overflow-hidden">
                                   <div className={`h-full ${course.color.replace('text', 'bg')} rounded-full`} style={{width: `${course.progress}%`}}></div>
                               </div>
                           </div>
-                          <button className={`size-9 rounded-lg flex items-center justify-center transition-colors ${idx === 0 ? 'bg-white/5 text-white' : 'text-py-muted hover:bg-white/5'}`}>
+                          <button className={`size-9 rounded-lg flex items-center justify-center transition-colors shrink-0 ${idx === 0 ? 'bg-white/5 text-white' : 'text-py-muted hover:bg-white/5'}`}>
                               <ChevronRight size={18} />
                           </button>
                       </div>
