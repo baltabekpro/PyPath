@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Bot, ChevronRight, Zap, Bug, PlayCircle } from 'lucide-react';
+import { TrendingUp, Bot, ChevronRight, Zap, Bug, PlayCircle, Clock, Play, Award, Calendar } from 'lucide-react';
 import { COURSES, getIcon, CURRENT_USER } from '../constants';
 import { View } from '../types';
 
@@ -9,152 +9,165 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in">
+    <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in pt-10">
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-4xl font-bold mb-2 text-white">С возвращением, Программист!</h1>
-        <p className="text-py-muted">Продолжайте обучение с того места, где остановились вчера.</p>
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold mb-2 text-white tracking-tight">С возвращением, {CURRENT_USER.name.split(' ')[0]}!</h1>
+          <p className="text-py-muted text-base">Ваш код компилируется, а навыки растут. Так держать!</p>
+        </div>
+        <div className="hidden md:block text-right">
+             <p className="text-xs text-py-muted font-mono mb-1 bg-py-surface px-3 py-1.5 rounded-lg border border-py-accent">
+                {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
+             </p>
+        </div>
       </div>
 
       {/* Hero Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Daily Progress */}
-        <div className="bg-py-surface/40 backdrop-blur-sm p-6 rounded-2xl border border-white/5 flex items-center gap-6">
-          <div className="relative size-24 shrink-0 flex items-center justify-center">
-             {/* Simple CSS Conic Gradient for Circular Progress */}
-            <div className="absolute inset-0 rounded-full" style={{ background: 'conic-gradient(#0df259 75%, #283928 0)' }}></div>
-            <div className="bg-py-surface absolute inset-2 rounded-full flex flex-col items-center justify-center z-10">
-               <span className="text-xl font-bold text-white">{CURRENT_USER.streak}</span>
-               <span className="text-[10px] text-py-muted uppercase tracking-wider">ДНЕЙ</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-py-muted">Серия дней</p>
-            <h3 className="text-xl font-bold text-white">Почти у цели!</h3>
-            <p className="text-xs text-py-green mt-1 flex items-center gap-1">
-              <TrendingUp size={14} />
-              <span>на 15% выше среднего</span>
-            </p>
-          </div>
-        </div>
-
-        {/* AI Recommendation */}
+        {/* Next Lesson Card (Primary Focus - 2/3 Width) */}
         <div 
           onClick={() => setView(View.PRACTICE)}
-          className="col-span-1 md:col-span-2 relative overflow-hidden bg-py-green rounded-2xl p-6 text-py-dark group cursor-pointer transition-transform hover:scale-[1.01]"
+          className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-[#152e20] to-[#0a120d] border border-py-green/30 rounded-[2rem] p-10 group cursor-pointer shadow-2xl shadow-black/50 transition-all hover:border-py-green/50 hover:shadow-py-green/5 flex flex-col justify-center"
         >
-          <div className="relative z-10 flex h-full items-center justify-between">
-            <div className="max-w-md">
-              <span className="bg-py-dark/90 text-py-green text-[10px] font-bold uppercase px-2 py-1 rounded-md mb-2 inline-block shadow-lg">Рекомендация ИИ</span>
-              <h3 className="text-2xl font-black mb-1">Мастер F-строк</h3>
-              <p className="text-sm font-bold opacity-80 mb-4">Этот метод форматирования ускорит ваш код и сделает его чище.</p>
-              <button className="bg-py-dark text-white text-sm font-bold px-5 py-2 rounded-lg hover:bg-black transition-colors">Начать урок</button>
+            {/* Background Pattern */}
+            <div className="absolute top-0 right-0 w-64 h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+            <div className="absolute -right-10 -bottom-20 size-64 bg-py-green/20 blur-[100px] rounded-full pointer-events-none"></div>
+
+            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+                 <div className="size-20 rounded-2xl bg-py-green/20 flex items-center justify-center text-py-green shadow-[0_0_30px_rgba(13,242,89,0.2)] border border-py-green/30 shrink-0">
+                     <Play size={32} fill="currentColor" className="ml-1"/>
+                 </div>
+                 <div className="flex-1 text-center md:text-left">
+                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/30 rounded-full border border-white/10 mb-3 backdrop-blur-sm">
+                         <span className="size-2 bg-py-green rounded-full animate-pulse"></span>
+                         <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Текущий урок</span>
+                     </div>
+                     <h2 className="text-3xl font-bold text-white mb-2 leading-tight">Асинхронность в Python</h2>
+                     <p className="text-gray-300 mb-6 max-w-md">Продолжите с места, где остановились: <span className="text-white font-medium">Урок 5: Event Loop</span></p>
+                     
+                     <div className="flex items-center justify-center md:justify-start gap-6">
+                        <button className="bg-py-green text-py-dark px-8 py-3.5 rounded-xl font-bold hover:bg-white transition-colors shadow-lg shadow-py-green/20 flex items-center gap-2 group-hover:scale-105 duration-300">
+                            Продолжить
+                            <ChevronRight size={18} />
+                        </button>
+                        <div className="text-xs font-bold text-gray-400 flex items-center gap-1.5">
+                            <Clock size={14} />
+                            <span>~15 минут</span>
+                        </div>
+                     </div>
+                 </div>
             </div>
-            <div className="opacity-30 group-hover:opacity-40 transition-opacity">
-              <Bot size={120} />
-            </div>
-          </div>
-          {/* Decorative Pattern */}
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/20 to-transparent pointer-events-none"></div>
+        </div>
+
+        {/* Daily Streak Card (Right Side) */}
+        <div className="bg-[#0c120e] border border-py-accent rounded-[2rem] p-8 flex flex-col items-center justify-center relative overflow-hidden group hover:border-py-green/30 transition-colors">
+             <div className="relative size-40 mb-6">
+                 <svg className="size-full -rotate-90" viewBox="0 0 120 120">
+                     <circle cx="60" cy="60" r="54" stroke="#1a2e21" strokeWidth="10" fill="none" />
+                     <circle 
+                        cx="60" 
+                        cy="60" 
+                        r="54" 
+                        stroke="#0df259" 
+                        strokeWidth="10" 
+                        fill="none" 
+                        strokeDasharray="339.29" 
+                        strokeDashoffset="100" 
+                        strokeLinecap="round"
+                     />
+                 </svg>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center">
+                     <span className="text-4xl font-black text-white leading-none mb-1">{CURRENT_USER.streak}</span>
+                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">дней</span>
+                 </div>
+             </div>
+             
+             <div className="text-center">
+                 <h3 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+                    Огонь! <span className="text-2xl">🔥</span>
+                 </h3>
+                 <p className="text-sm text-gray-400 leading-relaxed max-w-[200px] mx-auto">
+                    Вы в топ-10% по постоянству на этой неделе.
+                 </p>
+             </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: 'Решено задач', value: '154', sub: '+12 сегодня', subColor: 'text-py-green', view: View.PROFILE },
-          { label: 'Мировой рейтинг', value: `#${CURRENT_USER.rank}`, sub: '↑ 3 позиции', subColor: 'text-py-green', view: View.LEADERBOARD },
-          { label: 'Всего XP', value: CURRENT_USER.xp.toLocaleString(), sub: 'Уровень 14', subColor: 'text-py-muted', view: View.PROFILE }
-        ].map((stat, i) => (
-          <div 
-            key={i} 
-            onClick={() => stat.view && setView(stat.view)}
-            className="bg-py-accent/30 border border-py-accent p-5 rounded-xl hover:bg-py-accent/50 transition-colors cursor-pointer"
-          >
-            <p className="text-py-muted text-sm mb-1">{stat.label}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-white">{stat.value}</span>
-              <span className={`text-xs font-bold ${stat.subColor}`}>{stat.sub}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Current Courses */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Текущие курсы</h2>
-            <button 
-              onClick={() => setView(View.COURSES)}
-              className="text-py-green text-sm font-bold hover:underline"
-            >
-              Все
-            </button>
-          </div>
-          <div className="space-y-4">
-            {COURSES.slice(0, 2).map((course) => (
-              <div 
-                key={course.id} 
-                onClick={() => setView(View.PRACTICE)}
-                className="bg-py-surface/40 border border-white/5 p-5 rounded-2xl flex items-center gap-5 hover:bg-white/5 transition-all cursor-pointer group"
-              >
-                <div className={`size-16 rounded-xl bg-py-dark flex items-center justify-center ${course.color} bg-opacity-20`}>
-                  {getIcon(course.icon)}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1 text-white group-hover:text-py-green transition-colors">{course.title}</h4>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 h-1.5 bg-py-accent rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${course.color.replace('text', 'bg')}`} style={{ width: `${course.progress}%` }}></div>
-                    </div>
-                    <span className="text-xs text-py-muted font-mono">{course.progress}%</span>
-                  </div>
-                </div>
-                <div className="group-hover:translate-x-1 transition-transform">
-                  <ChevronRight className="text-py-muted" />
-                </div>
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+              { label: 'XP сегодня', value: '450', icon: Zap, color: 'text-yellow-400' },
+              { label: 'Задач решено', value: '12', icon: Bug, color: 'text-red-400' },
+              { label: 'Часов учебы', value: '2.5', icon: Clock, color: 'text-blue-400' },
+              { label: 'Рейтинг', value: `#${CURRENT_USER.rank}`, icon: Award, color: 'text-purple-400' },
+          ].map((stat, i) => (
+              <div key={i} className="bg-py-surface border border-py-accent p-5 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-[#1f3628] transition-colors group">
+                  <stat.icon size={24} className={`${stat.color} mb-3 group-hover:scale-110 transition-transform`} />
+                  <span className="text-2xl font-black text-white mb-1">{stat.value}</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{stat.label}</span>
               </div>
-            ))}
-          </div>
-        </div>
+          ))}
+      </div>
 
-        {/* Quick Practice */}
-        <div className="lg:col-span-1">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Быстрая практика</h2>
+      {/* Recent Courses / Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Active Courses List */}
+          <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">Мои курсы</h3>
+                  <button onClick={() => setView(View.COURSES)} className="text-xs font-bold text-py-green hover:underline">Все курсы</button>
+              </div>
+
+              <div className="space-y-4">
+                  {COURSES.slice(0, 3).map(course => (
+                      <div key={course.id} className="bg-py-surface border border-py-accent p-4 rounded-2xl flex items-center gap-4 hover:border-py-green/30 transition-all cursor-pointer group" onClick={() => setView(View.COURSES)}>
+                          <div className={`size-12 rounded-xl bg-[#0a0f0b] flex items-center justify-center ${course.color} border border-white/5`}>
+                              {getIcon(course.icon)}
+                          </div>
+                          <div className="flex-1">
+                              <h4 className="font-bold text-white text-sm mb-1 group-hover:text-py-green transition-colors">{course.title}</h4>
+                              <div className="w-full h-1.5 bg-[#0a0f0b] rounded-full overflow-hidden">
+                                  <div className={`h-full ${course.color.replace('text', 'bg')} rounded-full`} style={{width: `${course.progress}%`}}></div>
+                              </div>
+                          </div>
+                          <span className="text-xs font-bold text-gray-500">{course.progress}%</span>
+                          <button className="size-8 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 hover:bg-py-green hover:text-py-dark transition-colors">
+                              <Play size={14} fill="currentColor"/>
+                          </button>
+                      </div>
+                  ))}
+              </div>
           </div>
-          <div className="bg-py-accent/20 rounded-2xl p-6 border border-py-accent">
-            <div className="space-y-5">
-              {[
-                { title: 'Блиц-опрос', desc: '10 вопросов по List Comprehension', icon: Zap },
-                { title: 'Найди баг', desc: 'Отладка скрипта скрапинга', icon: Bug },
-                { title: 'Ежедневный вызов', desc: 'Алгоритм сортировки (Средний)', icon: PlayCircle },
-              ].map((item, i) => (
-                <div 
-                  key={i} 
-                  onClick={() => setView(View.PRACTICE)}
-                  className="flex items-start gap-4 group cursor-pointer"
-                >
-                  <div className="mt-1 size-8 rounded-lg bg-py-green/10 flex items-center justify-center text-py-green group-hover:bg-py-green group-hover:text-py-dark transition-colors">
-                    <item.icon size={18} />
+
+          {/* AI Mentor Quick Prompt */}
+          <div className="bg-[#0c120e] border border-py-accent rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-py-green/10 p-2 rounded-lg text-py-green">
+                      <Bot size={20} />
                   </div>
-                  <div>
-                    <h5 className="text-sm font-bold text-white group-hover:text-py-green transition-colors">{item.title}</h5>
-                    <p className="text-xs text-py-muted">{item.desc}</p>
+                  <h3 className="text-lg font-bold text-white">AI Ментор</h3>
+              </div>
+              
+              <div className="bg-py-surface border border-py-accent rounded-xl p-4 mb-4 flex-1">
+                  <div className="flex gap-3">
+                      <div className="size-8 rounded-full bg-py-green flex items-center justify-center text-py-dark shrink-0 font-bold text-xs">AI</div>
+                      <p className="text-sm text-gray-300 italic">
+                          "Заметил, что ты изучаешь асинхронность. Хочешь объясню разницу между многопоточностью и асинхронностью на примере кухни в ресторане?"
+                      </p>
                   </div>
-                </div>
-              ))}
+              </div>
+
               <button 
-                onClick={() => setView(View.PRACTICE)}
-                className="w-full mt-4 py-3 border border-py-green/40 text-py-green rounded-xl text-sm font-bold hover:bg-py-green hover:text-py-dark transition-colors"
+                onClick={() => setView(View.AI_CHAT)}
+                className="w-full py-3 bg-white/5 border border-py-accent hover:border-py-green/50 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
               >
-                Открыть песочницу
+                  <Bot size={16} />
+                  Начать диалог
               </button>
-            </div>
           </div>
-        </div>
       </div>
     </div>
   );

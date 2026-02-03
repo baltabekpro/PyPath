@@ -2,7 +2,7 @@ export enum View {
   DASHBOARD = 'DASHBOARD',
   COURSES = 'COURSES',
   PRACTICE = 'PRACTICE', // Editor
-  COMMUNITY = 'COMMUNITY',
+  AI_CHAT = 'AI_CHAT', // Full screen chat
   PROFILE = 'PROFILE',
   LEADERBOARD = 'LEADERBOARD',
   ACHIEVEMENTS = 'ACHIEVEMENTS',
@@ -24,6 +24,7 @@ export interface Course {
   title: string;
   description: string;
   progress: number;
+  totalLessons: number;
   icon: string;
   color: string;
   difficulty: string;

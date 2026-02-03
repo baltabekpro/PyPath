@@ -7,9 +7,9 @@ import { Editor } from './components/Editor';
 import { Courses } from './components/Courses';
 import { Profile } from './components/Profile';
 import { Settings } from './components/Settings';
-import { Community } from './components/Community';
 import { Leaderboard } from './components/Leaderboard';
 import { Achievements } from './components/Achievements';
+import { AIChatPage } from './components/AIChatPage';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
@@ -20,6 +20,8 @@ const App: React.FC = () => {
         return <Dashboard setView={setCurrentView} />;
       case View.PRACTICE:
         return <Editor />;
+      case View.AI_CHAT:
+        return <AIChatPage />;
       case View.COURSES:
         return <Courses setView={setCurrentView} />;
       case View.PROFILE:
@@ -30,8 +32,6 @@ const App: React.FC = () => {
         return <Leaderboard />;
       case View.SETTINGS:
         return <Settings />;
-      case View.COMMUNITY:
-        return <Community />;
       default:
         return <Dashboard setView={setCurrentView} />;
     }
@@ -42,9 +42,14 @@ const App: React.FC = () => {
       <Sidebar currentView={currentView} setView={setCurrentView} />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {currentView !== View.PRACTICE && <Header />}
+        {/* Hide header for immersive views like Practice and AI Chat */}
+        {currentView !== View.PRACTICE && currentView !== View.AI_CHAT && <Header />}
         
-        <div className={`flex-1 ${currentView !== View.PRACTICE ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'}`}>
+        <div className={`flex-1 ${
+            currentView !== View.PRACTICE && currentView !== View.AI_CHAT 
+            ? 'overflow-y-auto custom-scrollbar' 
+            : 'overflow-hidden'
+        }`}>
           {renderView()}
         </div>
       </main>

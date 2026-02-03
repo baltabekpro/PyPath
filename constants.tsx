@@ -18,6 +18,7 @@ export const COURSES: Course[] = [
     title: "Асинхронность в Python",
     description: "Освойте asyncio, await и конкурентное программирование.",
     progress: 45,
+    totalLessons: 20,
     icon: "Cpu",
     color: "text-blue-400",
     difficulty: "Средний"
@@ -27,6 +28,7 @@ export const COURSES: Course[] = [
     title: "PostgreSQL и SQLAlchemy",
     description: "Проектирование баз данных и мастерство ORM.",
     progress: 82,
+    totalLessons: 32,
     icon: "Database",
     color: "text-orange-400",
     difficulty: "Сложный"
@@ -36,6 +38,7 @@ export const COURSES: Course[] = [
     title: "Веб-скрапинг 101",
     description: "Извлечение данных из веба с помощью BeautifulSoup.",
     progress: 10,
+    totalLessons: 15,
     icon: "Globe",
     color: "text-purple-400",
     difficulty: "Новичок"
@@ -45,6 +48,7 @@ export const COURSES: Course[] = [
     title: "Введение в Data Science",
     description: "Pandas, NumPy и визуализация данных.",
     progress: 0,
+    totalLessons: 40,
     icon: "LineChart",
     color: "text-red-400",
     difficulty: "Средний"

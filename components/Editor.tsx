@@ -1,146 +1,435 @@
-import React, { useState } from 'react';
-import { Play, Bug, TerminalSquare, Folder, File, Settings, Database, Share2, History, X, Send, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Folder, File, X, ChevronRight, ChevronDown, MoreVertical, Search, Plus, Box, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { AIChat } from './AIChat';
+import MonacoEditor from '@monaco-editor/react';
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
 
-export const Editor: React.FC = () => {
-  const [output, setOutput] = useState<string[]>([
-    "Microsoft Windows [Version 10.0.19045.4170]",
-    "(env) C:\\Users\\PyPath\\learning_bot> python main.py"
-  ]);
+// --- Types ---
+interface FileNode {
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  content?: string;
+  parentId: string | null;
+  isOpen?: boolean;
+  language?: string;
+}
 
+// --- Mock File System ---
+const INITIAL_FILES: FileNode[] = [
+  { id: 'root', name: 'project_alpha', type: 'folder', parentId: null, isOpen: true },
+  
+  // Main Script
+  { id: '1', name: 'main.py', type: 'file', parentId: 'root', language: 'python', content: `from typing import List
+from dataclasses import dataclass
+from utils.analytics import calculate_metrics
+
+@dataclass
+class User:
+    id: int
+    username: str
+    is_active: bool = True
+
+def process_users(users: List[User]) -> None:
+    """
+    Main processing loop for user data.
+    """
+    print(f"Processing {len(users)} users...")
+    
+    active_users = [u for u in users if u.is_active]
+    
+    # Calculate engagement score
+    metrics = calculate_metrics(active_users)
+    print(f"Engagement Score: {metrics['score']:.2f}")
+
+if __name__ == "__main__":
+    # Mock data
+    users_db = [
+        User(1, "alex_dev"),
+        User(2, "marie_ai", is_active=False),
+        User(3, "ivan_coder")
+    ]
+    
+    process_users(users_db)` },
+
+  // Utils Folder
+  { id: '2', name: 'utils', type: 'folder', parentId: 'root', isOpen: true },
+  
+  // Helper Script
+  { id: '3', name: 'analytics.py', type: 'file', parentId: '2', language: 'python', content: `def calculate_metrics(data: list) -> dict:
+    """
+    Calculates basic performance metrics.
+    """
+    if not data:
+        return {"score": 0.0}
+        
+    base_score = len(data) * 1.5
+    bonus = 10 if len(data) > 5 else 0
+    
+    return {
+        "score": base_score + bonus,
+        "count": len(data)
+    }` },
+
+  // Config Files
+  { id: '4', name: 'requirements.txt', type: 'file', parentId: 'root', language: 'text', content: `pandas==2.1.0\nnumpy==1.26.0\nrequests>=2.31.0` },
+  { id: '5', name: 'config.json', type: 'file', parentId: 'root', language: 'json', content: `{\n  "env": "development",\n  "debug": true,\n  "max_retries": 3\n}` },
+];
+
+export const EditorComponent: React.FC = () => {
+  // --- State ---
+  const [files, setFiles] = useState<FileNode[]>(INITIAL_FILES);
+  const [openFiles, setOpenFiles] = useState<string[]>(['1', '3']);
+  const [activeFileId, setActiveFileId] = useState<string>('1');
+  const [isTerminalOpen, setIsTerminalOpen] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Refs
+  const editorRef = useRef<any>(null);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermInstance = useRef<Terminal | null>(null);
+  const fitAddon = useRef<FitAddon | null>(null);
+
+  const activeFile = files.find(f => f.id === activeFileId);
+
+  // --- Monaco Setup ---
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
+  };
+
+  const handleEditorBeforeMount = (monaco: any) => {
+    // Define custom PyPath theme with better contrast and coloring
+    monaco.editor.defineTheme('pypath-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '566960', fontStyle: 'italic' }, // Muted grey-green for comments
+        { token: 'keyword', foreground: 'ff79c6', fontStyle: 'bold' }, // Pink
+        { token: 'identifier', foreground: 'f8f8f2' }, // White
+        { token: 'type.identifier', foreground: '8be9fd' }, // Cyan
+        { token: 'string', foreground: 'e2e8a0' }, // Muted Yellow (not neon)
+        { token: 'number', foreground: 'bd93f9' }, // Purple
+        { token: 'delimiter', foreground: 'f8f8f2' },
+        { token: 'function', foreground: '50fa7b' }, // Green
+      ],
+      colors: {
+        'editor.background': '#0a0f0b',
+        'editor.foreground': '#f8f8f2',
+        'editor.lineHighlightBackground': '#1a2e21',
+        'editorLineNumber.foreground': '#4a5b51', 
+        'editorLineNumber.activeForeground': '#0df259',
+        'editor.selectionBackground': '#44475a',
+        'editorCursor.foreground': '#0df259',
+        'editorWhitespace.foreground': '#3b4252',
+      }
+    });
+  };
+
+  const handleEditorChange = (value: string | undefined) => {
+    if (value !== undefined) {
+      setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, content: value } : f));
+    }
+  };
+
+  // --- Xterm Setup ---
+  useEffect(() => {
+    if (!terminalRef.current) return;
+
+    const term = new Terminal({
+      cursorBlink: true,
+      fontFamily: '"Fira Code", monospace',
+      fontSize: 13,
+      theme: {
+        background: '#0c140e',
+        foreground: '#e2e8f0',
+        cursor: '#0df259',
+        selectionBackground: '#0df25944',
+        black: '#000000',
+        red: '#ff5555',
+        green: '#0df259',
+        yellow: '#f1fa8c',
+        blue: '#bd93f9',
+        magenta: '#ff79c6',
+        cyan: '#8be9fd',
+        white: '#bbbbbb',
+      },
+      rows: 10,
+    });
+
+    const fit = new FitAddon();
+    term.loadAddon(fit);
+    term.open(terminalRef.current);
+    
+    // Fit needs to happen after the element is visible/sized
+    setTimeout(() => fit.fit(), 100);
+    
+    xtermInstance.current = term;
+    fitAddon.current = fit;
+
+    term.writeln('\x1b[1;32mWelcome to PyPath Terminal v1.0\x1b[0m');
+    term.write('\r\n$ ');
+
+    // Basic Shell Simulation
+    let currentLine = '';
+    term.onData(e => {
+      switch (e) {
+        case '\r': // Enter
+          term.write('\r\n');
+          handleCommand(currentLine, term);
+          currentLine = '';
+          break;
+        case '\u007F': // Backspace
+          if (currentLine.length > 0) {
+            term.write('\b \b');
+            currentLine = currentLine.substring(0, currentLine.length - 1);
+          }
+          break;
+        default:
+          term.write(e);
+          currentLine += e;
+      }
+    });
+
+    const handleResize = () => fit.fit();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      term.dispose();
+    };
+  }, []);
+
+  // Resize terminal when toggled
+  useEffect(() => {
+    if (isTerminalOpen && fitAddon.current) {
+      setTimeout(() => fitAddon.current?.fit(), 50); // Small delay for layout transition
+    }
+  }, [isTerminalOpen, isSidebarCollapsed]); // Also fit when sidebar changes
+
+  const handleCommand = (cmd: string, term: Terminal) => {
+    const trimmed = cmd.trim();
+    if (trimmed === 'clear') {
+      term.clear();
+    } else if (trimmed.startsWith('python')) {
+      term.writeln('Processing 3 users...');
+      term.writeln('Engagement Score: 3.00');
+    } else if (trimmed === 'ls') {
+        term.writeln('main.py  utils/  requirements.txt  config.json');
+    } else if (trimmed === 'help') {
+        term.writeln('Available commands: python, ls, clear');
+    } else if (trimmed) {
+      term.writeln(`command not found: ${trimmed}`);
+    }
+    term.write('$ ');
+  };
+
+  // --- Execution Simulation ---
   const runCode = () => {
-      setOutput(prev => [...prev, "Запуск PyPath...", "score: 30.0", "(env) C:\\Users\\PyPath\\learning_bot> "]);
-  }
+    if (!xtermInstance.current) return;
+    setIsTerminalOpen(true);
+    
+    const term = xtermInstance.current;
+    term.write('python main.py\r\n');
+    
+    setTimeout(() => {
+       term.writeln('\x1b[36mProcessing 3 users...\x1b[0m');
+       term.writeln('Engagement Score: \x1b[1;32m3.00\x1b[0m');
+       term.write('$ ');
+    }, 400);
+  };
+
+  // --- File System Actions ---
+  const toggleFolder = (id: string) => {
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, isOpen: !f.isOpen } : f));
+  };
+
+  const openFile = (id: string) => {
+    if (!openFiles.includes(id)) {
+      setOpenFiles([...openFiles, id]);
+    }
+    setActiveFileId(id);
+  };
+
+  const closeFile = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const newOpen = openFiles.filter(fid => fid !== id);
+    setOpenFiles(newOpen);
+    if (activeFileId === id && newOpen.length > 0) {
+      setActiveFileId(newOpen[newOpen.length - 1]);
+    } else if (newOpen.length === 0) {
+      setActiveFileId('');
+    }
+  };
+
+  // --- Render Helpers ---
+  const renderTree = (parentId: string | null, depth = 0) => {
+    return files
+      .filter(f => f.parentId === parentId)
+      .map(node => (
+        <div key={node.id}>
+          <div 
+            className={`flex items-center gap-2 py-1.5 cursor-pointer text-sm transition-all border-l-2 relative group ${
+              node.id === activeFileId 
+                ? 'bg-white/5 text-white border-py-green' 
+                : 'text-gray-300 hover:bg-white/5 hover:text-white border-transparent'
+            }`}
+            style={{ 
+                paddingLeft: `${depth * 16 + 12}px`,
+                paddingRight: '12px'
+            }} 
+            onClick={() => node.type === 'folder' ? toggleFolder(node.id) : openFile(node.id)}
+          >
+            {node.type === 'folder' ? (
+              <>
+                <span className="text-gray-500 group-hover:text-white">
+                     {node.isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </span>
+                <Folder size={14} className={node.isOpen ? 'text-py-green fill-py-green/20' : 'text-gray-500'} />
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                 <span className="w-3.5"></span> 
+                 <File size={14} className={node.id === activeFileId ? 'text-py-green' : 'text-blue-400'} />
+              </div>
+            )}
+            <span className="truncate font-medium">{node.name}</span>
+          </div>
+          {node.type === 'folder' && node.isOpen && renderTree(node.id, depth + 1)}
+        </div>
+      ));
+  };
 
   return (
-    <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-editor-bg">
+    <div className="flex h-full overflow-hidden bg-editor-bg font-sans">
       {/* Sidebar - File Explorer */}
-      <aside className="w-64 border-r border-py-accent bg-editor-sidebar flex flex-col">
-        <div className="p-4 border-b border-py-accent">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-py-muted/60">ПРОВОДНИК</h2>
-          </div>
-          <p className="text-py-green text-sm font-medium truncate">проект: learning_bot</p>
+      <aside className={`border-r border-py-accent bg-editor-sidebar flex flex-col shrink-0 select-none transition-all duration-300 ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
+        <div className="h-10 px-3 flex items-center justify-between border-b border-py-accent bg-[#0a0f0b]">
+           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Файлы</span>
+           <div className="flex gap-2 text-gray-400">
+              <Plus size={16} className="hover:text-white cursor-pointer"/>
+              <MoreVertical size={16} className="hover:text-white cursor-pointer"/>
+           </div>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-py-green/10 text-py-green text-sm cursor-pointer">
-            <File size={16} />
-            <span>main.py</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 text-py-muted hover:bg-white/5 rounded-lg text-sm cursor-pointer">
-            <Folder size={16} />
-            <span>utils</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 text-py-muted hover:bg-white/5 rounded-lg text-sm cursor-pointer pl-8">
-            <File size={16} />
-            <span>helpers.py</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 text-py-muted hover:bg-white/5 rounded-lg text-sm cursor-pointer">
-            <Settings size={16} />
-            <span>config.json</span>
-          </div>
-           <div className="flex items-center gap-2 px-3 py-2 text-py-muted hover:bg-white/5 rounded-lg text-sm cursor-pointer">
-            <Database size={16} />
-            <span>database.db</span>
-          </div>
-        </nav>
+        <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+           {renderTree('root')}
+        </div>
       </aside>
 
       {/* Main Editor Area */}
-      <div className="flex flex-1 flex-col relative">
-        {/* Editor Tabs/Breadcrumbs */}
-        <div className="flex items-center justify-between border-b border-py-accent bg-editor-bg px-4 h-10">
-          <div className="flex items-center gap-2 text-sm text-py-muted">
-             <span>проекты</span>
-             <span>/</span>
-             <span>learning_bot</span>
-             <span>/</span>
-             <span className="text-white font-medium">main.py</span>
-          </div>
-          <div className="flex gap-2">
-             <button className="p-1 hover:text-white text-py-muted transition-colors"><Share2 size={16}/></button>
-             <button className="p-1 hover:text-white text-py-muted transition-colors"><History size={16}/></button>
-          </div>
-        </div>
+      <div className="flex flex-1 flex-col relative min-w-0 bg-[#0a0f0b]">
+        
+        {/* Top Bar: Tabs & Actions */}
+        <div className="flex h-10 bg-[#0c140e] border-b border-py-accent overflow-hidden">
+          {/* Sidebar Toggle */}
+          <button 
+             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+             className="px-3 border-r border-py-accent text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+             title="Toggle Sidebar"
+          >
+             {isSidebarCollapsed ? <PanelLeftOpen size={16}/> : <PanelLeftClose size={16}/>}
+          </button>
 
-        {/* Code Content */}
-        <div className="flex-1 overflow-auto font-mono text-sm leading-relaxed p-6 bg-[#0a0f0b] text-gray-300">
-           <div className="flex gap-4">
-             <div className="text-right text-py-muted/30 select-none pr-4 border-r border-white/5 flex flex-col gap-1">
-               {Array.from({length: 15}).map((_, i) => <span key={i}>{i + 1}</span>)}
-             </div>
-             <div className="flex-1 flex flex-col gap-1">
-                <div><span className="text-[#c678dd]">import</span> pandas <span className="text-[#c678dd]">as</span> pd</div>
-                <div><span className="text-[#c678dd]">import</span> os</div>
-                <div className="h-4"></div>
-                <div><span className="text-[#c678dd]">def</span> <span className="text-[#61afef]">calculate_pypath</span>(data):</div>
-                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[#5c6370] italic"># AI Tip: Use vectorization for speed</span></div>
-                <div>&nbsp;&nbsp;&nbsp;&nbsp;result = data.mean() * <span className="text-[#d19a66]">1.5</span></div>
-                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[#c678dd]">return</span> result</div>
-                <div className="h-4"></div>
-                <div><span className="text-[#c678dd]">if</span> __name__ == <span className="text-[#98c379]">'__main__'</span>:</div>
-                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[#e5c07b]">print</span>(<span className="text-[#98c379]">'Running PyPath...'</span>)</div>
-                <div>&nbsp;&nbsp;&nbsp;&nbsp;df = pd.DataFrame&#123;<span className="text-[#98c379]">'score'</span>: [<span className="text-[#d19a66]">10</span>, <span className="text-[#d19a66]">20</span>, <span className="text-[#d19a66]">30</span>]&#125;</div>
-                <div className="flex items-center">&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-[#e5c07b]">print</span>(<span className="text-[#61afef]">calculate_pypath</span>(df)) <span className="w-2 h-5 bg-py-green/80 animate-pulse ml-1"></span></div>
-             </div>
-           </div>
-        </div>
-
-        {/* Floating Action Buttons */}
-        <div className="absolute right-8 bottom-48 flex flex-col gap-3 z-10">
-            <button onClick={runCode} className="flex items-center gap-2 rounded-xl bg-py-green px-6 py-3 text-py-dark font-bold hover:scale-105 transition-transform shadow-[0_0_15px_rgba(13,242,89,0.4)]">
-                <Play size={18} fill="currentColor" />
-                Запуск
-            </button>
-            <button className="flex items-center gap-2 rounded-xl bg-py-accent border border-py-green/30 px-6 py-3 text-white font-bold hover:bg-py-surface transition-all">
-                <Bug size={18} className="text-py-green"/>
-                Отладка
-            </button>
-        </div>
-
-        {/* Terminal */}
-        <div className="h-40 border-t border-py-accent bg-[#0c140e] flex flex-col">
-           <div className="flex items-center gap-6 px-4 py-2 border-b border-white/5 text-xs font-bold tracking-wider">
-              <button className="text-py-green border-b-2 border-py-green pb-1">ТЕРМИНАЛ</button>
-              <button className="text-py-muted hover:text-white pb-1 transition-colors">ВЫВОД</button>
-              <button className="text-py-muted hover:text-white pb-1 transition-colors">КОНСОЛЬ ОТЛАДКИ</button>
-           </div>
-           <div className="p-4 font-mono text-xs text-py-muted/80 overflow-y-auto">
-             {output.map((line, i) => (
-                 <p key={i} className={line.startsWith('Запуск') ? 'text-py-green font-bold my-1' : ''}>{line}</p>
-             ))}
-             <span className="animate-pulse">_</span>
-           </div>
-        </div>
-      </div>
-
-      {/* AI Chat Bubble Mockup */}
-      <div className="fixed bottom-6 right-6 z-50 animate-bounce-in">
-        <div className="bg-py-dark border border-py-green/30 rounded-2xl w-80 shadow-2xl flex flex-col overflow-hidden ring-1 ring-py-green/20">
-            <div className="bg-py-green/10 p-3 border-b border-py-green/20 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Sparkles className="text-py-green" size={16}/>
-                    <span className="text-sm font-bold text-white">ИИ Помощник</span>
-                </div>
-                <button className="text-py-muted hover:text-white"><X size={16}/></button>
-            </div>
-            <div className="h-64 overflow-y-auto p-4 flex flex-col gap-3 text-sm bg-[#0f1912]">
-                <div className="bg-py-accent p-3 rounded-lg rounded-tl-none self-start max-w-[90%] text-white">
-                    Привет! Вижу, ты используешь pandas. Нужна помощь с оптимизацией `calculate_pypath`?
-                </div>
-                <div className="bg-py-green/20 p-3 rounded-lg rounded-tr-none self-end max-w-[90%] text-white">
-                    Да, предложи лучший подход.
-                </div>
-            </div>
-            <div className="p-3 border-t border-py-accent bg-py-dark">
-                <div className="relative">
-                    <input type="text" placeholder="Спросить ИИ..." className="w-full bg-py-accent border-none rounded-lg py-2 pl-3 pr-10 text-xs focus:ring-1 focus:ring-py-green text-white placeholder-py-muted"/>
-                    <button className="absolute right-2 top-1.5 text-py-green hover:text-white transition-colors">
-                        <Send size={14}/>
+          <div className="flex-1 flex overflow-x-auto custom-scrollbar-hide">
+             {openFiles.map(fid => {
+               const file = files.find(f => f.id === fid);
+               if (!file) return null;
+               const isActive = activeFileId === fid;
+               
+               return (
+                 <div 
+                    key={fid}
+                    onClick={() => setActiveFileId(fid)}
+                    className={`flex items-center justify-center gap-2 px-4 min-w-[140px] max-w-[200px] border-r border-py-accent cursor-pointer text-sm select-none group transition-colors relative ${
+                      isActive 
+                        ? 'bg-[#1a231e] text-white font-medium' 
+                        : 'bg-transparent text-gray-500 hover:bg-[#151e18] hover:text-gray-300'
+                    }`}
+                 >
+                    {isActive && <div className="absolute top-0 left-0 right-0 h-0.5 bg-py-green shadow-[0_0_8px_#0df259]"></div>}
+                    <File size={12} className={isActive ? 'text-py-green' : 'text-gray-600'} />
+                    <span className="truncate flex-1 pt-0.5">{file.name}</span>
+                    <button 
+                      onClick={(e) => closeFile(e, fid)}
+                      className={`rounded-md p-0.5 transition-all ${
+                          isActive ? 'opacity-100 hover:bg-white/10' : 'opacity-0 group-hover:opacity-100 hover:bg-white/10'
+                      }`}
+                    >
+                      <X size={12} />
                     </button>
+                 </div>
+               )
+             })}
+          </div>
+          <div className="flex items-center gap-2 px-3 border-l border-py-accent bg-[#0c140e]">
+             <button className="p-2 text-gray-500 hover:text-white rounded-lg hover:bg-white/5 transition-colors"><Search size={18}/></button>
+             <button 
+                onClick={runCode}
+                className="ml-2 px-4 py-1.5 bg-py-green text-py-dark rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-white transition-colors shadow-lg shadow-py-green/10"
+             >
+                <Play size={14} fill="currentColor"/> 
+                Run
+             </button>
+          </div>
+        </div>
+
+        {/* Monaco Editor Integration */}
+        <div className="flex-1 relative min-h-0 bg-[#0a0f0b]">
+            {activeFile ? (
+                 <MonacoEditor
+                    height="100%"
+                    language={activeFile.language || 'python'}
+                    value={activeFile.content}
+                    theme="pypath-dark"
+                    beforeMount={handleEditorBeforeMount}
+                    onMount={handleEditorDidMount}
+                    onChange={handleEditorChange}
+                    options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        fontFamily: "'Fira Code', monospace",
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        padding: { top: 16 },
+                        lineNumbersMinChars: 3,
+                        renderLineHighlight: 'line',
+                        contextmenu: true,
+                    }}
+                 />
+            ) : (
+                <div className="flex-1 h-full flex flex-col items-center justify-center text-gray-500 select-none bg-[#0a0f0b]">
+                   <Box size={40} className="opacity-50 mb-4"/>
+                   <p className="text-xs">Выберите файл для редактирования</p>
                 </div>
-            </div>
+            )}
+        </div>
+
+        {/* Xterm.js Terminal Panel */}
+        <div className={`border-t border-py-accent bg-[#0c140e] flex flex-col transition-all duration-300 ${isTerminalOpen ? 'h-48' : 'h-9'}`}>
+           <div 
+             className="flex items-center justify-between px-4 py-2 border-b border-py-accent/50 cursor-pointer hover:bg-white/5 group select-none"
+             onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+           >
+              <div className="flex gap-6 text-[11px] font-bold tracking-wider uppercase">
+                 <span className="text-white border-b-2 border-py-green pb-1.5">Терминал</span>
+                 <span className="text-gray-500 group-hover:text-gray-300 transition-colors">Вывод</span>
+              </div>
+              <div className="flex items-center gap-3">
+                 <ChevronDown size={14} className={`text-gray-500 transition-transform ${isTerminalOpen ? '' : 'rotate-180'}`} />
+                 <X size={14} className="text-gray-500 hover:text-white" onClick={(e) => { e.stopPropagation(); xtermInstance.current?.clear(); }}/>
+              </div>
+           </div>
+           
+           {/* Added padding-left (pl-4) to fix text sticking to edge */}
+           <div className={`flex-1 relative bg-[#0c140e] pl-4 pb-2 ${!isTerminalOpen && 'hidden'}`}>
+               <div ref={terminalRef} className="h-full w-full" />
+           </div>
         </div>
       </div>
+
+      <AIChat />
     </div>
   );
 };
+
+export const Editor = EditorComponent;

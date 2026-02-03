@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Medal, Crown, TrendingUp, ChevronUp, ChevronDown, Shield, Minus } from 'lucide-react';
+import { Crown, TrendingUp, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 import { CURRENT_USER } from '../constants';
 
 const MOCK_LEADERS = [
@@ -10,124 +10,159 @@ const MOCK_LEADERS = [
   { rank: 5, name: "AlgoQueen", xp: 36500, level: 34, avatar: "https://i.pravatar.cc/150?u=5", streak: 30, change: "up" },
   { rank: 6, name: "BugHunter", xp: 34200, level: 32, avatar: "https://i.pravatar.cc/150?u=6", streak: 5, change: "down" },
   { rank: 7, name: "Rusty", xp: 31000, level: 29, avatar: "https://i.pravatar.cc/150?u=7", streak: 21, change: "same" },
+  { rank: 8, name: "NetRunner", xp: 29500, level: 28, avatar: "https://i.pravatar.cc/150?u=8", streak: 14, change: "up" },
+  { rank: 9, name: "PixelArt", xp: 28200, level: 27, avatar: "https://i.pravatar.cc/150?u=9", streak: 3, change: "down" },
 ];
+
+const formatXP = (num: number) => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+};
 
 export const Leaderboard: React.FC = () => {
   const [league, setLeague] = useState('Diamond');
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="p-8 max-w-6xl mx-auto space-y-12 animate-fade-in pb-20">
+      <div className="flex flex-col md:flex-row items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Таблица лидеров</h1>
-          <p className="text-py-muted">Соревнуйтесь с лучшими разработчиками в лиге.</p>
+          <h1 className="text-4xl font-black text-white mb-2">Таблица лидеров</h1>
+          <p className="text-gray-400 max-w-md text-base leading-relaxed">
+            Соревнуйтесь с лучшими разработчиками, повышайте ранг и получайте награды.
+          </p>
         </div>
         
-        {/* League Selector */}
-        <div className="flex bg-py-surface border border-py-accent rounded-xl p-1">
-          {['Gold', 'Diamond', 'Master'].map((l) => (
-            <button 
-              key={l}
-              onClick={() => setLeague(l)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                league === l 
-                ? 'bg-py-green text-py-dark shadow-lg' 
-                : 'text-py-muted hover:text-white'
-              }`}
-            >
-              {l}
-            </button>
-          ))}
+        {/* League Selector - Larger, Clearer */}
+        <div className="bg-[#0a0f0b] border border-py-accent p-1.5 rounded-xl shadow-lg">
+           <div className="flex gap-1">
+              {['Gold', 'Diamond', 'Master'].map((l) => (
+                <button 
+                  key={l}
+                  onClick={() => setLeague(l)}
+                  className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+                    league === l 
+                    ? 'bg-[#1a2e21] text-white shadow-md border border-white/5' 
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+           </div>
         </div>
       </div>
 
-      {/* Podium */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end mb-12 min-h-[300px]">
+      {/* Podium - Cleaned up visual noise */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end mb-12 min-h-[360px]">
+        
         {/* 2nd Place */}
-        <div className="order-2 md:order-1 bg-py-surface/50 border border-py-accent rounded-t-3xl rounded-b-xl p-6 flex flex-col items-center relative h-64 justify-end hover:bg-py-surface transition-colors">
-          <div className="absolute -top-8 size-20 rounded-full border-4 border-gray-400 overflow-hidden shadow-[0_0_20px_rgba(156,163,175,0.3)]">
-             <img src={MOCK_LEADERS[1].avatar} className="w-full h-full object-cover" alt="Rank 2" />
-          </div>
-          <div className="absolute -top-12 bg-gray-400 text-py-dark font-black size-8 rounded-full flex items-center justify-center border-2 border-py-dark z-10">2</div>
-          <h3 className="text-xl font-bold text-white mt-8">{MOCK_LEADERS[1].name}</h3>
-          <p className="text-py-green font-mono font-bold mb-2">{MOCK_LEADERS[1].xp.toLocaleString()} XP</p>
-          <div className="text-xs text-py-muted bg-py-dark/50 px-3 py-1 rounded-full">Lvl {MOCK_LEADERS[1].level}</div>
+        <div className="order-2 md:order-1 bg-[#0c120e] border border-white/5 rounded-3xl p-6 flex flex-col items-center relative h-[300px] justify-end group hover:border-py-accent transition-colors shadow-lg">
+           <div className="absolute top-8 size-24 rounded-full border-4 border-gray-400 p-1 bg-[#0c120e]">
+             <img src={MOCK_LEADERS[1].avatar} className="w-full h-full rounded-full object-cover" alt="Rank 2" />
+             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gray-400 text-py-dark font-black size-7 rounded-full flex items-center justify-center text-sm border-4 border-[#0c120e]">2</div>
+           </div>
+           
+           <h3 className="text-xl font-bold text-white mt-4 mb-1">{MOCK_LEADERS[1].name}</h3>
+           <p className="text-white font-mono font-black text-xl mb-6 tracking-wide drop-shadow-sm">
+             {formatXP(MOCK_LEADERS[1].xp)} XP
+           </p>
+           
+           <div className="w-full pt-4 border-t border-white/10 flex items-center justify-center gap-6 text-xs font-bold uppercase tracking-wider">
+              <span className="text-gray-300">Lvl {MOCK_LEADERS[1].level}</span>
+              <span className="text-orange-400 flex items-center gap-1.5">
+                  <TrendingUp size={14}/> {MOCK_LEADERS[1].streak}
+              </span>
+           </div>
         </div>
 
-        {/* 1st Place */}
-        <div className="order-1 md:order-2 bg-gradient-to-b from-py-surface to-py-green/10 border border-py-green/50 rounded-t-3xl rounded-b-xl p-6 flex flex-col items-center relative h-80 justify-end shadow-[0_0_30px_rgba(13,242,89,0.1)]">
-           <div className="absolute -top-16">
-             <Crown size={48} className="text-yellow-400 fill-yellow-400 animate-bounce" />
+        {/* 1st Place - Center */}
+        <div className="order-1 md:order-2 bg-gradient-to-b from-[#131f17] to-[#0a0f0b] border border-yellow-500/20 rounded-3xl p-8 flex flex-col items-center relative h-[380px] justify-end shadow-[0_0_50px_rgba(234,179,8,0.05)] z-10 transform md:-translate-y-4">
+           <div className="absolute -top-8">
+             <Crown size={56} className="text-yellow-400 fill-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
            </div>
-           <div className="absolute -top-10 size-24 rounded-full border-4 border-yellow-400 overflow-hidden shadow-[0_0_30px_rgba(250,204,21,0.4)]">
-             <img src={MOCK_LEADERS[0].avatar} className="w-full h-full object-cover" alt="Rank 1" />
-          </div>
-          <h3 className="text-2xl font-bold text-white mt-10">{MOCK_LEADERS[0].name}</h3>
-          <p className="text-yellow-400 font-mono font-bold text-lg mb-2">{MOCK_LEADERS[0].xp.toLocaleString()} XP</p>
-          <div className="flex gap-2">
-             <div className="text-xs text-py-muted bg-py-dark/50 px-3 py-1 rounded-full">Lvl {MOCK_LEADERS[0].level}</div>
-             <div className="text-xs text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full flex items-center gap-1">
-                <TrendingUp size={12}/> {MOCK_LEADERS[0].streak}
-             </div>
-          </div>
+           
+           <div className="absolute top-12 size-36 rounded-full border-4 border-yellow-400 p-1 shadow-[0_0_40px_rgba(250,204,21,0.15)] bg-[#0a0f0b]">
+             <img src={MOCK_LEADERS[0].avatar} className="w-full h-full rounded-full object-cover" alt="Rank 1" />
+             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black font-black size-10 rounded-full flex items-center justify-center border-4 border-[#131f17] text-lg">1</div>
+           </div>
+           
+           <h3 className="text-2xl font-black text-white mt-12 mb-2 tracking-tight">{MOCK_LEADERS[0].name}</h3>
+           <p className="text-yellow-400 font-mono font-black text-3xl mb-8 drop-shadow-md">{formatXP(MOCK_LEADERS[0].xp)} XP</p>
+           
+           {/* Detailed stats box for winner - High Contrast */}
+           <div className="bg-[#1a251e] rounded-xl w-full flex items-center justify-between p-4 border border-white/10 shadow-inner">
+               <div className="flex flex-col items-center w-1/2 border-r border-white/10">
+                    <span className="text-[10px] uppercase text-gray-400 font-bold mb-1">УРОВЕНЬ</span>
+                    <span className="text-white font-bold text-xl">{MOCK_LEADERS[0].level}</span>
+               </div>
+               <div className="flex flex-col items-center w-1/2">
+                    <span className="text-[10px] uppercase text-gray-400 font-bold mb-1">СТРИК</span>
+                    <span className="text-orange-400 font-bold text-xl flex items-center gap-1.5">
+                        <TrendingUp size={18}/> {MOCK_LEADERS[0].streak}
+                    </span>
+               </div>
+           </div>
         </div>
 
         {/* 3rd Place */}
-        <div className="order-3 md:order-3 bg-py-surface/50 border border-py-accent rounded-t-3xl rounded-b-xl p-6 flex flex-col items-center relative h-56 justify-end hover:bg-py-surface transition-colors">
-          <div className="absolute -top-8 size-20 rounded-full border-4 border-orange-700 overflow-hidden shadow-[0_0_20px_rgba(194,65,12,0.3)]">
-             <img src={MOCK_LEADERS[2].avatar} className="w-full h-full object-cover" alt="Rank 3" />
+        <div className="order-3 md:order-3 bg-[#0c120e] border border-white/5 rounded-3xl p-6 flex flex-col items-center relative h-[300px] justify-end group hover:border-py-accent transition-colors shadow-lg">
+          <div className="absolute top-8 size-24 rounded-full border-4 border-orange-700 p-1 bg-[#0c120e]">
+             <img src={MOCK_LEADERS[2].avatar} className="w-full h-full rounded-full object-cover" alt="Rank 3" />
+             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-orange-700 text-white font-black size-7 rounded-full flex items-center justify-center text-sm border-4 border-[#0c120e]">3</div>
           </div>
-          <div className="absolute -top-12 bg-orange-700 text-py-dark font-black size-8 rounded-full flex items-center justify-center border-2 border-py-dark z-10">3</div>
-          <h3 className="text-xl font-bold text-white mt-8">{MOCK_LEADERS[2].name}</h3>
-          <p className="text-py-green font-mono font-bold mb-2">{MOCK_LEADERS[2].xp.toLocaleString()} XP</p>
-          <div className="text-xs text-py-muted bg-py-dark/50 px-3 py-1 rounded-full">Lvl {MOCK_LEADERS[2].level}</div>
+          
+          <h3 className="text-xl font-bold text-white mt-4 mb-1">{MOCK_LEADERS[2].name}</h3>
+           <p className="text-white font-mono font-black text-xl mb-6 tracking-wide drop-shadow-sm">
+             {formatXP(MOCK_LEADERS[2].xp)} XP
+           </p>
+          
+          <div className="w-full pt-4 border-t border-white/10 flex items-center justify-center gap-6 text-xs font-bold uppercase tracking-wider">
+              <span className="text-gray-300">Lvl {MOCK_LEADERS[2].level}</span>
+              <span className="text-orange-400 flex items-center gap-1.5">
+                  <TrendingUp size={14}/> {MOCK_LEADERS[2].streak}
+              </span>
+          </div>
         </div>
       </div>
 
-      {/* List */}
-      <div className="bg-py-surface border border-py-accent rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-12 gap-4 p-4 text-xs font-bold text-py-muted uppercase tracking-wider border-b border-py-accent">
+      {/* List - Improved alignment and row separation */}
+      <div className="bg-[#0c120e] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="grid grid-cols-12 gap-4 px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/10 bg-[#0a0f0b]">
             <div className="col-span-1 text-center">#</div>
-            <div className="col-span-5">Участник</div>
-            <div className="col-span-2 text-center">Уровень</div>
-            <div className="col-span-2 text-center">Стрик</div>
-            <div className="col-span-2 text-right">XP</div>
+            <div className="col-span-5 text-left pl-2">УЧАСТНИК</div>
+            <div className="col-span-2 text-center">УРОВЕНЬ</div>
+            <div className="col-span-2 text-center">СТРИК</div>
+            <div className="col-span-2 text-right pr-2">XP</div>
         </div>
         
-        <div className="divide-y divide-white/5">
+        <div className="flex flex-col">
             {MOCK_LEADERS.slice(3).map((user) => (
-                <div key={user.rank} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors">
-                    <div className="col-span-1 text-center font-bold text-py-muted flex items-center justify-center gap-1">
-                        {user.change === 'up' && <ChevronUp size={12} className="text-py-green"/>}
-                        {user.change === 'down' && <ChevronDown size={12} className="text-red-500"/>}
-                        {user.change === 'same' && <Minus size={12} className="text-py-muted"/>}
-                        {user.rank}
+                <div key={user.rank} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0">
+                    <div className="col-span-1 flex flex-col items-center justify-center">
+                        <span className="font-bold text-white text-base">{user.rank}</span>
+                        <div className="mt-0.5 opacity-70">
+                            {user.change === 'up' && <ChevronUp size={12} className="text-py-green"/>}
+                            {user.change === 'down' && <ChevronDown size={12} className="text-red-500"/>}
+                            {user.change === 'same' && <Minus size={12} className="text-gray-600"/>}
+                        </div>
                     </div>
-                    <div className="col-span-5 flex items-center gap-3">
-                        <img src={user.avatar} className="size-8 rounded-full" alt={user.name}/>
-                        <span className="font-bold text-white">{user.name}</span>
+                    <div className="col-span-5 flex items-center gap-4 pl-2">
+                        <div className="size-11 rounded-full bg-[#151e18] flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                            {user.avatar ? (
+                                <img src={user.avatar} className="size-full object-cover" alt={user.name}/>
+                            ) : (
+                                <span className="text-xs font-bold text-gray-400">{user.name[0]}</span>
+                            )}
+                        </div>
+                        <span className="font-bold text-gray-200 text-sm group-hover:text-white transition-colors">{user.name}</span>
                     </div>
-                    <div className="col-span-2 text-center text-sm text-py-muted">{user.level}</div>
-                    <div className="col-span-2 text-center text-sm text-orange-400 font-bold flex items-center justify-center gap-1">
-                         <TrendingUp size={14} /> {user.streak}
+                    <div className="col-span-2 text-center text-sm text-gray-300 font-bold">{user.level}</div>
+                    <div className="col-span-2 text-center text-sm text-orange-400 font-bold flex items-center justify-center gap-1.5">
+                         <TrendingUp size={16} /> 
+                         <span>{user.streak}</span>
                     </div>
-                    <div className="col-span-2 text-right font-mono text-py-green">{user.xp.toLocaleString()}</div>
+                    <div className="col-span-2 text-right font-mono text-py-green font-bold text-sm tracking-wide pr-2">{formatXP(user.xp)}</div>
                 </div>
             ))}
-            
-            {/* Current User Row (Sticky or Separated) */}
-            <div className="grid grid-cols-12 gap-4 p-4 items-center bg-py-green/10 border-t border-py-green/30">
-                 <div className="col-span-1 text-center font-bold text-white">{CURRENT_USER.rank}</div>
-                 <div className="col-span-5 flex items-center gap-3">
-                        <img src={CURRENT_USER.avatar} className="size-8 rounded-full border border-py-green" alt="Me"/>
-                        <span className="font-bold text-white">{CURRENT_USER.name} (Вы)</span>
-                </div>
-                <div className="col-span-2 text-center text-sm text-white">{CURRENT_USER.levelNum}</div>
-                <div className="col-span-2 text-center text-sm text-orange-400 font-bold flex items-center justify-center gap-1">
-                     <TrendingUp size={14} /> {CURRENT_USER.streak}
-                </div>
-                <div className="col-span-2 text-right font-mono text-py-green">{CURRENT_USER.xp.toLocaleString()}</div>
-            </div>
         </div>
       </div>
     </div>
