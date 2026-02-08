@@ -1,187 +1,235 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, X, Sparkles, MessageSquare, Bot, Minimize2, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, X, Sparkles, Zap, Bot, Code, Search, AlertCircle, ChevronRight } from 'lucide-react';
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
-  timestamp: Date;
+  type?: 'text' | 'hint' | 'error';
 }
+
+const QUICK_ACTIONS = [
+    { label: "Что не так?", icon: AlertCircle, prompt: "Найди ошибку в моем коде." },
+    { label: "Теория", icon: Search, prompt: "Объясни, как это работает." },
+    { label: "Подсказка", icon: Sparkles, prompt: "Дай наводку, но не решение." },
+];
 
 export const AIChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [oracleState, setOracleState] = useState<'idle' | 'analyzing' | 'alert'>('idle');
+  const [energy, setEnergy] = useState(5);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Привет! Я твой AI-ментор. Вижу, ты работаешь с pandas. Могу помочь с оптимизацией кода или объяснить сложные концепции.",
-      sender: 'ai',
-      timestamp: new Date()
-    }
+    { id: '1', text: "Системы прогреты. Готов к взлому кода, Neo_Coder?", sender: 'ai' }
   ]);
-  
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    if (isOpen && !isMinimized) {
-        scrollToBottom();
-    }
-  }, [messages, isTyping, isOpen, isMinimized]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping, isOpen]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  const handleSend = (text: string = inputValue) => {
+    if (!text.trim()) return;
 
-    const userText = inputValue;
-    const newUserMsg: Message = {
-      id: Date.now().toString(),
-      text: userText,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, newUserMsg]);
+    // Add User Message
+    const userMsg: Message = { id: Date.now().toString(), text, sender: 'user' };
+    setMessages(prev => [...prev, userMsg]);
     setInputValue('');
+    setOracleState('analyzing');
     setIsTyping(true);
 
-    // Simulate AI processing and response
+    // Simulate AI Processing
     setTimeout(() => {
-      let aiResponseText = "Интересный вопрос. Давай разберем подробнее.";
-      
-      // Simple keyword matching for demo
-      const lowerText = userText.toLowerCase();
-      if (lowerText.includes("ошибк") || lowerText.includes("баг") || lowerText.includes("error")) {
-          aiResponseText = "Похоже на проблему с типами данных. Попробуй проверить df.dtypes перед операцией.";
-      } else if (lowerText.includes("код") || lowerText.includes("пример")) {
-          aiResponseText = "Конечно! Вот пример использования apply для этой задачи:\n\ndf['new_col'] = df['col'].apply(lambda x: x*2)";
-      } else if (lowerText.includes("спасибо")) {
-          aiResponseText = "Всегда пожалуйста! Обращайся, если застрянешь.";
-      } else if (lowerText.includes("оптимиз")) {
-          aiResponseText = "Для оптимизации лучше использовать векторизированные операции numpy вместо циклов.";
-      }
+        let responseText = "Интересный запрос. Дай подумать...";
+        let state: 'idle' | 'alert' = 'idle';
+        let msgType: 'text' | 'hint' | 'error' = 'text';
 
-      const newAiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: aiResponseText,
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, newAiMsg]);
-      setIsTyping(false);
-    }, 1500);
+        const lower = text.toLowerCase();
+        if (lower.includes('ошибк') || lower.includes('не так') || lower.includes('bug')) {
+            responseText = "Анализирую твои алгоритмы... Вижу небольшую аномалию в логике! Проверь отступы в 5-й строке.";
+            state = 'alert';
+            msgType = 'error';
+        } else if (lower.includes('подсказк') || lower.includes('hint')) {
+            if (energy > 0) {
+                setEnergy(e => e - 1);
+                responseText = "Хмм, попробуй использовать цикл while вместо for здесь. Это сэкономит память.";
+                msgType = 'hint';
+            } else {
+                responseText = "Мои энергоблоки разряжены. Реши пару задач самостоятельно, чтобы зарядить меня!";
+                state = 'idle';
+            }
+        } else if (lower.includes('теори')) {
+            responseText = "Генераторы — это функции, которые возвращают итератор. Они не хранят все значения в памяти, а генерируют их на лету.";
+            state = 'idle';
+        } else {
+            responseText = "Идеально! Твой код чист, как слеза робота. Продолжай в том же духе!";
+            state = 'idle';
+        }
+
+        const aiMsg: Message = { id: (Date.now() + 1).toString(), text: responseText, sender: 'ai', type: msgType };
+        setMessages(prev => [...prev, aiMsg]);
+        setOracleState(state);
+        setIsTyping(false);
+
+        // Reset state after a while
+        if (state === 'alert') {
+            setTimeout(() => setOracleState('idle'), 5000);
+        }
+    }, 2000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSend();
+      if (e.key === 'Enter') handleSend();
   };
 
-  // Floating Trigger Button - Positioned higher (bottom-20) to avoid covering terminal
-  if (!isOpen) {
-      return (
-          <button 
-            onClick={() => setIsOpen(true)}
-            className="fixed bottom-20 right-8 z-50 size-14 bg-py-green text-py-dark rounded-full shadow-[0_0_20px_rgba(13,242,89,0.3)] flex items-center justify-center hover:scale-110 transition-transform animate-bounce-in group ring-2 ring-white/10"
-          >
-              <div className="absolute -top-1 -right-1 size-3 bg-red-500 rounded-full animate-pulse"></div>
-              <Sparkles size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform"/>
-          </button>
-      );
-  }
-
   return (
-    <div className={`fixed bottom-20 right-8 z-50 bg-py-dark/95 backdrop-blur-xl border border-py-green/30 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden transition-all duration-300 ring-1 ring-white/10 ${isMinimized ? 'w-72 h-14' : 'w-80 sm:w-96 h-[500px]'}`}>
-      
-      {/* Header */}
-      <div 
-        className="bg-gradient-to-r from-py-green/20 to-py-dark p-3 border-b border-white/10 flex items-center justify-between cursor-pointer"
-        onClick={() => setIsMinimized(!isMinimized)}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="bg-py-green/20 p-1.5 rounded-lg text-py-green">
-             <Bot size={18} />
-          </div>
-          <div>
-              <h3 className="text-sm font-bold text-white leading-none">PyPath AI</h3>
-              <p className="text-[10px] text-py-green flex items-center gap-1 mt-0.5">
-                  <span className="size-1.5 bg-py-green rounded-full animate-pulse"></span>
-                  Online
-              </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-             <button 
-                onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-py-muted hover:text-white transition-colors"
-             >
-                 {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
-             </button>
-             <button 
-                onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
-                className="p-1.5 hover:bg-red-500/20 rounded-lg text-py-muted hover:text-red-400 transition-colors"
-             >
-                 <X size={14} />
-             </button>
-        </div>
-      </div>
+    <>
+        {/* Floating Orb Trigger */}
+        <div className={`fixed bottom-8 right-8 z-50 flex flex-col items-center gap-4 transition-all duration-500 ${isOpen ? 'translate-y-[20px] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+            <button 
+                onClick={() => setIsOpen(true)}
+                className="relative group cursor-pointer"
+            >
+                {/* Core Orb */}
+                <div className={`size-16 rounded-full bg-slate-900 border-2 border-cyan-500/50 flex items-center justify-center relative z-10 shadow-[0_0_30px_rgba(34,211,238,0.4)] animate-float overflow-hidden backdrop-blur-md`}>
+                    <div className={`absolute inset-0 bg-gradient-to-tr from-cyan-900/80 to-blue-600/20 transition-all duration-1000 ${oracleState === 'alert' ? 'from-orange-900/80 to-red-600/20' : ''}`}></div>
+                    
+                    {/* Inner Core */}
+                    <div className={`size-8 rounded-full bg-cyan-400 blur-md opacity-60 animate-pulse-glow ${oracleState === 'alert' ? 'bg-orange-500' : ''}`}></div>
+                    
+                    {/* Mascott Icon */}
+                    <Bot size={28} className={`relative z-20 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-colors duration-300 ${oracleState === 'alert' ? 'text-orange-100' : ''}`} />
+                </div>
 
-      {/* Messages Area */}
-      {!isMinimized && (
-          <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0a0f0b] custom-scrollbar">
-                {messages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                            msg.sender === 'user' 
-                            ? 'bg-py-green text-py-dark font-medium rounded-tr-sm' 
-                            : 'bg-py-surface border border-white/5 text-gray-200 rounded-tl-sm'
-                        }`}>
-                            {msg.text.split('\n').map((line, i) => (
-                                <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                {/* Rotating Rings (Analyzing State) */}
+                <div className={`absolute top-0 left-0 size-full rounded-full border border-cyan-400/30 -z-10 scale-125 transition-all duration-700 ${oracleState === 'analyzing' ? 'animate-[spin_2s_linear_infinite] opacity-100 border-dashed' : 'opacity-0'}`}></div>
+                <div className={`absolute top-0 left-0 size-full rounded-full border border-blue-500/30 -z-10 scale-150 transition-all duration-700 ${oracleState === 'analyzing' ? 'animate-[spin_3s_linear_infinite_reverse] opacity-100 border-dotted' : 'opacity-0'}`}></div>
+
+                {/* Idle Glow Ring */}
+                <div className={`absolute top-0 left-0 size-full rounded-full border border-cyan-500/20 -z-10 scale-110 animate-ping opacity-20 ${oracleState !== 'analyzing' ? 'block' : 'hidden'}`}></div>
+            </button>
+            <div className="bg-black/60 backdrop-blur text-cyan-400 text-xs font-bold px-3 py-1 rounded-full border border-cyan-500/30 shadow-lg animate-float" style={{animationDelay: '1s'}}>
+                Oracle Lvl. 12
+            </div>
+        </div>
+
+        {/* Chat Overlay */}
+        {isOpen && (
+            <div className="fixed bottom-8 right-8 z-[60] w-[380px] h-[600px] flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 origin-bottom-right">
+                
+                {/* Glassmorphism Container */}
+                <div className="relative flex-1 bg-slate-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden ring-1 ring-white/10">
+                    
+                    {/* Header */}
+                    <div className="h-16 border-b border-white/5 bg-slate-900/50 flex items-center justify-between px-6 shrink-0 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent pointer-events-none"></div>
+                        <div className="flex items-center gap-3 relative z-10">
+                            <div className={`size-10 rounded-full bg-slate-800 border border-cyan-500/50 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)] ${oracleState === 'analyzing' ? 'animate-pulse' : ''}`}>
+                                <Bot size={20} className="text-cyan-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-white font-display font-black tracking-wide text-sm">ОРАКУЛ</h3>
+                                <p className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                                    <span className="size-1.5 bg-cyan-400 rounded-full animate-pulse"></span>
+                                    ONLINE • LVL 12
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {/* Energy Bar */}
+                        <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
+                            <Zap size={12} className={energy > 0 ? "text-yellow-400 fill-yellow-400" : "text-gray-600"} />
+                            <span className="text-xs font-mono font-bold text-yellow-100">{energy}/5</span>
+                        </div>
+
+                        <button 
+                            onClick={() => setIsOpen(false)}
+                            className="absolute -top-2 -right-2 p-4 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {/* Messages Body */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
+                        {messages.map((msg) => (
+                            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                                {msg.sender === 'ai' && (
+                                    <div className="size-8 rounded-full bg-slate-800 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 mr-3 mt-1 shadow-lg">
+                                        {msg.type === 'error' ? <AlertCircle size={16} className="text-orange-500" /> : <Bot size={16} />}
+                                    </div>
+                                )}
+                                <div className={`
+                                    max-w-[80%] rounded-2xl p-3 text-sm font-medium leading-relaxed shadow-lg
+                                    ${msg.sender === 'user' 
+                                        ? 'bg-cyan-600 text-white rounded-tr-none' 
+                                        : msg.type === 'error'
+                                            ? 'bg-orange-900/20 border border-orange-500/30 text-orange-100 rounded-tl-none'
+                                            : 'bg-slate-800 border border-white/5 text-gray-100 rounded-tl-none'
+                                    }
+                                `}>
+                                    {msg.text}
+                                </div>
+                            </div>
+                        ))}
+                        {isTyping && (
+                            <div className="flex justify-start items-center gap-3">
+                                <div className="size-8 rounded-full bg-slate-800 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-lg">
+                                    <Bot size={16} />
+                                </div>
+                                <div className="bg-slate-800 border border-white/5 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-1.5">
+                                    <span className="size-1.5 bg-cyan-500/50 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                    <span className="size-1.5 bg-cyan-500/50 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                    <span className="size-1.5 bg-cyan-500/50 rounded-full animate-bounce"></span>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Footer / Input */}
+                    <div className="p-4 bg-slate-900/90 border-t border-white/5 backdrop-blur-md">
+                        {/* Quick Actions */}
+                        <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar-none mb-2">
+                            {QUICK_ACTIONS.map((action, i) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => handleSend(action.prompt)}
+                                    className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-cyan-900/30 border border-cyan-500/20 hover:border-cyan-500/50 rounded-lg text-xs text-cyan-300 font-bold transition-all flex items-center gap-1.5 group active:scale-95"
+                                >
+                                    <action.icon size={12} className="group-hover:text-cyan-400" />
+                                    {action.label}
+                                </button>
                             ))}
                         </div>
-                    </div>
-                ))}
-                
-                {isTyping && (
-                    <div className="flex justify-start">
-                        <div className="bg-py-surface border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
-                            <span className="size-2 bg-py-muted/50 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                            <span className="size-2 bg-py-muted/50 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                            <span className="size-2 bg-py-muted/50 rounded-full animate-bounce"></span>
+
+                        {/* Input Field */}
+                        <div className="relative group">
+                            <input 
+                                type="text"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={handleKeyPress} 
+                                placeholder="Задай вопрос ментору..." 
+                                className="w-full bg-transparent border-b border-white/10 py-3 pl-2 pr-10 text-white placeholder-gray-600 focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
+                            />
+                            <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500 w-0 group-focus-within:w-full transition-all duration-500"></div>
+                            <button 
+                                onClick={() => handleSend()}
+                                disabled={!inputValue.trim()}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-cyan-600 hover:text-cyan-400 disabled:opacity-30 disabled:hover:text-cyan-600 transition-colors"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
                         </div>
                     </div>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <div className="p-3 bg-py-dark border-t border-white/10">
-                <div className="relative flex items-center gap-2">
-                    <input 
-                        type="text" 
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        placeholder="Спроси о коде..." 
-                        className="w-full bg-py-surface border border-py-accent rounded-xl py-2.5 pl-4 pr-10 text-sm text-white placeholder-py-muted focus:ring-1 focus:ring-py-green focus:border-py-green outline-none transition-all"
-                    />
-                    <button 
-                        onClick={handleSend}
-                        disabled={!inputValue.trim()}
-                        className="absolute right-1.5 top-1.5 p-1.5 bg-py-green/10 text-py-green rounded-lg hover:bg-py-green hover:text-py-dark disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-py-green transition-all"
-                    >
-                        <Send size={16} />
-                    </button>
                 </div>
+
+                {/* Decorative Background Elements behind chat */}
+                <div className="absolute inset-0 bg-cyan-500/5 blur-3xl rounded-full -z-10 pointer-events-none"></div>
             </div>
-          </>
-      )}
-    </div>
+        )}
+    </>
   );
 };

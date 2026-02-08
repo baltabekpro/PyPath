@@ -1,127 +1,433 @@
-import React from 'react';
-import { Shield, Zap, Target, Flame, Bug, Code2, Coffee, Globe, Lock, Trophy, Calendar, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Zap, Target, Flame, Bug, Code2, Coffee, Globe, Lock, Trophy, Star, Gift, Share2, X, Sword, Crown, Eye, LockKeyhole, Sparkles } from 'lucide-react';
+
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+type Category = 'all' | 'coding' | 'community' | 'streak' | 'secret';
 
 interface Achievement {
     id: number;
     title: string;
     description: string;
+    flavorText: string; // Artistic description
     icon: any;
+    rarity: Rarity;
+    category: Category;
     progress: number;
     maxProgress: number;
-    color: string;
     unlocked: boolean;
     date?: string;
+    globalRate?: number; // % of players who have this
+    xpReward: number;
 }
 
 const ACHIEVEMENTS_LIST: Achievement[] = [
-    { id: 1, title: 'Hello World', description: 'Завершите первый урок', icon: Code2, progress: 1, maxProgress: 1, color: 'text-blue-400', unlocked: true, date: '12.03.2024' },
-    { id: 2, title: 'Воин Кода', description: 'Решите 50 задач', icon: Shield, progress: 50, maxProgress: 50, color: 'text-yellow-400', unlocked: true, date: '15.03.2024' },
-    { id: 3, title: 'В огне', description: 'Стрик 7 дней подряд', icon: Flame, progress: 7, maxProgress: 7, color: 'text-orange-500', unlocked: true, date: '18.03.2024' },
-    { id: 4, title: 'Охотник на багов', description: 'Найдите 20 ошибок в коде', icon: Bug, progress: 12, maxProgress: 20, color: 'text-red-400', unlocked: false },
-    { id: 5, title: 'Ночная Сова', description: 'Занимайтесь после 22:00', icon: Coffee, progress: 3, maxProgress: 5, color: 'text-purple-400', unlocked: false },
-    { id: 6, title: 'Снайпер', description: '100% точность в тесте', icon: Target, progress: 0, maxProgress: 1, color: 'text-green-400', unlocked: false },
-    { id: 7, title: 'Веб-мастер', description: 'Закончите курс по Flask', icon: Globe, progress: 45, maxProgress: 100, color: 'text-cyan-400', unlocked: false },
-    { id: 8, title: 'Спидраннер', description: 'Решите задачу за 30 сек', icon: Zap, progress: 0, maxProgress: 1, color: 'text-yellow-200', unlocked: false },
+    { 
+        id: 1, 
+        title: 'Первый Байт', 
+        description: 'Завершите первый урок', 
+        flavorText: 'Даже самый сложный алгоритм начинается с одной строки кода.',
+        icon: Code2, 
+        rarity: 'common', 
+        category: 'coding',
+        progress: 1, 
+        maxProgress: 1, 
+        unlocked: true, 
+        date: '12.03.2024',
+        globalRate: 85,
+        xpReward: 50
+    },
+    { 
+        id: 2, 
+        title: 'Воин Кода', 
+        description: 'Решите 50 задач', 
+        flavorText: 'Твоя клавиатура дымится, а баги бегут в ужасе.',
+        icon: Sword, 
+        rarity: 'rare', 
+        category: 'coding',
+        progress: 50, 
+        maxProgress: 50, 
+        unlocked: true, 
+        date: '15.03.2024',
+        globalRate: 32,
+        xpReward: 200
+    },
+    { 
+        id: 3, 
+        title: 'Вечный Огонь', 
+        description: 'Стрик 30 дней подряд', 
+        flavorText: 'Дисциплина — это мост между целью и достижением.',
+        icon: Flame, 
+        rarity: 'epic', 
+        category: 'streak',
+        progress: 12, 
+        maxProgress: 30, 
+        unlocked: false,
+        globalRate: 5,
+        xpReward: 500
+    },
+    { 
+        id: 4, 
+        title: 'Дебаггер 80 lvl', 
+        description: 'Найдите 20 ошибок в коде', 
+        flavorText: 'Ты видишь матрицу. Ты чувствуешь сбои.',
+        icon: Bug, 
+        rarity: 'rare', 
+        category: 'coding',
+        progress: 12, 
+        maxProgress: 20, 
+        unlocked: false,
+        globalRate: 25,
+        xpReward: 150
+    },
+    { 
+        id: 5, 
+        title: 'Архитектор Матрицы', 
+        description: 'Создайте свою первую нейросеть', 
+        flavorText: 'Теперь ты не просто пользователь. Ты — Создатель.',
+        icon: Crown, 
+        rarity: 'legendary', 
+        category: 'coding',
+        progress: 0, 
+        maxProgress: 1, 
+        unlocked: false,
+        globalRate: 0.8,
+        xpReward: 2000
+    },
+    { 
+        id: 6, 
+        title: 'Душа Компании', 
+        description: 'Получите 100 лайков на форуме', 
+        flavorText: 'Твои знания освещают путь другим.',
+        icon: Gift, 
+        rarity: 'epic', 
+        category: 'community',
+        progress: 45, 
+        maxProgress: 100, 
+        unlocked: false,
+        globalRate: 12,
+        xpReward: 400
+    },
+    { 
+        id: 7, 
+        title: '?? Hidden ??', 
+        description: 'Секретное достижение', 
+        flavorText: 'Его тайну знают лишь избранные.',
+        icon: LockKeyhole, 
+        rarity: 'legendary', 
+        category: 'secret',
+        progress: 0, 
+        maxProgress: 1, 
+        unlocked: false,
+        globalRate: 0.01,
+        xpReward: 5000
+    },
+    { 
+        id: 8, 
+        title: 'Снайпер', 
+        description: '100% точность в 5 тестах подряд', 
+        flavorText: 'Ни одного промаха. Чистое исполнение.',
+        icon: Target, 
+        rarity: 'rare', 
+        category: 'coding',
+        progress: 3, 
+        maxProgress: 5, 
+        unlocked: false,
+        globalRate: 18,
+        xpReward: 250
+    },
 ];
 
+const RARITY_STYLES = {
+    common: {
+        border: 'border-slate-500',
+        bg: 'bg-slate-800',
+        glow: '',
+        text: 'text-slate-300',
+        iconBg: 'bg-slate-700',
+        name: 'Обычный'
+    },
+    rare: {
+        border: 'border-cyan-500',
+        bg: 'bg-slate-900',
+        glow: 'shadow-[0_0_15px_rgba(6,182,212,0.3)]',
+        text: 'text-cyan-400',
+        iconBg: 'bg-cyan-950',
+        name: 'Редкий'
+    },
+    epic: {
+        border: 'border-purple-500',
+        bg: 'bg-[#1e1b2e]',
+        glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]',
+        text: 'text-purple-400',
+        iconBg: 'bg-purple-950',
+        name: 'Эпический'
+    },
+    legendary: {
+        border: 'border-amber-400',
+        bg: 'bg-gradient-to-br from-slate-900 to-amber-950',
+        glow: 'shadow-[0_0_30px_rgba(251,191,36,0.5)] animate-pulse-glow',
+        text: 'text-amber-400',
+        iconBg: 'bg-amber-900/50',
+        name: 'Легендарный'
+    }
+};
+
 export const Achievements: React.FC = () => {
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [filter, setFilter] = useState<Category>('all');
+
     const unlockedCount = ACHIEVEMENTS_LIST.filter(a => a.unlocked).length;
     const totalCount = ACHIEVEMENTS_LIST.length;
-    const progressPercentage = (unlockedCount / totalCount) * 100;
+    const completionPercent = Math.round((unlockedCount / totalCount) * 100);
+    
+    // Calculate Rank
+    let rank = "Новичок";
+    if (completionPercent > 30) rank = "Искатель";
+    if (completionPercent > 60) rank = "Хранитель Байт";
+    if (completionPercent > 90) rank = "Легендарный Архивариус";
+
+    const filteredList = ACHIEVEMENTS_LIST.filter(a => filter === 'all' || a.category === filter);
+    const selectedAchievement = ACHIEVEMENTS_LIST.find(a => a.id === selectedId);
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in">
-            {/* Header Stats Block - Rebalanced Hierarchy */}
-            <div className="bg-gradient-to-br from-[#131f17] to-[#0c140e] border border-py-accent rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl">
-                {/* Background decorative elements */}
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-py-green/5 blur-3xl rounded-full pointer-events-none transform translate-x-20"></div>
-                
-                <div className="z-10 flex-1 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-py-accent/50 rounded-full border border-white/5 backdrop-blur-sm">
-                        <Trophy size={14} className="text-yellow-400" />
-                        <span className="text-xs font-bold text-gray-300 uppercase tracking-wide">Зал славы</span>
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6 min-h-screen">
+            
+            {/* Header: Collector's Dashboard */}
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-96 h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="absolute -top-20 -right-20 size-64 bg-arcade-primary/20 blur-[80px] rounded-full"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="flex items-center gap-6">
+                        <div className="size-20 md:size-24 bg-black/40 rounded-full border-4 border-arcade-action flex items-center justify-center shadow-neon-orange relative">
+                            <Trophy size={40} className="text-arcade-action fill-arcade-action/20" />
+                            <div className="absolute -bottom-2 bg-arcade-action text-white text-xs font-black px-2 py-0.5 rounded-md">
+                                {completionPercent}%
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-arcade-muted text-sm font-bold uppercase tracking-widest mb-1">Ранг Коллекционера</p>
+                            <h1 className="text-3xl md:text-4xl font-display font-black text-white">{rank}</h1>
+                            <p className="text-sm text-gray-400 mt-1">Собрано <span className="text-white font-bold">{unlockedCount}</span> из <span className="text-white font-bold">{totalCount}</span> артефактов</p>
+                        </div>
                     </div>
-                    <h1 className="text-4xl font-extrabold text-white tracking-tight">Ваши достижения</h1>
-                    <p className="text-gray-400 text-lg max-w-lg leading-relaxed">
-                        Каждая решенная задача и пройденный урок приближают вас к новому званию. Продолжайте в том же духе!
-                    </p>
-                </div>
-                
-                {/* Enlarged Progress Circle */}
-                <div className="z-10 flex items-center gap-8 bg-[#0a0f0b]/80 p-6 rounded-2xl border border-white/10 shadow-xl backdrop-blur-md min-w-[300px]">
-                    <div className="relative size-24 flex items-center justify-center shrink-0">
-                        {/* Added viewBox to ensure scaling doesn't crop the stroke */}
-                        <svg className="size-full -rotate-90" viewBox="0 0 96 96">
-                             <circle cx="48" cy="48" r="40" stroke="#1a2e21" strokeWidth="8" fill="none" />
-                             <circle cx="48" cy="48" r="40" stroke="#0df259" strokeWidth="8" fill="none" strokeDasharray="251" strokeDashoffset={251 - (251 * progressPercentage) / 100} className="transition-all duration-1000 ease-out" strokeLinecap="round"/>
-                        </svg>
-                        <span className="absolute text-xl font-black text-white">{Math.round(progressPercentage)}%</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Прогресс</span>
-                        <span className="text-3xl font-black text-white leading-none mb-1">{unlockedCount} <span className="text-gray-500 text-xl">/ {totalCount}</span></span>
-                        <span className="text-sm text-py-green font-medium">Получено наград</span>
+
+                    <div className="flex gap-4 md:gap-8 text-center bg-black/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                        <div>
+                            <p className="text-2xl font-black text-white">1250</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Очки (AP)</p>
+                        </div>
+                        <div className="w-px h-10 bg-white/10"></div>
+                        <div>
+                            <p className="text-2xl font-black text-arcade-action">4</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Редких</p>
+                        </div>
+                        <div className="w-px h-10 bg-white/10"></div>
+                        <div>
+                            <p className="text-2xl font-black text-amber-400">0</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Легенд</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {ACHIEVEMENTS_LIST.map((ach) => (
-                    <div 
-                        key={ach.id} 
-                        className={`relative group rounded-2xl p-6 border transition-all duration-300 flex flex-col h-full ${
-                            ach.unlocked 
-                            ? 'bg-py-surface border-py-accent hover:border-py-green/40 hover:shadow-[0_4px_20px_rgba(13,242,89,0.05)]' 
-                            : 'bg-[#0c120e] border-white/5 opacity-80 hover:opacity-100 hover:border-white/10'
-                        }`}
+            {/* Filter Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar-none">
+                {[
+                    { id: 'all', label: 'Все' },
+                    { id: 'coding', label: 'Кодинг' },
+                    { id: 'community', label: 'Сообщество' },
+                    { id: 'streak', label: 'Стрик' },
+                    { id: 'secret', label: 'Скрытые' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setFilter(tab.id as Category)}
+                        className={`
+                            px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap border
+                            ${filter === tab.id 
+                                ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]' 
+                                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}
+                        `}
                     >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={`size-14 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-inner border border-white/5 ${
-                                ach.unlocked 
-                                ? `bg-[#0a0f0b] ${ach.color} bg-opacity-20` 
-                                : 'bg-[#151e18] text-gray-600'
-                            }`}>
-                                <ach.icon size={28} strokeWidth={ach.unlocked ? 2 : 1.5} className={ach.unlocked ? ach.color : ''} />
-                            </div>
-
-                            {/* Status Icon */}
-                            {ach.unlocked ? (
-                                <div className="bg-py-green/10 p-1.5 rounded-lg border border-py-green/20">
-                                    <Star size={16} className="text-py-green fill-py-green" />
-                                </div>
-                            ) : (
-                                <div className="bg-[#1a231e] p-1.5 rounded-lg border border-white/10 text-gray-500 group-hover:text-gray-300 transition-colors">
-                                    <Lock size={16} />
-                                </div>
-                            )}
-                        </div>
-
-                        <h3 className={`font-bold mb-2 text-lg ${ach.unlocked ? 'text-white' : 'text-gray-400'}`}>{ach.title}</h3>
-                        <p className={`text-sm mb-6 leading-relaxed flex-1 ${ach.unlocked ? 'text-gray-300' : 'text-gray-500'}`}>{ach.description}</p>
-
-                        {/* Standardized Footer for both states */}
-                        <div className="mt-auto pt-4 border-t border-white/5 w-full min-h-[50px] flex items-center">
-                            {!ach.unlocked ? (
-                                <div className="w-full">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1.5 font-mono tracking-wide">
-                                        <span>ПРОГРЕСС</span>
-                                        <span>{ach.progress}/{ach.maxProgress}</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-black rounded-full overflow-hidden border border-white/5">
-                                        <div className="h-full bg-gray-600 group-hover:bg-py-green rounded-full transition-all duration-500" style={{ width: `${(ach.progress / ach.maxProgress) * 100}%` }}></div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
-                                    <Calendar size={14} className="text-py-green" />
-                                    <span>Получено: <span className="text-gray-300">{ach.date}</span></span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                        {tab.label}
+                    </button>
                 ))}
             </div>
+
+            {/* Trophy Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                {filteredList.map(ach => {
+                    const style = RARITY_STYLES[ach.rarity];
+                    const isSecret = ach.category === 'secret' && !ach.unlocked;
+
+                    return (
+                        <div 
+                            key={ach.id}
+                            onClick={() => setSelectedId(ach.id)}
+                            className={`
+                                group relative aspect-[4/5] rounded-2xl p-1 cursor-pointer transition-all duration-300 hover:scale-105 hover:z-10
+                                ${ach.unlocked 
+                                    ? `bg-slate-900 ${style.glow}` 
+                                    : 'bg-slate-900/50 opacity-80 hover:opacity-100'}
+                            `}
+                        >
+                            {/* Card Border / Frame */}
+                            <div className={`
+                                absolute inset-0 rounded-2xl border-2 ${ach.unlocked ? style.border : 'border-slate-700'} 
+                                opacity-60 group-hover:opacity-100 transition-opacity
+                            `}></div>
+
+                            {/* Inner Content */}
+                            <div className={`
+                                h-full w-full rounded-xl bg-[#0F172A] relative overflow-hidden flex flex-col items-center justify-between p-4
+                                ${ach.unlocked ? '' : 'grayscale'}
+                            `}>
+                                {/* Background Effect for Rarity */}
+                                {ach.unlocked && (
+                                    <div className={`absolute inset-0 opacity-20 bg-gradient-to-b from-transparent to-${style.text.split('-')[1]}-500/20`}></div>
+                                )}
+
+                                {/* Rarity Gem/Header */}
+                                <div className="w-full flex justify-between items-start z-10">
+                                    {ach.unlocked ? (
+                                        <div className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/40 border border-white/10 ${style.text}`}>
+                                            {style.name}
+                                        </div>
+                                    ) : (
+                                        <div className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/40 text-gray-500">
+                                            Locked
+                                        </div>
+                                    )}
+                                    {ach.unlocked && ach.rarity === 'legendary' && (
+                                        <Sparkles size={14} className="text-amber-400 animate-spin-slow" />
+                                    )}
+                                </div>
+
+                                {/* Icon */}
+                                <div className={`
+                                    relative z-10 size-16 md:size-20 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg
+                                    ${ach.unlocked ? style.iconBg : 'bg-slate-800'}
+                                `}>
+                                    <ach.icon 
+                                        size={32} 
+                                        strokeWidth={1.5} 
+                                        className={`
+                                            transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6
+                                            ${ach.unlocked ? style.text : 'text-gray-600'}
+                                        `}
+                                    />
+                                    {/* Shine effect for unlocked */}
+                                    {ach.unlocked && <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[length:200%_200%] animate-shine"></div>}
+                                </div>
+
+                                {/* Text */}
+                                <div className="z-10 text-center w-full">
+                                    <h3 className={`font-bold text-sm md:text-base leading-tight mb-1 truncate ${ach.unlocked ? 'text-white' : 'text-gray-500'}`}>
+                                        {isSecret ? '?? ??? ??' : ach.title}
+                                    </h3>
+                                    {!ach.unlocked && (
+                                        <div className="w-full h-1 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                                            <div 
+                                                className={`h-full rounded-full ${ach.progress > 0 ? 'bg-blue-500' : 'bg-transparent'}`} 
+                                                style={{ width: `${(ach.progress / ach.maxProgress) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* DETAIL MODAL */}
+            {selectedAchievement && (() => {
+                const style = RARITY_STYLES[selectedAchievement.rarity];
+                const isSecret = selectedAchievement.category === 'secret' && !selectedAchievement.unlocked;
+
+                return (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedId(null)}></div>
+                        
+                        <div className={`
+                            relative w-full max-w-md bg-[#0F172A] border-2 ${selectedAchievement.unlocked ? style.border : 'border-slate-600'} 
+                            rounded-3xl p-1 shadow-2xl animate-float-up overflow-hidden
+                        `}>
+                            {/* Close Button */}
+                            <button onClick={() => setSelectedId(null)} className="absolute top-4 right-4 z-20 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 transition-colors">
+                                <X size={20} />
+                            </button>
+
+                            <div className="bg-[#1E293B] rounded-[1.3rem] p-6 flex flex-col items-center text-center relative overflow-hidden h-full">
+                                {/* Background Ambient Light */}
+                                <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-to-b ${selectedAchievement.unlocked ? `from-${style.text.split('-')[1]}-500/20` : 'from-gray-500/10'} to-transparent pointer-events-none`}></div>
+
+                                {/* Rarity Badge */}
+                                <div className={`relative z-10 px-3 py-1 rounded-full border border-white/10 bg-black/40 text-xs font-black uppercase tracking-widest mb-6 ${selectedAchievement.unlocked ? style.text : 'text-gray-500'}`}>
+                                    {style.name}
+                                </div>
+
+                                {/* Big Icon */}
+                                <div className={`
+                                    relative z-10 size-32 rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-white/10
+                                    ${selectedAchievement.unlocked ? style.iconBg : 'bg-slate-800 grayscale'}
+                                    ${selectedAchievement.rarity === 'legendary' && selectedAchievement.unlocked ? 'animate-pulse-glow' : ''}
+                                `}>
+                                    <selectedAchievement.icon size={64} className={selectedAchievement.unlocked ? style.text : 'text-gray-500'} strokeWidth={1.5} />
+                                    {selectedAchievement.unlocked && <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-50"></div>}
+                                </div>
+
+                                {/* Content */}
+                                <h2 className={`relative z-10 text-2xl md:text-3xl font-display font-black mb-2 ${selectedAchievement.unlocked ? 'text-white' : 'text-gray-400'}`}>
+                                    {isSecret ? 'Засекречено' : selectedAchievement.title}
+                                </h2>
+                                
+                                <p className="relative z-10 text-gray-400 text-sm mb-4 max-w-xs">
+                                    {isSecret ? 'Выполните скрытое условие, чтобы открыть этот артефакт.' : selectedAchievement.description}
+                                </p>
+
+                                {/* Flavor Text (Only unlocked) */}
+                                {selectedAchievement.unlocked && (
+                                    <div className="relative z-10 bg-black/30 p-3 rounded-xl border border-white/5 mb-6 italic text-gray-300 text-sm font-serif">
+                                        "{selectedAchievement.flavorText}"
+                                    </div>
+                                )}
+
+                                {/* Progress Bar (Only locked) */}
+                                {!selectedAchievement.unlocked && (
+                                    <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-white/5 mb-6">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-arcade-action to-red-500 shadow-neon-orange" 
+                                            style={{ width: `${(selectedAchievement.progress / selectedAchievement.maxProgress) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                )}
+
+                                {/* Stats Footer */}
+                                <div className="w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Владеют</span>
+                                        <span className="text-white font-bold">{selectedAchievement.globalRate}%</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Награда</span>
+                                        <span className="text-arcade-primary font-bold">+{selectedAchievement.xpReward} XP</span>
+                                    </div>
+                                </div>
+
+                                {/* Share Button */}
+                                {selectedAchievement.unlocked && (
+                                    <button className="mt-6 w-full py-3 bg-white text-black rounded-xl font-black uppercase tracking-wider hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 shadow-lg">
+                                        <Share2 size={18} />
+                                        Похвастаться
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 };
