@@ -78,7 +78,10 @@ const App: React.FC = () => {
 
         {/* Main Header */}
         {currentView !== View.PRACTICE && currentView !== View.AI_CHAT && (
-            <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+            <Header 
+              onMenuClick={() => setIsMobileMenuOpen(true)} 
+              onProfileClick={() => handleViewChange(View.PROFILE)}
+            />
         )}
         
         <div className={`flex-1 ${

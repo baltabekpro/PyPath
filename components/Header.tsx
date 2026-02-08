@@ -4,9 +4,10 @@ import { CURRENT_USER } from '../constants';
 
 interface HeaderProps {
     onMenuClick?: () => void;
+    onProfileClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick }) => {
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-4 sticky top-0 bg-arcade-bg/80 backdrop-blur-md z-30 border-b border-white/5">
       
@@ -57,12 +58,15 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
 
         {/* User Profile Pill */}
-        <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10">
-          <div className="text-right hidden sm:block">
+        <div 
+            className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10 cursor-pointer group"
+            onClick={onProfileClick}
+        >
+          <div className="text-right hidden sm:block group-hover:opacity-80 transition-opacity">
             <p className="text-sm font-display font-bold leading-none text-white mb-1">{CURRENT_USER.name}</p>
             <p className="text-[10px] font-bold text-arcade-mentor uppercase tracking-wide">{CURRENT_USER.level}</p>
           </div>
-          <div className="relative cursor-pointer group">
+          <div className="relative">
               <div className="absolute inset-0 bg-arcade-primary rounded-2xl blur-md opacity-50 group-hover:opacity-100 transition-opacity"></div>
               <img 
                 src={CURRENT_USER.avatar} 

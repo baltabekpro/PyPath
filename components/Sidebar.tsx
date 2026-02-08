@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { LayoutGrid, Map, Code, Settings, Trophy, Crown, Bot, Gamepad2, LogOut, X, Volume2 } from 'lucide-react';
+import { LayoutGrid, Map, Code, Settings, Trophy, Crown, Bot, Gamepad2, LogOut, X, Volume2, User } from 'lucide-react';
 
 interface SidebarProps {
   currentView: View;
@@ -12,6 +12,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileOpen = false, closeMobileMenu }) => {
   const navItems = [
     { view: View.DASHBOARD, label: 'Лобби', icon: LayoutGrid },
+    { view: View.PROFILE, label: 'Герой', icon: User },
     { view: View.COURSES, label: 'Карта', icon: Map },
     { view: View.PRACTICE, label: 'Арена Кода', icon: Code },
     { view: View.AI_CHAT, label: 'Оракул', icon: Bot },
