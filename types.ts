@@ -28,4 +28,7 @@ export interface Course {
   icon: string;
   color: string;
   difficulty: string;
+  stars?: number;     // 0-3 stars for completed levels
+  isBoss?: boolean;   // Marks a boss level
+  locked?: boolean;   // Explicit lock status
 }

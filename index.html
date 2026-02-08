@@ -39,6 +39,7 @@
               'float': 'float 3s ease-in-out infinite',
               'bounce-sm': 'bounce-sm 2s infinite',
               'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'shake': 'shake 0.4s ease-in-out',
             },
             keyframes: {
               float: {
@@ -52,6 +53,11 @@
               'pulse-glow': {
                 '0%, 100%': { opacity: 1, boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)' },
                 '50%': { opacity: .7, boxShadow: '0 0 10px rgba(168, 85, 247, 0.2)' },
+              },
+              shake: {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '25%': { transform: 'translateX(-5px)' },
+                '75%': { transform: 'translateX(5px)' },
               }
             }
           }
