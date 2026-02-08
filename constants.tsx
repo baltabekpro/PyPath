@@ -1,57 +1,57 @@
 import { Course, User } from './types';
-import { Terminal, Database, Cpu, Globe, Code2, LineChart } from 'lucide-react';
+import { Terminal, Database, Cpu, Globe, Code2, LineChart, Gamepad2, Rocket, Ghost, Zap } from 'lucide-react';
 import React from 'react';
 
 export const CURRENT_USER: User = {
-  name: "Алексей П.",
-  level: "Младший Профи",
-  levelNum: 14,
-  xp: 12450,
+  name: "Neo_Coder",
+  level: "Кибер-ниндзя",
+  levelNum: 5,
+  xp: 450,
   streak: 12,
   rank: 42,
-  avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
 };
 
 export const COURSES: Course[] = [
   {
     id: 1,
-    title: "Асинхронность в Python",
-    description: "Освойте asyncio, await и конкурентное программирование.",
-    progress: 45,
-    totalLessons: 20,
-    icon: "Cpu",
-    color: "text-blue-400",
-    difficulty: "Средний"
+    title: "Основы Магии Python",
+    description: "Научись управлять переменными и заклинаниями print().",
+    progress: 100,
+    totalLessons: 10,
+    icon: "Rocket",
+    color: "text-arcade-success",
+    difficulty: "Изи"
   },
   {
     id: 2,
-    title: "PostgreSQL и SQLAlchemy",
-    description: "Проектирование баз данных и мастерство ORM.",
-    progress: 82,
-    totalLessons: 32,
-    icon: "Database",
-    color: "text-orange-400",
-    difficulty: "Сложный"
+    title: "Петли Времени",
+    description: "Освой циклы for и while, чтобы не повторяться.",
+    progress: 45,
+    totalLessons: 12,
+    icon: "Zap",
+    color: "text-arcade-action",
+    difficulty: "Норм"
   },
   {
     id: 3,
-    title: "Веб-скрапинг 101",
-    description: "Извлечение данных из веба с помощью BeautifulSoup.",
-    progress: 10,
+    title: "Функции-Помощники",
+    description: "Создавай своих мини-ботов для рутинных задач.",
+    progress: 0,
     totalLessons: 15,
-    icon: "Globe",
-    color: "text-purple-400",
-    difficulty: "Новичок"
+    icon: "Ghost",
+    color: "text-arcade-primary",
+    difficulty: "Сложно"
   },
   {
     id: 4,
-    title: "Введение в Data Science",
-    description: "Pandas, NumPy и визуализация данных.",
+    title: "Данные и Драконы",
+    description: "Списки, словари и как в них не потеряться.",
     progress: 0,
-    totalLessons: 40,
-    icon: "LineChart",
-    color: "text-red-400",
-    difficulty: "Средний"
+    totalLessons: 20,
+    icon: "Database",
+    color: "text-arcade-danger",
+    difficulty: "Босс"
   }
 ];
 
@@ -67,10 +67,10 @@ export const ACTIVITY_DATA = [
 
 export const getIcon = (name: string) => {
     switch(name) {
-        case 'Cpu': return <Cpu />;
-        case 'Database': return <Database />;
-        case 'Globe': return <Globe />;
-        case 'LineChart': return <LineChart />;
-        default: return <Code2 />;
+        case 'Rocket': return <Rocket strokeWidth={2.5} />;
+        case 'Zap': return <Zap strokeWidth={2.5} />;
+        case 'Ghost': return <Ghost strokeWidth={2.5} />;
+        case 'Database': return <Database strokeWidth={2.5} />;
+        default: return <Gamepad2 strokeWidth={2.5} />;
     }
 }

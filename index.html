@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PyPath AI Learning</title>
+    <title>PyPath Code Arcade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -11,39 +11,54 @@
         theme: {
           extend: {
             colors: {
-              py: {
-                green: '#0df259',     // Primary Action / Success
-                secondary: '#8b5cf6', // Secondary Accent (Purple) for AI/Magic
-                dark: '#0a0f0b',      // Deepest background
-                surface: '#111813',   // Card background
-                accent: '#1f2e25',    // Borders/Secondary background
-                text: '#f8fafc',      // Primary text (Slate-50 - Brighter white)
-                muted: '#cbd5e1',     // Secondary text (Slate-300 - Much lighter for readability)
-              },
-              editor: {
-                bg: '#050806',
-                sidebar: '#0c120e'
+              arcade: {
+                bg: '#0F172A',        // Deep Space (Slate-900)
+                card: '#1E293B',      // Lighter Slate
+                primary: '#A855F7',   // Magic Purple
+                action: '#F97316',    // Action Orange
+                success: '#34D399',   // Emerald Green
+                mentor: '#22D3EE',    // Cyan Robot
+                danger: '#F43F5E',    // Rose Red
+                text: '#F1F5F9',      // Soft White
+                muted: '#94A3B8',     // Muted Slate
               }
             },
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              mono: ['Fira Code', 'monospace'],
+              sans: ['Nunito', 'sans-serif'],
+              display: ['Outfit', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            boxShadow: {
+              'neon-purple': '0 0 15px rgba(168, 85, 247, 0.5)',
+              'neon-orange': '0 0 15px rgba(249, 115, 22, 0.5)',
+              'neon-green': '0 0 15px rgba(52, 211, 153, 0.5)',
+              'press': '0 4px 0 rgba(0,0,0,0.4)',
+              'press-active': '0 0px 0 rgba(0,0,0,0.4)',
             },
             animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 3s ease-in-out infinite',
+              'bounce-sm': 'bounce-sm 2s infinite',
+              'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              'bounce-sm': {
+                '0%, 100%': { transform: 'translateY(-5%)', animationTimingFunction: 'cubic-bezier(0.8,0,1,1)' },
+                '50%': { transform: 'translateY(0)', animationTimingFunction: 'cubic-bezier(0,0,0.2,1)' },
+              },
+              'pulse-glow': {
+                '0%, 100%': { opacity: 1, boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)' },
+                '50%': { opacity: .7, boxShadow: '0 0 10px rgba(168, 85, 247, 0.2)' },
               }
             }
           }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
   <script type="importmap">
 {
@@ -62,7 +77,7 @@
 }
 </script>
 </head>
-  <body class="bg-py-dark text-py-text font-sans antialiased overflow-hidden selection:bg-py-green/30 selection:text-white">
+  <body class="bg-arcade-bg text-arcade-text font-sans antialiased overflow-hidden selection:bg-arcade-primary/30 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

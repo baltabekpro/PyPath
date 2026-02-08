@@ -1,103 +1,89 @@
 import React from 'react';
 import { COURSES, getIcon } from '../constants';
-import { Lock, Play, CheckCircle2 } from 'lucide-react';
+import { Lock, Star, Play } from 'lucide-react';
 import { View } from '../types';
 
 interface CoursesProps {
   setView: (view: View) => void;
 }
 
-const getDifficultyStyle = (level: string) => {
-    switch (level) {
-        case 'Новичок': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-        case 'Средний': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-        case 'Сложный': return 'bg-red-500/10 text-red-400 border-red-500/20';
-        default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-    }
-};
-
 export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-fade-in pt-6">
-       <div className="flex flex-col gap-2">
-           <h1 className="text-2xl md:text-3xl font-bold text-white">Каталог курсов</h1>
-           <p className="text-py-muted text-sm md:text-base">Прокачай навыки Python с нашими курируемыми курсами.</p>
+    <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-8 animate-fade-in pt-6 pb-20">
+       <div className="text-center mb-12">
+           <h1 className="text-4xl font-display font-black text-white mb-2">Карта Приключений</h1>
+           <p className="text-arcade-muted font-medium">Выбирай уровень и прокачивай своего персонажа.</p>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+       <div className="relative flex flex-col items-center gap-16 md:gap-24">
+           {/* Center Path Line */}
+           <div className="absolute top-0 bottom-0 w-3 bg-white/5 rounded-full -z-10"></div>
+           
            {COURSES.map((course, index) => {
-               const completedLessons = Math.round((course.progress / 100) * course.totalLessons);
-               // Only the first course (presumably most active/recommended) gets the primary CTA
-               const isPrimary = index === 0;
+               const isLocked = course.progress === 0 && index > 0 && COURSES[index-1].progress < 100;
+               const isCompleted = course.progress === 100;
+               const isCurrent = !isLocked && !isCompleted;
+
+               // Calculate offset for zigzag effect
+               const offsetClass = index % 2 === 0 ? 'translate-x-0' : (index % 4 === 1 ? 'md:translate-x-16' : 'md:-translate-x-16');
 
                return (
-               <div key={course.id} className="bg-py-surface border border-py-accent rounded-2xl overflow-hidden hover:border-py-green/30 transition-all group flex flex-col shadow-lg">
-                   {/* Card Header Gradient */}
-                   <div className="h-32 bg-gradient-to-br from-[#1f2e25] to-[#0c140e] p-6 relative flex flex-col justify-between border-b border-white/5">
-                       <div className="flex justify-between items-start">
-                           <div className={`size-12 rounded-xl bg-[#0a0f0b] flex items-center justify-center ${course.color} shadow-lg border border-white/10`}>
-                               {getIcon(course.icon)}
-                           </div>
-                           <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${getDifficultyStyle(course.difficulty)}`}>
-                               {course.difficulty}
-                           </span>
-                       </div>
-                   </div>
+               <div key={course.id} className={`relative z-10 flex flex-col items-center group ${offsetClass}`}>
                    
-                   <div className="p-6 flex-1 flex flex-col">
-                       <h3 className="text-xl font-bold text-white mb-2 group-hover:text-py-green transition-colors leading-tight">{course.title}</h3>
-                       <p className="text-sm text-py-muted mb-6 leading-relaxed flex-1">{course.description}</p>
-                       
-                       {/* Progress Info */}
-                       <div className="space-y-3 mb-6">
-                           <div className="flex justify-between items-end text-xs">
-                               <span className="font-bold text-white flex items-center gap-1.5">
-                                   {course.progress === 100 ? <CheckCircle2 size={14} className="text-py-green"/> : null}
-                                   {course.progress}% Завершено
-                               </span>
-                               <span className="text-gray-500 font-mono">
-                                   {completedLessons}/{course.totalLessons} Уроков
-                               </span>
-                           </div>
-                           <div className="h-1.5 w-full bg-[#0c140e] rounded-full overflow-hidden border border-white/5">
-                               <div className={`h-full ${course.color.replace('text', 'bg')} rounded-full transition-all duration-1000`} style={{ width: `${course.progress}%` }}></div>
-                           </div>
+                   {/* Level Node (Circle) */}
+                   <div 
+                        onClick={() => !isLocked && setView(View.PRACTICE)}
+                        className={`
+                            size-24 md:size-32 rounded-full border-b-8 shadow-2xl flex items-center justify-center transition-all duration-300 cursor-pointer relative
+                            ${isLocked 
+                                ? 'bg-gray-800 border-gray-900 text-gray-600 cursor-not-allowed' 
+                                : isCurrent 
+                                    ? 'bg-gradient-to-b from-arcade-action to-orange-600 border-orange-800 text-white scale-110 shadow-neon-orange animate-float' 
+                                    : 'bg-arcade-success border-emerald-700 text-white'
+                            }
+                            ${!isLocked && 'active:scale-95 active:border-b-0 active:translate-y-2'}
+                        `}
+                   >
+                       {/* Icon inside */}
+                       <div className="transform group-hover:scale-110 transition-transform duration-300">
+                           {isLocked ? <Lock size={32} /> : getIcon(course.icon)}
                        </div>
 
-                       <button 
-                         onClick={() => setView(View.PRACTICE)}
-                         className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 border ${
-                             isPrimary
-                             ? 'bg-py-green text-py-dark hover:bg-white border-transparent shadow-lg shadow-py-green/10' 
-                             : 'bg-transparent text-gray-300 border-white/10 hover:border-py-green hover:text-py-green'
-                         }`}
-                        >
-                           {course.progress > 0 ? (
-                               <>Продолжить <Play size={16} fill="currentColor" /></>
-                           ) : (
-                               'Начать курс'
-                           )}
-                       </button>
+                       {/* Stars for completed levels */}
+                       {isCompleted && (
+                           <div className="absolute -bottom-2 flex gap-1">
+                               {[1,2,3].map(s => <Star key={s} size={16} className="text-yellow-400 fill-yellow-400 stroke-orange-600 stroke-2" />)}
+                           </div>
+                       )}
+
+                       {/* 'START' label for current level */}
+                       {isCurrent && (
+                           <div className="absolute -top-10 bg-white text-arcade-action px-3 py-1 rounded-lg font-black text-xs uppercase shadow-lg animate-bounce-sm">
+                               Start
+                               <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-t-[6px] border-t-white border-r-[6px] border-r-transparent"></div>
+                           </div>
+                       )}
                    </div>
+
+                   {/* Info Card (Below Node) */}
+                   <div className={`mt-4 text-center transition-opacity duration-300 ${isLocked ? 'opacity-50' : 'opacity-100'}`}>
+                       <h3 className="font-display font-black text-white text-lg md:text-xl leading-tight">{course.title}</h3>
+                       <p className={`text-xs font-bold uppercase mt-1 px-3 py-1 rounded-full inline-block ${
+                           isLocked ? 'bg-gray-800 text-gray-500' : 'bg-white/10 text-arcade-muted'
+                       }`}>
+                           {course.difficulty}
+                       </p>
+                   </div>
+
                </div>
            )})}
-
-           {/* Locked Course - Enhanced Visuals */}
-           <div className="bg-[#0c120e] border border-py-accent border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-6 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')] opacity-5"></div>
-                
-                <div className="size-20 rounded-full bg-py-surface border border-py-accent flex items-center justify-center text-gray-600 mb-2 shadow-inner group-hover:scale-110 transition-transform duration-500">
-                    <Lock size={32} />
-                </div>
-                
-                <div className="relative z-10 max-w-[80%]">
-                    <h3 className="text-lg font-bold text-gray-300 mb-2">Машинное обучение</h3>
-                    <p className="text-xs text-gray-500 mb-4 leading-relaxed">Продвинутый курс по нейронным сетям и Deep Learning.</p>
-                    <div className="inline-flex items-center gap-2 bg-py-accent text-gray-400 px-4 py-2 rounded-full text-xs font-bold border border-white/5">
-                        <Lock size={12} />
-                        Откроется на 20 уровне
-                    </div>
-                </div>
+           
+           {/* Boss Level Placeholder */}
+           <div className="relative z-10 flex flex-col items-center opacity-50">
+               <div className="size-40 rounded-[2rem] bg-gray-900 border-4 border-dashed border-gray-700 flex items-center justify-center">
+                   <Lock size={48} className="text-gray-700" />
+               </div>
+               <p className="mt-4 font-black text-gray-600 uppercase tracking-widest">Скоро...</p>
            </div>
        </div>
     </div>

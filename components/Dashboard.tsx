@@ -1,6 +1,6 @@
 import React from 'react';
-import { TrendingUp, Bot, ChevronRight, Zap, Bug, PlayCircle, Clock, Play, Award, Sparkles, Brain } from 'lucide-react';
-import { COURSES, getIcon, CURRENT_USER } from '../constants';
+import { Flame, Bot, ChevronRight, Zap, Target, Play, Award, Sparkles, Gift, Clock, Swords, Lock } from 'lucide-react';
+import { COURSES, CURRENT_USER } from '../constants';
 import { View } from '../types';
 
 interface DashboardProps {
@@ -9,164 +9,165 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 md:space-y-10 animate-fade-in pt-6 md:pt-10">
-      {/* Welcome Section */}
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-white tracking-tight">С возвращением, {CURRENT_USER.name.split(' ')[0]}!</h1>
-          <p className="text-py-muted text-sm md:text-base">Ваш код компилируется, а навыки растут.</p>
-        </div>
-        <div className="hidden md:block text-right">
-             <p className="text-xs text-py-muted font-mono mb-1 bg-py-surface px-3 py-1.5 rounded-lg border border-py-accent">
-                {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
-             </p>
-        </div>
-      </div>
-
-      {/* Hero Stats Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
+      
+      {/* Welcome & Mentor Header */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-arcade-primary/20 to-transparent p-6 rounded-3xl border border-white/5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 size-64 bg-arcade-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
         
-        {/* Next Lesson Card (Primary Focus - 2/3 Width) */}
-        <div 
-          onClick={() => setView(View.PRACTICE)}
-          className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-[#0f1912] to-[#050806] border border-py-accent hover:border-py-green/30 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 group cursor-pointer shadow-xl transition-all flex flex-col justify-center"
-        >
-            {/* Background Pattern */}
-            <div className="absolute top-0 right-0 w-64 h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
-            <div className="absolute -right-10 -bottom-20 size-64 bg-py-green/10 blur-[100px] rounded-full pointer-events-none"></div>
-
-            <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center">
-                 <div className="size-16 md:size-20 rounded-2xl bg-[#1a2e21] flex items-center justify-center text-py-green shadow-lg border border-white/5 shrink-0 group-hover:scale-105 transition-transform">
-                     <Play size={28} md:size={32} fill="currentColor" className="ml-1"/>
-                 </div>
-                 <div className="flex-1 text-center md:text-left">
-                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 mb-3">
-                         <span className="size-2 bg-py-green rounded-full animate-pulse"></span>
-                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Текущий урок</span>
-                     </div>
-                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">Асинхронность в Python</h2>
-                     <p className="text-py-muted mb-6 max-w-md text-sm md:text-base">Продолжите с места, где остановились: <span className="text-white font-medium">Урок 5: Event Loop</span></p>
-                     
-                     <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 md:gap-6">
-                        <button className="w-full md:w-auto bg-py-green text-py-dark px-8 py-3.5 rounded-xl font-bold hover:bg-white transition-colors shadow-lg shadow-py-green/10 flex items-center justify-center gap-2">
-                            Продолжить
-                            <ChevronRight size={18} />
-                        </button>
-                        <div className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
-                            <Clock size={14} />
-                            <span>~15 минут</span>
-                        </div>
-                     </div>
-                 </div>
-            </div>
-        </div>
-
-        {/* Daily Streak Card (Compact) */}
-        <div className="bg-py-surface border border-py-accent rounded-[1.5rem] md:rounded-[2rem] p-6 flex flex-col justify-between relative overflow-hidden group hover:border-py-green/20 transition-colors min-h-[180px]">
-             <div className="flex justify-between items-start mb-4">
-                 <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        Стрик
-                    </h3>
-                    <p className="text-xs text-py-muted mt-1">Не сбавляй темп!</p>
-                 </div>
-                 <div className="bg-orange-500/10 p-2 rounded-xl text-orange-500">
-                     <TrendingUp size={24} />
-                 </div>
+        <div className="flex items-center gap-6 z-10 w-full md:w-auto">
+             <div className="size-20 bg-arcade-mentor rounded-full flex items-center justify-center shadow-neon-green border-4 border-white/20 animate-float">
+                 <Bot size={40} className="text-white" strokeWidth={2.5}/>
              </div>
-             
-             <div className="flex items-end gap-2 mt-auto">
-                 <span className="text-5xl font-black text-white leading-none">{CURRENT_USER.streak}</span>
-                 <span className="text-sm font-bold text-py-muted mb-1.5 uppercase">дней</span>
-             </div>
-             
-             {/* Mini visual representation */}
-             <div className="flex gap-1 mt-6">
-                {[1,2,3,4,5,6,7].map(d => (
-                    <div key={d} className={`h-1.5 flex-1 rounded-full ${d <= 5 ? 'bg-orange-500' : 'bg-py-accent'}`}></div>
-                ))}
+             <div>
+                 <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-white/5">
+                    <p className="text-sm md:text-base text-white font-medium">👋 Привет, {CURRENT_USER.name}! Готов покорять код?</p>
+                 </div>
+                 <h1 className="text-3xl md:text-4xl font-display font-black text-white leading-none">Твоя База</h1>
              </div>
         </div>
-      </div>
 
-      {/* Stats Row - Mixed Colors */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-              { label: 'XP сегодня', value: '450', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-              { label: 'Задач решено', value: '12', icon: Bug, color: 'text-red-400', bg: 'bg-red-400/10' },
-              { label: 'Часов учебы', value: '2.5', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-              { label: 'Рейтинг', value: `#${CURRENT_USER.rank}`, icon: Award, color: 'text-py-secondary', bg: 'bg-py-secondary/10' },
-          ].map((stat, i) => (
-              <div key={i} className="bg-py-surface border border-py-accent p-4 md:p-5 rounded-2xl flex flex-col items-start hover:border-white/10 transition-colors group">
-                  <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color} mb-3 group-hover:scale-110 transition-transform`}>
-                      <stat.icon size={20} />
-                  </div>
-                  <span className="text-xl md:text-2xl font-black text-white mb-0.5">{stat.value}</span>
-                  <span className="text-[9px] md:text-[10px] font-bold text-py-muted uppercase tracking-wider">{stat.label}</span>
-              </div>
-          ))}
+        {/* Streak Counter (Fire) */}
+        <div className="flex items-center gap-4 bg-black/40 p-3 pr-6 rounded-2xl border border-orange-500/30 shadow-neon-orange transform hover:scale-105 transition-transform cursor-pointer">
+             <div className="size-12 bg-gradient-to-t from-red-600 to-yellow-400 rounded-xl flex items-center justify-center animate-pulse-glow">
+                 <Flame size={28} className="text-white fill-white" />
+             </div>
+             <div>
+                 <p className="text-2xl font-black text-white leading-none">{CURRENT_USER.streak}</p>
+                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Дней в огне</p>
+             </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Active Courses List */}
-          <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white">Мои курсы</h3>
-                  <button onClick={() => setView(View.COURSES)} className="text-xs font-bold text-py-green hover:underline">Все курсы</button>
-              </div>
+        
+        {/* Main Column */}
+        <div className="lg:col-span-2 space-y-8">
+            
+            {/* Current Mission (Big Card) */}
+            <div 
+              onClick={() => setView(View.PRACTICE)}
+              className="group relative overflow-hidden bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2rem] border-2 border-indigo-500/30 hover:border-arcade-action transition-all cursor-pointer shadow-xl hover:shadow-2xl"
+            >
+                {/* Background Art */}
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/circuit-board.png')] opacity-10"></div>
+                <div className="absolute -right-20 -top-20 size-80 bg-arcade-action/20 blur-[80px] rounded-full group-hover:bg-arcade-action/30 transition-colors"></div>
 
-              <div className="space-y-3">
-                  {COURSES.slice(0, 3).map((course, idx) => (
-                      <div key={course.id} className="bg-py-surface border border-py-accent p-4 rounded-2xl flex items-center gap-5 hover:border-white/10 transition-all cursor-pointer group" onClick={() => setView(View.COURSES)}>
-                          <div className={`size-12 rounded-xl bg-[#0a0f0b] flex items-center justify-center ${course.color} border border-white/5 shrink-0`}>
-                              {getIcon(course.icon)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                              <div className="flex justify-between mb-1">
-                                  <h4 className="font-bold text-white text-sm group-hover:text-py-green transition-colors truncate pr-2">{course.title}</h4>
-                                  <span className="text-xs font-bold text-py-muted shrink-0">{course.progress}%</span>
-                              </div>
-                              <div className="w-full h-1.5 bg-[#0a0f0b] rounded-full overflow-hidden">
-                                  <div className={`h-full ${course.color.replace('text', 'bg')} rounded-full`} style={{width: `${course.progress}%`}}></div>
-                              </div>
-                          </div>
-                          <button className={`size-9 rounded-lg flex items-center justify-center transition-colors shrink-0 ${idx === 0 ? 'bg-white/5 text-white' : 'text-py-muted hover:bg-white/5'}`}>
-                              <ChevronRight size={18} />
-                          </button>
-                      </div>
-                  ))}
-              </div>
-          </div>
+                <div className="relative p-8 flex flex-col md:flex-row gap-8 items-center">
+                     <div className="size-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/10 shadow-2xl group-hover:rotate-6 transition-transform duration-500">
+                         <div className="size-16 bg-arcade-action rounded-2xl flex items-center justify-center text-white shadow-lg">
+                             <Play size={32} fill="currentColor" className="ml-1"/>
+                         </div>
+                     </div>
+                     
+                     <div className="flex-1 text-center md:text-left">
+                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-arcade-action/20 text-arcade-action rounded-full border border-arcade-action/20 mb-3">
+                             <Swords size={14} />
+                             <span className="text-xs font-black uppercase tracking-wider">Текущая миссия</span>
+                         </div>
+                         <h2 className="text-3xl font-display font-black text-white mb-2">Петли Времени</h2>
+                         <p className="text-gray-300 mb-6 font-medium">Уровень 5 • Босс: Бесконечный Цикл</p>
+                         
+                         {/* Progress Bar styled as HP */}
+                         <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10 relative">
+                             <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-arcade-action to-yellow-400 w-[45%] rounded-full shadow-[0_0_15px_rgba(249,115,22,0.8)]"></div>
+                             {/* Glare effect */}
+                             <div className="absolute top-0 left-0 w-full h-[50%] bg-white/10 rounded-full"></div>
+                         </div>
+                         <div className="flex justify-between mt-2 text-xs font-bold text-gray-500 uppercase">
+                             <span>Прогресс</span>
+                             <span className="text-white">45%</span>
+                         </div>
+                     </div>
 
-          {/* AI Mentor - Revamped */}
-          <div className="bg-gradient-to-b from-py-secondary/10 to-py-surface border border-py-secondary/20 rounded-2xl p-6 flex flex-col relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 size-40 bg-py-secondary/20 blur-[60px] rounded-full"></div>
-              
-              <div className="flex items-center gap-3 mb-6 relative z-10">
-                  <div className="bg-py-secondary p-2 rounded-lg text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]">
-                      <Brain size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white leading-none">AI Ментор</h3>
-                    <p className="text-[10px] text-py-secondary font-bold uppercase tracking-wide mt-1">Всегда онлайн</p>
-                  </div>
-              </div>
-              
-              <div className="bg-black/20 border border-py-secondary/20 rounded-xl p-4 mb-6 flex-1 backdrop-blur-sm relative z-10">
-                  <p className="text-sm text-gray-300 italic leading-relaxed">
-                      "Привет! Я проанализировал твой код. Ты отлично справляешься с циклами, но давай улучшим работу с памятью?"
-                  </p>
-              </div>
+                     <div className="hidden md:flex flex-col items-center gap-1">
+                        <button className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
+                            <ChevronRight size={32} strokeWidth={3} />
+                        </button>
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">Start</span>
+                     </div>
+                </div>
+            </div>
 
-              <button 
-                onClick={() => setView(View.AI_CHAT)}
-                className="w-full py-3 bg-py-secondary text-white rounded-xl text-sm font-bold hover:bg-py-secondary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-py-secondary/20 relative z-10"
-              >
-                  <Sparkles size={16} />
-                  Спросить совета
-              </button>
-          </div>
+            {/* Daily Quests */}
+            <div>
+                <h3 className="text-xl font-display font-black text-white mb-4 flex items-center gap-2">
+                    <Target className="text-arcade-danger" />
+                    Ежедневные Квесты
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                        { title: "Реши 3 задачи", reward: "50 XP", icon: Zap, done: true, color: "text-yellow-400", border: "border-yellow-400/20" },
+                        { title: "Без ошибок", reward: "Сундук", icon: Gift, done: false, color: "text-arcade-primary", border: "border-arcade-primary/20" },
+                        { title: "Помоги другу", reward: "20 XP", icon: Bot, done: false, color: "text-arcade-mentor", border: "border-arcade-mentor/20" },
+                    ].map((quest, i) => (
+                        <div key={i} className={`bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform`}>
+                            <div className={`size-12 rounded-full flex items-center justify-center ${quest.done ? 'bg-arcade-success text-white' : 'bg-white/5 ' + quest.color}`}>
+                                {quest.done ? <Award size={24} /> : <quest.icon size={24} />}
+                            </div>
+                            <div>
+                                <h4 className={`font-bold text-sm ${quest.done ? 'text-arcade-success line-through' : 'text-white'}`}>{quest.title}</h4>
+                                <div className="inline-block mt-1 bg-black/40 px-2 py-0.5 rounded-md border border-white/5">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">{quest.reward}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+        </div>
+
+        {/* Sidebar / Stats */}
+        <div className="space-y-6">
+            
+            {/* Player Stats */}
+            <div className="bg-arcade-card border border-white/5 rounded-3xl p-6 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-display font-black text-white">Статистика</h3>
+                    <button className="text-xs font-bold text-arcade-primary hover:underline">Подробнее</button>
+                </div>
+                
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
+                            <span className="font-bold text-gray-300 text-sm">Всего XP</span>
+                        </div>
+                        <span className="font-mono font-bold text-white">12,450</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
+                            <span className="font-bold text-gray-300 text-sm">Задач решено</span>
+                        </div>
+                        <span className="font-mono font-bold text-white">42</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
+                            <span className="font-bold text-gray-300 text-sm">Время в коде</span>
+                        </div>
+                        <span className="font-mono font-bold text-white">14ч 30м</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Quick Play / Mini Games */}
+            <div className="bg-gradient-to-b from-arcade-primary to-purple-800 rounded-3xl p-6 text-center text-white relative overflow-hidden shadow-neon-purple group cursor-pointer hover:scale-[1.02] transition-transform">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-20"></div>
+                <Sparkles className="absolute top-4 left-4 text-white/40 animate-pulse" />
+                <Sparkles className="absolute bottom-4 right-4 text-white/40 animate-pulse delay-700" />
+                
+                <h3 className="text-2xl font-display font-black mb-2 relative z-10">Блиц-Турнир</h3>
+                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">Реши 5 задач за 5 минут и получи удвоенный XP!</p>
+                
+                <button className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
+                    Начать
+                </button>
+            </div>
+        </div>
+
       </div>
     </div>
   );
