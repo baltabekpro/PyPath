@@ -66,7 +66,6 @@ const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' 
 };
 
 export const Profile: React.FC<ProfileProps> = ({ setView }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [loadRadar, setLoadRadar] = useState(false);
 
   useEffect(() => {
@@ -92,7 +91,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <Share2 size={20} />
                 </button>
                 <button 
-                    onClick={() => setIsEditing(!isEditing)}
+                    onClick={() => setView(View.SETTINGS)}
                     className="p-2 bg-black/30 backdrop-blur-md rounded-xl text-white hover:bg-white/10 transition-colors border border-white/10 hover:border-white/30 flex items-center gap-2"
                 >
                     <Edit3 size={20} />
@@ -271,14 +270,17 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             <div className="lg:col-span-4 space-y-8">
                 
                 {/* Trophy Showcase */}
-                <div className="bg-[#1E293B] border border-white/5 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                <div 
+                    onClick={() => setView(View.ACHIEVEMENTS)}
+                    className="bg-[#1E293B] border border-white/5 rounded-3xl p-6 shadow-xl relative overflow-hidden cursor-pointer group"
+                >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-[50px] rounded-full pointer-events-none"></div>
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-bold text-white flex items-center gap-2">
+                        <h3 className="font-bold text-white flex items-center gap-2 group-hover:text-yellow-400 transition-colors">
                             <Trophy className="text-yellow-400" size={20} />
                             Витрина
                         </h3>
-                        <button className="text-xs text-arcade-primary font-bold hover:underline">Изменить</button>
+                        <button className="text-xs text-arcade-primary font-bold hover:underline">Открыть все</button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -288,21 +290,21 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                 <div 
                                     key={index} 
                                     className={`
-                                        aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all duration-300
+                                        aspect-square rounded-2xl flex flex-col items-center justify-center relative group/item transition-all duration-300
                                         ${item ? `${style} border-2` : 'bg-black/20 border-2 border-dashed border-white/10 hover:border-white/20'}
                                     `}
                                 >
                                     {item ? (
                                         <>
-                                            <div className={`size-12 rounded-xl bg-black/30 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform duration-300 relative z-10 backdrop-blur-sm`}>
+                                            <div className={`size-12 rounded-xl bg-black/30 flex items-center justify-center mb-2 shadow-lg group-hover/item:scale-110 transition-transform duration-300 relative z-10 backdrop-blur-sm`}>
                                                 <item.icon size={24} className="text-white drop-shadow-md" />
                                             </div>
                                             <span className={`text-[10px] font-bold text-white/90 text-center leading-tight px-1 relative z-10`}>{item.name}</span>
                                             {/* Rarity Flare */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity rounded-xl"></div>
                                         </>
                                     ) : (
-                                        <div className="flex flex-col items-center opacity-40 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex flex-col items-center opacity-40 group-hover/item:opacity-100 transition-opacity">
                                             <Lock size={20} className="text-gray-500 mb-1" />
                                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Слот</span>
                                         </div>
@@ -344,17 +346,21 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                     </div>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Дуэль">
+                                    <button 
+                                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" 
+                                        title="Дуэль"
+                                        onClick={(e) => { e.stopPropagation(); setView(View.PRACTICE); }}
+                                    >
                                         <Swords size={16} />
-                                    </button>
-                                    <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                                        <Settings size={16} />
                                     </button>
                                 </div>
                             </div>
                         ))}
                         
-                        <button className="w-full py-3 mt-4 bg-arcade-primary/10 border border-arcade-primary/30 rounded-xl text-xs font-bold text-arcade-primary hover:bg-arcade-primary hover:text-white hover:shadow-neon-purple transition-all flex items-center justify-center gap-2 group">
+                        <button 
+                            onClick={() => setView(View.LEADERBOARD)}
+                            className="w-full py-3 mt-4 bg-arcade-primary/10 border border-arcade-primary/30 rounded-xl text-xs font-bold text-arcade-primary hover:bg-arcade-primary hover:text-white hover:shadow-neon-purple transition-all flex items-center justify-center gap-2 group"
+                        >
                             <Search size={14} className="group-hover:scale-110 transition-transform" />
                             Найти друга
                         </button>

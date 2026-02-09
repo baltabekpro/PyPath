@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Crown, TrendingUp, ChevronUp, ChevronDown, Minus, Globe, Users, School, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
 import { CURRENT_USER } from '../constants';
 
@@ -14,18 +14,21 @@ interface Leader {
   league: string;
   title: string;
   tier: 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+  isFriend?: boolean;
+  isSchool?: boolean;
 }
 
-const MOCK_LEADERS: Leader[] = [
-  { rank: 1, name: "CyberNinja", xp: 45200, level: 42, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", streak: 150, change: "up", changeAmount: 2, league: "Diamond", title: "Гроза Циклов", tier: 'diamond' },
-  { rank: 2, name: "Pythonista", xp: 44100, level: 40, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka", streak: 89, change: "up", changeAmount: 1, league: "Platinum", title: "Мастер Функций", tier: 'platinum' },
-  { rank: 3, name: "CodeMaster", xp: 42500, level: 38, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jude", streak: 45, change: "down", changeAmount: 1, league: "Gold", title: "Баг-Хантер", tier: 'gold' },
-  { rank: 4, name: "DevOps_King", xp: 38000, level: 35, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kyle", streak: 12, change: "same", league: "Gold", title: "Архитектор", tier: 'gold' },
-  { rank: 5, name: "AlgoQueen", xp: 36500, level: 34, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe", streak: 30, change: "up", changeAmount: 5, league: "Silver", title: "Алгоритмик", tier: 'silver' },
+const ALL_LEADERS: Leader[] = [
+  { rank: 1, name: "CyberNinja", xp: 45200, level: 42, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", streak: 150, change: "up", changeAmount: 2, league: "Diamond", title: "Гроза Циклов", tier: 'diamond', isFriend: true, isSchool: true },
+  { rank: 2, name: "Pythonista", xp: 44100, level: 40, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka", streak: 89, change: "up", changeAmount: 1, league: "Platinum", title: "Мастер Функций", tier: 'platinum', isSchool: true },
+  { rank: 3, name: "CodeMaster", xp: 42500, level: 38, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jude", streak: 45, change: "down", changeAmount: 1, league: "Gold", title: "Баг-Хантер", tier: 'gold', isFriend: true },
+  { rank: 4, name: "DevOps_King", xp: 38000, level: 35, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kyle", streak: 12, change: "same", league: "Gold", title: "Архитектор", tier: 'gold', isSchool: true },
+  { rank: 5, name: "AlgoQueen", xp: 36500, level: 34, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe", streak: 30, change: "up", changeAmount: 5, league: "Silver", title: "Алгоритмик", tier: 'silver', isFriend: true, isSchool: true },
   { rank: 6, name: "BugHunter", xp: 34200, level: 32, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max", streak: 5, change: "down", changeAmount: 2, league: "Silver", title: "Тестировщик", tier: 'silver' },
-  { rank: 7, name: "Rusty", xp: 31000, level: 29, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tyler", streak: 21, change: "same", league: "Bronze", title: "Новичок", tier: 'bronze' },
-  { rank: 8, name: "NetRunner", xp: 29500, level: 28, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Maria", streak: 14, change: "up", changeAmount: 1, league: "Bronze", title: "Скриптер", tier: 'bronze' },
+  { rank: 7, name: "Rusty", xp: 31000, level: 29, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tyler", streak: 21, change: "same", league: "Bronze", title: "Новичок", tier: 'bronze', isFriend: true },
+  { rank: 8, name: "NetRunner", xp: 29500, level: 28, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Maria", streak: 14, change: "up", changeAmount: 1, league: "Bronze", title: "Скриптер", tier: 'bronze', isSchool: true },
   { rank: 9, name: "PixelArt", xp: 28200, level: 27, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo", streak: 3, change: "down", changeAmount: 3, league: "Bronze", title: "Дизайнер", tier: 'bronze' },
+  { rank: 42, name: CURRENT_USER.name, xp: CURRENT_USER.xp, level: CURRENT_USER.levelNum, avatar: CURRENT_USER.avatar, streak: CURRENT_USER.streak, change: 'up', changeAmount: 5, league: "Diamond", title: "Кибер-Ниндзя", tier: 'diamond', isFriend: true, isSchool: true },
 ];
 
 const formatXP = (num: number) => {
@@ -57,6 +60,22 @@ const getTierColor = (tier: string) => {
 export const Leaderboard: React.FC = () => {
   const [scope, setScope] = useState<'global' | 'friends' | 'school'>('global');
   const [period, setPeriod] = useState<'all' | 'month'>('all');
+
+  const displayedLeaders = useMemo(() => {
+      let filtered = ALL_LEADERS;
+      
+      if (scope === 'friends') {
+          filtered = ALL_LEADERS.filter(l => l.isFriend || l.name === CURRENT_USER.name);
+      } else if (scope === 'school') {
+          filtered = ALL_LEADERS.filter(l => l.isSchool || l.name === CURRENT_USER.name);
+      }
+
+      // Re-rank after filtering for display purposes
+      return filtered.sort((a, b) => b.xp - a.xp).map((l, idx) => ({ ...l, displayRank: idx + 1 }));
+  }, [scope]);
+
+  const topThree = displayedLeaders.slice(0, 3);
+  const list = displayedLeaders.slice(3);
 
   return (
     <div className="h-full flex flex-col bg-[#0F172A] relative overflow-hidden">
@@ -118,23 +137,24 @@ export const Leaderboard: React.FC = () => {
       {/* Main Scrollable Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-32">
           
-          {/* PODIUM */}
-          <div className="flex justify-center items-end gap-2 md:gap-6 mb-12 min-h-[320px]">
+          {/* PODIUM (Only if we have enough users) */}
+          {displayedLeaders.length >= 3 && (
+            <div className="flex justify-center items-end gap-2 md:gap-6 mb-12 min-h-[320px]">
               
               {/* 2nd Place */}
               <div className="flex flex-col items-center group">
                   <div className="relative mb-4">
                       <div className="size-20 md:size-24 rounded-full border-4 border-slate-300 shadow-[0_0_30px_rgba(203,213,225,0.3)] z-10 relative overflow-hidden bg-slate-800">
-                          <img src={MOCK_LEADERS[1].avatar} className="size-full object-cover" />
+                          <img src={topThree[1].avatar} className="size-full object-cover" />
                       </div>
                       <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-300 text-slate-900 font-black px-2 py-0.5 rounded text-xs z-20 shadow-lg border-2 border-slate-900">
                           #2
                       </div>
                   </div>
                   <div className="bg-gradient-to-b from-slate-800 to-slate-900/50 p-4 rounded-t-2xl border-t-2 border-slate-300 w-28 md:w-40 text-center h-[180px] flex flex-col justify-end relative shadow-[0_0_30px_rgba(148,163,184,0.1)] group-hover:-translate-y-2 transition-transform">
-                      <div className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">{MOCK_LEADERS[1].title}</div>
-                      <div className="text-white font-bold text-sm md:text-base truncate">{MOCK_LEADERS[1].name}</div>
-                      <div className="text-slate-400 font-mono text-xs mt-1">{formatXP(MOCK_LEADERS[1].xp)} XP</div>
+                      <div className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">{topThree[1].title}</div>
+                      <div className="text-white font-bold text-sm md:text-base truncate">{topThree[1].name}</div>
+                      <div className="text-slate-400 font-mono text-xs mt-1">{formatXP(topThree[1].xp)} XP</div>
                   </div>
               </div>
 
@@ -143,7 +163,7 @@ export const Leaderboard: React.FC = () => {
                    <div className="relative mb-4">
                       <Crown size={40} className="absolute -top-10 left-1/2 -translate-x-1/2 text-yellow-400 fill-yellow-400 animate-bounce-sm drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]" />
                       <div className="size-28 md:size-32 rounded-full border-4 border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,0.5)] z-10 relative overflow-hidden bg-yellow-900/20 ring-4 ring-yellow-400/20">
-                          <img src={MOCK_LEADERS[0].avatar} className="size-full object-cover" />
+                          <img src={topThree[0].avatar} className="size-full object-cover" />
                       </div>
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-950 font-black px-3 py-1 rounded-lg text-sm z-20 shadow-[0_0_20px_rgba(234,179,8,0.6)] border-2 border-yellow-950 flex items-center gap-1">
                           <Sword size={12} fill="currentColor" /> #1
@@ -151,9 +171,9 @@ export const Leaderboard: React.FC = () => {
                   </div>
                   <div className="bg-gradient-to-b from-yellow-900/40 to-slate-900/50 p-6 rounded-t-3xl border-t-4 border-yellow-400 w-36 md:w-52 text-center h-[220px] flex flex-col justify-end relative shadow-[0_0_60px_rgba(234,179,8,0.15)] group-hover:-translate-y-2 transition-transform backdrop-blur-sm">
                       <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 rounded-t-3xl"></div>
-                      <div className="text-yellow-400 text-xs font-black uppercase tracking-widest mb-1 drop-shadow-sm">{MOCK_LEADERS[0].title}</div>
-                      <div className="text-white font-black text-lg md:text-xl truncate">{MOCK_LEADERS[0].name}</div>
-                      <div className="text-yellow-200/80 font-mono text-sm mt-1 font-bold">{formatXP(MOCK_LEADERS[0].xp)} XP</div>
+                      <div className="text-yellow-400 text-xs font-black uppercase tracking-widest mb-1 drop-shadow-sm">{topThree[0].title}</div>
+                      <div className="text-white font-black text-lg md:text-xl truncate">{topThree[0].name}</div>
+                      <div className="text-yellow-200/80 font-mono text-sm mt-1 font-bold">{formatXP(topThree[0].xp)} XP</div>
                   </div>
               </div>
 
@@ -161,31 +181,31 @@ export const Leaderboard: React.FC = () => {
               <div className="flex flex-col items-center group">
                   <div className="relative mb-4">
                       <div className="size-20 md:size-24 rounded-full border-4 border-orange-700 shadow-[0_0_30px_rgba(194,65,12,0.3)] z-10 relative overflow-hidden bg-slate-800">
-                          <img src={MOCK_LEADERS[2].avatar} className="size-full object-cover" />
+                          <img src={topThree[2].avatar} className="size-full object-cover" />
                       </div>
                       <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-orange-700 text-white font-black px-2 py-0.5 rounded text-xs z-20 shadow-lg border-2 border-slate-900">
                           #3
                       </div>
                   </div>
                   <div className="bg-gradient-to-b from-slate-800 to-slate-900/50 p-4 rounded-t-2xl border-t-2 border-orange-700 w-28 md:w-40 text-center h-[160px] flex flex-col justify-end relative shadow-[0_0_30px_rgba(194,65,12,0.1)] group-hover:-translate-y-2 transition-transform">
-                      <div className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-1">{MOCK_LEADERS[2].title}</div>
-                      <div className="text-white font-bold text-sm md:text-base truncate">{MOCK_LEADERS[2].name}</div>
-                      <div className="text-slate-400 font-mono text-xs mt-1">{formatXP(MOCK_LEADERS[2].xp)} XP</div>
+                      <div className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-1">{topThree[2].title}</div>
+                      <div className="text-white font-bold text-sm md:text-base truncate">{topThree[2].name}</div>
+                      <div className="text-slate-400 font-mono text-xs mt-1">{formatXP(topThree[2].xp)} XP</div>
                   </div>
               </div>
-
-          </div>
+            </div>
+          )}
 
           {/* THE LIST */}
           <div className="space-y-3 max-w-4xl mx-auto">
-              {MOCK_LEADERS.slice(3).map((player) => (
+              {list.map((player) => (
                   <div 
                     key={player.rank}
-                    className="bg-[#1E293B] hover:bg-[#283548] border border-white/5 hover:border-white/10 rounded-xl p-4 flex items-center gap-4 md:gap-6 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg group"
+                    className={`bg-[#1E293B] hover:bg-[#283548] border ${player.name === CURRENT_USER.name ? 'border-arcade-primary/50 bg-arcade-primary/5' : 'border-white/5'} hover:border-white/10 rounded-xl p-4 flex items-center gap-4 md:gap-6 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg group`}
                   >
                       {/* Rank */}
                       <div className="font-mono font-bold text-gray-500 text-xl w-8 text-center group-hover:text-white transition-colors">
-                          {player.rank}
+                          {player.displayRank}
                       </div>
 
                       {/* Change Indicator */}
@@ -207,7 +227,7 @@ export const Leaderboard: React.FC = () => {
                           </div>
                           <div>
                               <div className="flex items-center gap-2">
-                                  <h3 className="font-bold text-white text-base md:text-lg">{player.name}</h3>
+                                  <h3 className={`font-bold text-base md:text-lg ${player.name === CURRENT_USER.name ? 'text-arcade-primary' : 'text-white'}`}>{player.name}</h3>
                                   <div className="hidden sm:flex items-center gap-1 bg-black/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide text-gray-400 border border-white/5">
                                       {getTierIcon(player.tier)}
                                       <span>{player.league}</span>

@@ -16,7 +16,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="absolute top-0 right-0 size-64 bg-arcade-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
         
         <div className="flex items-center gap-6 z-10 w-full md:w-auto">
-             <div className="size-20 bg-arcade-mentor rounded-full flex items-center justify-center shadow-neon-green border-4 border-white/20 animate-float">
+             <div 
+                className="size-20 bg-arcade-mentor rounded-full flex items-center justify-center shadow-neon-green border-4 border-white/20 animate-float cursor-pointer hover:scale-110 transition-transform"
+                onClick={() => setView(View.AI_CHAT)}
+             >
                  <Bot size={40} className="text-white" strokeWidth={2.5}/>
              </div>
              <div>
@@ -28,8 +31,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
 
         {/* Streak Counter (Fire) */}
-        <div className="flex items-center gap-4 bg-black/40 p-3 pr-6 rounded-2xl border border-orange-500/30 shadow-neon-orange transform hover:scale-105 transition-transform cursor-pointer">
-             <div className="size-12 bg-gradient-to-t from-red-600 to-yellow-400 rounded-xl flex items-center justify-center animate-pulse-glow">
+        <div 
+            onClick={() => setView(View.ACHIEVEMENTS)}
+            className="flex items-center gap-4 bg-black/40 p-3 pr-6 rounded-2xl border border-orange-500/30 shadow-neon-orange transform hover:scale-105 transition-transform cursor-pointer group"
+        >
+             <div className="size-12 bg-gradient-to-t from-red-600 to-yellow-400 rounded-xl flex items-center justify-center animate-pulse-glow group-hover:rotate-6 transition-transform">
                  <Flame size={28} className="text-white fill-white" />
              </div>
              <div>
@@ -47,7 +53,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             {/* Current Mission (Big Card) */}
             <div 
               onClick={() => setView(View.PRACTICE)}
-              className="group relative overflow-hidden bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2rem] border-2 border-indigo-500/30 hover:border-arcade-action transition-all cursor-pointer shadow-xl hover:shadow-2xl"
+              className="group relative overflow-hidden bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2rem] border-2 border-indigo-500/30 hover:border-arcade-action transition-all cursor-pointer shadow-xl hover:shadow-2xl hover:-translate-y-1"
             >
                 {/* Background Art */}
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/circuit-board.png')] opacity-10"></div>
@@ -65,7 +71,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                              <Swords size={14} />
                              <span className="text-xs font-black uppercase tracking-wider">Текущая миссия</span>
                          </div>
-                         <h2 className="text-3xl font-display font-black text-white mb-2">Петли Времени</h2>
+                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">Петли Времени</h2>
                          <p className="text-gray-300 mb-6 font-medium">Уровень 5 • Босс: Бесконечный Цикл</p>
                          
                          {/* Progress Bar styled as HP */}
@@ -97,11 +103,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
-                        { title: "Реши 3 задачи", reward: "50 XP", icon: Zap, done: true, color: "text-yellow-400", border: "border-yellow-400/20" },
-                        { title: "Без ошибок", reward: "Сундук", icon: Gift, done: false, color: "text-arcade-primary", border: "border-arcade-primary/20" },
-                        { title: "Помоги другу", reward: "20 XP", icon: Bot, done: false, color: "text-arcade-mentor", border: "border-arcade-mentor/20" },
+                        { title: "Реши 3 задачи", reward: "50 XP", icon: Zap, done: true, color: "text-yellow-400", border: "border-yellow-400/20", link: View.PRACTICE },
+                        { title: "Без ошибок", reward: "Сундук", icon: Gift, done: false, color: "text-arcade-primary", border: "border-arcade-primary/20", link: View.COURSES },
+                        { title: "Помоги другу", reward: "20 XP", icon: Bot, done: false, color: "text-arcade-mentor", border: "border-arcade-mentor/20", link: View.AI_CHAT },
                     ].map((quest, i) => (
-                        <div key={i} className={`bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform`}>
+                        <div 
+                            key={i} 
+                            onClick={() => setView(quest.link)}
+                            className={`bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform cursor-pointer hover:border-white/20`}
+                        >
                             <div className={`size-12 rounded-full flex items-center justify-center ${quest.done ? 'bg-arcade-success text-white' : 'bg-white/5 ' + quest.color}`}>
                                 {quest.done ? <Award size={24} /> : <quest.icon size={24} />}
                             </div>
@@ -125,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div className="bg-arcade-card border border-white/5 rounded-3xl p-6 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-display font-black text-white">Статистика</h3>
-                    <button className="text-xs font-bold text-arcade-primary hover:underline">Подробнее</button>
+                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">Подробнее</button>
                 </div>
                 
                 <div className="space-y-4">
@@ -154,7 +164,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             </div>
 
             {/* Quick Play / Mini Games */}
-            <div className="bg-gradient-to-b from-arcade-primary to-purple-800 rounded-3xl p-6 text-center text-white relative overflow-hidden shadow-neon-purple group cursor-pointer hover:scale-[1.02] transition-transform">
+            <div 
+                onClick={() => setView(View.PRACTICE)}
+                className="bg-gradient-to-b from-arcade-primary to-purple-800 rounded-3xl p-6 text-center text-white relative overflow-hidden shadow-neon-purple group cursor-pointer hover:scale-[1.02] transition-transform"
+            >
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-20"></div>
                 <Sparkles className="absolute top-4 left-4 text-white/40 animate-pulse" />
                 <Sparkles className="absolute bottom-4 right-4 text-white/40 animate-pulse delay-700" />
