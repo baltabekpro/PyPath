@@ -10,13 +10,24 @@ export enum View {
 }
 
 export interface User {
+  id?: string;
   name: string;
+  email?: string;
+  fullName?: string;
   level: string;
   levelNum: number;
   xp: number;
+  maxXp?: number;
   streak: number;
   rank: number;
   avatar: string;
+  bio?: string;
+  league?: string;
+  settings?: {
+    theme: string;
+    notifications: boolean;
+    sound: boolean;
+  };
 }
 
 export interface Course {
@@ -28,7 +39,7 @@ export interface Course {
   icon: string;
   color: string;
   difficulty: string;
-  stars?: number;     // 0-3 stars for completed levels
-  isBoss?: boolean;   // Marks a boss level
-  locked?: boolean;   // Explicit lock status
+  stars: number;
+  isBoss: boolean;
+  locked: boolean;
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Flame, Bot, ChevronRight, Zap, Target, Play, Award, Sparkles, Gift, Clock, Swords, Lock } from 'lucide-react';
-import { COURSES, CURRENT_USER } from '../constants';
+import { COURSES, CURRENT_USER, STATS } from '../constants';
 import { View } from '../types';
 
 interface DashboardProps {
@@ -144,21 +144,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                             <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
                             <span className="font-bold text-gray-300 text-sm">Всего XP</span>
                         </div>
-                        <span className="font-mono font-bold text-white">12,450</span>
+                        <span className="font-mono font-bold text-white">{STATS.totalXp.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
                             <span className="font-bold text-gray-300 text-sm">Задач решено</span>
                         </div>
-                        <span className="font-mono font-bold text-white">42</span>
+                        <span className="font-mono font-bold text-white">{STATS.problemsSolved}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
                             <span className="font-bold text-gray-300 text-sm">Время в коде</span>
                         </div>
-                        <span className="font-mono font-bold text-white">14ч 30м</span>
+                        <span className="font-mono font-bold text-white">{STATS.codingHours}ч</span>
                     </div>
                 </div>
             </div>

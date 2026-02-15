@@ -1,40 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquare, Heart, Share2, MoreHorizontal, Image, Code, Hash, TrendingUp, Search, Filter } from 'lucide-react';
-import { CURRENT_USER } from '../constants';
-
-const MOCK_POSTS = [
-  {
-    id: 1,
-    author: { name: "Дмитрий К.", avatar: "https://i.pravatar.cc/150?u=dmitry", level: 24 },
-    time: "2 ч. назад",
-    content: "Ребята, кто работал с FastAPI? Стоит ли переходить с Flask для микросервисов? Интересует производительность и типизация.",
-    tags: ["FastAPI", "Backend", "Python3"],
-    likes: 42,
-    comments: 15,
-    liked: true
-  },
-  {
-    id: 2,
-    author: { name: "Анна С.", avatar: "https://i.pravatar.cc/150?u=anna", level: 18 },
-    time: "5 ч. назад",
-    content: "Наконец-то разобралась с генераторами списков! Код стал в 3 раза короче. Вот пример того, как я это сделала:",
-    code: "users = [u.name for u in db.users if u.is_active]\n# Вместо цикла for из 4 строк!",
-    tags: ["Refactoring", "CleanCode"],
-    likes: 128,
-    comments: 8,
-    liked: false
-  },
-  {
-    id: 3,
-    author: { name: "Сергей В.", avatar: "https://i.pravatar.cc/150?u=sergey", level: 45 },
-    time: "1 д. назад",
-    content: "Запустил свой первый ML-модель в продакшн! Использовал PyTorch и Docker. Если есть вопросы по деплою — задавайте в комментах.",
-    tags: ["MachineLearning", "DevOps", "PyTorch"],
-    likes: 350,
-    comments: 42,
-    liked: false
-  }
-];
+import { CURRENT_USER, POSTS } from '../constants';
 
 const TOP_TAGS = [
   { name: "Python", count: 1250 },
@@ -109,7 +75,7 @@ export const Community: React.FC = () => {
 
             {/* Posts */}
             <div className="space-y-4">
-                {MOCK_POSTS.map(post => (
+                {POSTS.map((post: any) => (
                     <div key={post.id} className="bg-py-surface border border-py-accent rounded-2xl p-6 hover:border-py-green/30 transition-colors">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
@@ -133,7 +99,7 @@ export const Community: React.FC = () => {
                         )}
 
                         <div className="flex flex-wrap gap-2 mb-4">
-                            {post.tags.map(tag => (
+                            {post.tags.map((tag: string) => (
                                 <span key={tag} className="text-xs bg-py-accent/50 text-py-muted px-2 py-1 rounded-md hover:text-py-green cursor-pointer transition-colors">
                                     #{tag}
                                 </span>

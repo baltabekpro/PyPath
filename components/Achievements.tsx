@@ -1,141 +1,9 @@
 import React, { useState } from 'react';
-import { Shield, Zap, Target, Flame, Bug, Code2, Coffee, Globe, Lock, Trophy, Star, Gift, Share2, X, Sword, Crown, Eye, LockKeyhole, Sparkles } from 'lucide-react';
+import { Trophy, Sparkles, Share2, X } from 'lucide-react';
+import { ACHIEVEMENTS, getIconComponent } from '../constants';
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 type Category = 'all' | 'coding' | 'community' | 'streak' | 'secret';
-
-interface Achievement {
-    id: number;
-    title: string;
-    description: string;
-    flavorText: string; // Artistic description
-    icon: any;
-    rarity: Rarity;
-    category: Category;
-    progress: number;
-    maxProgress: number;
-    unlocked: boolean;
-    date?: string;
-    globalRate?: number; // % of players who have this
-    xpReward: number;
-}
-
-const ACHIEVEMENTS_LIST: Achievement[] = [
-    { 
-        id: 1, 
-        title: 'Первый Байт', 
-        description: 'Завершите первый урок', 
-        flavorText: 'Даже самый сложный алгоритм начинается с одной строки кода.',
-        icon: Code2, 
-        rarity: 'common', 
-        category: 'coding',
-        progress: 1, 
-        maxProgress: 1, 
-        unlocked: true, 
-        date: '12.03.2024',
-        globalRate: 85,
-        xpReward: 50
-    },
-    { 
-        id: 2, 
-        title: 'Воин Кода', 
-        description: 'Решите 50 задач', 
-        flavorText: 'Твоя клавиатура дымится, а баги бегут в ужасе.',
-        icon: Sword, 
-        rarity: 'rare', 
-        category: 'coding',
-        progress: 50, 
-        maxProgress: 50, 
-        unlocked: true, 
-        date: '15.03.2024',
-        globalRate: 32,
-        xpReward: 200
-    },
-    { 
-        id: 3, 
-        title: 'Вечный Огонь', 
-        description: 'Стрик 30 дней подряд', 
-        flavorText: 'Дисциплина — это мост между целью и достижением.',
-        icon: Flame, 
-        rarity: 'epic', 
-        category: 'streak',
-        progress: 12, 
-        maxProgress: 30, 
-        unlocked: false,
-        globalRate: 5,
-        xpReward: 500
-    },
-    { 
-        id: 4, 
-        title: 'Дебаггер 80 lvl', 
-        description: 'Найдите 20 ошибок в коде', 
-        flavorText: 'Ты видишь матрицу. Ты чувствуешь сбои.',
-        icon: Bug, 
-        rarity: 'rare', 
-        category: 'coding',
-        progress: 12, 
-        maxProgress: 20, 
-        unlocked: false,
-        globalRate: 25,
-        xpReward: 150
-    },
-    { 
-        id: 5, 
-        title: 'Архитектор Матрицы', 
-        description: 'Создайте свою первую нейросеть', 
-        flavorText: 'Теперь ты не просто пользователь. Ты — Создатель.',
-        icon: Crown, 
-        rarity: 'legendary', 
-        category: 'coding',
-        progress: 0, 
-        maxProgress: 1, 
-        unlocked: false,
-        globalRate: 0.8,
-        xpReward: 2000
-    },
-    { 
-        id: 6, 
-        title: 'Душа Компании', 
-        description: 'Получите 100 лайков на форуме', 
-        flavorText: 'Твои знания освещают путь другим.',
-        icon: Gift, 
-        rarity: 'epic', 
-        category: 'community',
-        progress: 45, 
-        maxProgress: 100, 
-        unlocked: false,
-        globalRate: 12,
-        xpReward: 400
-    },
-    { 
-        id: 7, 
-        title: '?? Hidden ??', 
-        description: 'Секретное достижение', 
-        flavorText: 'Его тайну знают лишь избранные.',
-        icon: LockKeyhole, 
-        rarity: 'legendary', 
-        category: 'secret',
-        progress: 0, 
-        maxProgress: 1, 
-        unlocked: false,
-        globalRate: 0.01,
-        xpReward: 5000
-    },
-    { 
-        id: 8, 
-        title: 'Снайпер', 
-        description: '100% точность в 5 тестах подряд', 
-        flavorText: 'Ни одного промаха. Чистое исполнение.',
-        icon: Target, 
-        rarity: 'rare', 
-        category: 'coding',
-        progress: 3, 
-        maxProgress: 5, 
-        unlocked: false,
-        globalRate: 18,
-        xpReward: 250
-    },
-];
 
 const RARITY_STYLES = {
     common: {
@@ -176,8 +44,8 @@ export const Achievements: React.FC = () => {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [filter, setFilter] = useState<Category>('all');
 
-    const unlockedCount = ACHIEVEMENTS_LIST.filter(a => a.unlocked).length;
-    const totalCount = ACHIEVEMENTS_LIST.length;
+    const unlockedCount = ACHIEVEMENTS.filter((a: any) => a.unlocked).length;
+    const totalCount = ACHIEVEMENTS.length;
     const completionPercent = Math.round((unlockedCount / totalCount) * 100);
     
     // Calculate Rank
@@ -186,8 +54,8 @@ export const Achievements: React.FC = () => {
     if (completionPercent > 60) rank = "Хранитель Байт";
     if (completionPercent > 90) rank = "Легендарный Архивариус";
 
-    const filteredList = ACHIEVEMENTS_LIST.filter(a => filter === 'all' || a.category === filter);
-    const selectedAchievement = ACHIEVEMENTS_LIST.find(a => a.id === selectedId);
+    const filteredList = ACHIEVEMENTS.filter((a: any) => filter === 'all' || a.category === filter);
+    const selectedAchievement = ACHIEVEMENTS.find((a: any) => a.id === selectedId);
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6 min-h-screen">
@@ -257,9 +125,10 @@ export const Achievements: React.FC = () => {
 
             {/* Trophy Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                {filteredList.map(ach => {
-                    const style = RARITY_STYLES[ach.rarity];
+                {filteredList.map((ach: any) => {
+                    const style = RARITY_STYLES[ach.rarity as Rarity];
                     const isSecret = ach.category === 'secret' && !ach.unlocked;
+                    const IconComponent = getIconComponent(ach.icon);
 
                     return (
                         <div 
@@ -309,7 +178,7 @@ export const Achievements: React.FC = () => {
                                     relative z-10 size-16 md:size-20 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg
                                     ${ach.unlocked ? style.iconBg : 'bg-slate-800'}
                                 `}>
-                                    <ach.icon 
+                                    <IconComponent
                                         size={32} 
                                         strokeWidth={1.5} 
                                         className={`
@@ -343,8 +212,9 @@ export const Achievements: React.FC = () => {
 
             {/* DETAIL MODAL */}
             {selectedAchievement && (() => {
-                const style = RARITY_STYLES[selectedAchievement.rarity];
+                const style = RARITY_STYLES[selectedAchievement.rarity as Rarity];
                 const isSecret = selectedAchievement.category === 'secret' && !selectedAchievement.unlocked;
+                const IconComponent = getIconComponent(selectedAchievement.icon);
 
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -374,7 +244,7 @@ export const Achievements: React.FC = () => {
                                     ${selectedAchievement.unlocked ? style.iconBg : 'bg-slate-800 grayscale'}
                                     ${selectedAchievement.rarity === 'legendary' && selectedAchievement.unlocked ? 'animate-pulse-glow' : ''}
                                 `}>
-                                    <selectedAchievement.icon size={64} className={selectedAchievement.unlocked ? style.text : 'text-gray-500'} strokeWidth={1.5} />
+                                    <IconComponent size={64} className={selectedAchievement.unlocked ? style.text : 'text-gray-500'} strokeWidth={1.5} />
                                     {selectedAchievement.unlocked && <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-50"></div>}
                                 </div>
 

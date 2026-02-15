@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Folder, Settings, ChevronDown, PanelLeftClose, PanelLeftOpen, FileCode, FileText, Sparkles, CheckCircle2, Terminal as TerminalIcon, Bot, HelpCircle, Code, Maximize2, Minimize2, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Play, Folder, Settings, ChevronDown, PanelLeftClose, PanelLeftOpen, FileCode, FileText, Sparkles, CheckCircle2, Terminal as TerminalIcon, Bot, HelpCircle, Code, Maximize2, Minimize2, AlertTriangle, Lightbulb, BookOpen, Flag, Scroll, Map } from 'lucide-react';
 import { AIChat } from './AIChat';
 import MonacoEditor from '@monaco-editor/react';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { MISSIONS } from '../constants';
 
 // --- Types ---
 interface FileNode {
@@ -16,13 +17,6 @@ interface FileNode {
   language?: string;
 }
 
-// --- Mock File System ---
-const INITIAL_FILES: FileNode[] = [
-  { id: 'root', name: 'mission_04_hack', type: 'folder', parentId: null, isOpen: true },
-  { id: '1', name: 'main_exploit.py', type: 'file', parentId: 'root', language: 'python', content: `def bypass_firewall(ip_address):\n    # МИССИЯ: Напиши цикл для перебора портов\n    ports = [80, 443, 8080]\n    \n    # Твой код здесь:\n    for port in ports:\n        print(f"Checking port {port}...")\n        \n    return "ACCESS DENIED"` },
-  { id: '2', name: 'config.json', type: 'file', parentId: 'root', language: 'json', content: `{\n  "target": "192.168.1.105",\n  "port": 8080,\n  "timeout": 5000\n}` },
-];
-
 const getFileIcon = (name: string) => {
     if (name.endsWith('.py')) return <FileCode size={16} className="text-blue-400" />;
     if (name.endsWith('.json')) return <FileText size={16} className="text-yellow-400" />;
@@ -30,10 +24,22 @@ const getFileIcon = (name: string) => {
 }
 
 export const EditorComponent: React.FC = () => {
-  const [files, setFiles] = useState<FileNode[]>(INITIAL_FILES);
-  const [openFiles, setOpenFiles] = useState<string[]>(['1']);
-  const [activeFileId, setActiveFileId] = useState<string>('1');
+  // Use the first mission from DB as default for now
+  const mission = MISSIONS[0];
+  
+  // Transform DB files to FileNode format if necessary, or just use them
+  const initialFiles: FileNode[] = [
+      { id: 'root', name: mission.id, type: 'folder', parentId: null, isOpen: true },
+      ...mission.files.map((f: any) => ({
+          ...f,
+          parentId: 'root'
+      }))
+  ];
+
+  const [files, setFiles] = useState<FileNode[]>(initialFiles);
+  const [activeFileId, setActiveFileId] = useState<string>(mission.files[0].id);
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<'mission' | 'files'>('mission');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -41,12 +47,11 @@ export const EditorComponent: React.FC = () => {
   
   // AI Bot State
   const [botEmotion, setBotEmotion] = useState<'idle' | 'thinking' | 'happy' | 'alert'>('idle');
-  const [botMessage, setBotMessage] = useState<string | null>("Жду твой код, напарник!");
+  const [botMessage, setBotMessage] = useState<string | null>("Я загрузил данные миссии. Ознакомься с задачами слева.");
 
   const editorRef = useRef<any>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<Terminal | null>(null);
-  const fitAddon = useRef<FitAddon | null>(null);
 
   const activeFile = files.find(f => f.id === activeFileId);
 
@@ -95,7 +100,6 @@ export const EditorComponent: React.FC = () => {
     term.open(terminalRef.current);
     setTimeout(() => fit.fit(), 100);
     xtermInstance.current = term;
-    fitAddon.current = fit;
     
     term.writeln('\x1b[1;36mNeural Link Established...\x1b[0m');
     term.write('$ ');
@@ -110,7 +114,7 @@ export const EditorComponent: React.FC = () => {
     setIsRunning(true);
     setIsTerminalOpen(true);
     setBotEmotion('thinking');
-    setBotMessage("Анализирую синтаксис...");
+    setBotMessage("Компилирую твое решение...");
     
     const term = xtermInstance.current;
     term.writeln('');
@@ -123,13 +127,15 @@ export const EditorComponent: React.FC = () => {
            term.writeln('Hint: Change return value to "GRANTED"');
            term.write('$ ');
            setBotEmotion('alert');
-           setBotMessage("Упс! Файрвол нас не пускает. Проверь return.");
+           setBotMessage("Внимание! Код работает, но цель не достигнута. Проверь условие выхода.");
        } else {
-           term.writeln('Ports scanned: 80, 443, 8080');
+           term.writeln('Checking port 80... Closed');
+           term.writeln('Checking port 443... Closed');
+           term.writeln('Checking port 8080... \x1b[1;32mOPEN\x1b[0m');
            term.writeln('\x1b[35m[OUTPUT]\x1b[0m ACCESS GRANTED');
            term.writeln('\x1b[1;32m> Mission Complete!\x1b[0m');
            setBotEmotion('happy');
-           setBotMessage("Отличная работа! Мы в системе.");
+           setBotMessage("Отлично! Мы внутри. +50 XP");
            setShowSuccess(true);
            setTimeout(() => setShowSuccess(false), 3000);
        }
@@ -140,23 +146,93 @@ export const EditorComponent: React.FC = () => {
   return (
     <div className="flex h-full overflow-hidden bg-[#0F172A] font-sans p-2 md:p-4 gap-4 relative pb-20 md:pb-4">
       
-      {/* --- Sidebar: File Manager (Hidden on Mobile by default) --- */}
+      {/* --- Sidebar: Mission & Files --- */}
       <aside className={`
           bg-[#0F172A] border border-slate-800/50 rounded-2xl flex flex-col shrink-0 transition-all duration-300 overflow-hidden relative
           shadow-lg backdrop-blur-md absolute md:relative z-20 h-full
-          ${isSidebarCollapsed ? 'w-0 opacity-0 border-0 p-0 pointer-events-none md:pointer-events-auto' : 'w-64 left-0'}
+          ${isSidebarCollapsed ? 'w-0 opacity-0 border-0 p-0 pointer-events-none md:pointer-events-auto' : 'w-80 left-0'}
       `}>
-        <div className="h-14 px-4 flex items-center justify-between border-b border-slate-800/50 bg-[#1E293B]/30">
-           <span className="text-xs font-bold text-gray-300 uppercase tracking-[0.2em] font-mono">Файлы</span>
-           <button onClick={() => setIsSidebarCollapsed(true)} className="text-gray-500 hover:text-white"><PanelLeftClose size={16}/></button>
+        {/* Tab Switcher */}
+        <div className="flex items-center p-2 gap-2 bg-[#1E293B]/50 border-b border-white/5">
+            <button 
+                onClick={() => setSidebarTab('mission')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'mission' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+            >
+                <Flag size={14} /> Миссия
+            </button>
+            <button 
+                onClick={() => setSidebarTab('files')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'files' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+            >
+                <Folder size={14} /> Файлы
+            </button>
+            <button onClick={() => setIsSidebarCollapsed(true)} className="p-2 text-gray-500 hover:text-white"><PanelLeftClose size={16}/></button>
         </div>
-        <div className="flex-1 py-2 overflow-y-auto custom-scrollbar bg-[#0F172A]">
-            {files.map(f => (
-                 <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-white/5 text-white' : 'border-transparent text-gray-500'}`} onClick={() => setActiveFileId(f.id)}>
-                    {getFileIcon(f.name)} <span>{f.name}</span>
-                 </div>
-            ))}
-        </div>
+
+        {/* --- MISSION TAB --- */}
+        {sidebarTab === 'mission' && (
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 bg-[#0F172A]">
+                
+                {/* Header */}
+                <div>
+                    <div className="text-[10px] text-arcade-action font-bold uppercase tracking-widest mb-1">{mission.chapter}</div>
+                    <h2 className="text-xl font-display font-black text-white leading-tight">{mission.title}</h2>
+                    <p className="text-sm text-gray-400 mt-2 leading-relaxed">{mission.description}</p>
+                </div>
+
+                {/* Objectives */}
+                <div className="bg-[#1E293B] rounded-xl p-4 border border-white/5">
+                    <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-arcade-success"/>
+                        Цели
+                    </h3>
+                    <div className="space-y-3">
+                        {mission.objectives.map((obj: any) => (
+                            <div key={obj.id} className="flex items-start gap-3 text-sm">
+                                <div className={`mt-0.5 size-4 rounded border flex items-center justify-center shrink-0 ${obj.completed ? 'bg-arcade-success border-arcade-success' : 'border-gray-600 bg-transparent'}`}>
+                                    {obj.completed && <CheckCircle2 size={12} className="text-[#0F172A]" strokeWidth={3} />}
+                                </div>
+                                <span className={obj.completed ? 'text-gray-500 line-through' : 'text-gray-200'}>{obj.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Theory Card */}
+                <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 rounded-xl p-4 border border-indigo-500/30">
+                    <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <BookOpen size={14} />
+                        База Знаний
+                    </h3>
+                    <div className="text-sm text-gray-300 space-y-2">
+                         <p className="font-bold text-white">{mission.theory.title}</p>
+                         <div className="text-xs opacity-80 whitespace-pre-wrap font-mono bg-black/30 p-2 rounded-lg border border-white/5">
+                             {mission.theory.content}
+                         </div>
+                    </div>
+                    
+                    <button 
+                        onClick={() => { setAiChatOpen(true); }}
+                        className="mt-4 w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 text-xs font-bold rounded-lg transition-colors border border-indigo-500/30 flex items-center justify-center gap-2"
+                    >
+                        <Bot size={14} />
+                        Спросить Ментора
+                    </button>
+                </div>
+
+            </div>
+        )}
+
+        {/* --- FILES TAB --- */}
+        {sidebarTab === 'files' && (
+            <div className="flex-1 py-2 overflow-y-auto custom-scrollbar bg-[#0F172A]">
+                {files.map(f => (
+                     <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-white/5 text-white' : 'border-transparent text-gray-500'}`} onClick={() => setActiveFileId(f.id)}>
+                        {getFileIcon(f.name)} <span>{f.name}</span>
+                     </div>
+                ))}
+            </div>
+        )}
       </aside>
 
       {/* --- Main Area: Code Editor --- */}
@@ -169,6 +245,7 @@ export const EditorComponent: React.FC = () => {
                     <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 text-gray-400 hover:text-white"><PanelLeftOpen size={20}/></button>
                 )}
                 <span className="text-xs font-bold text-gray-400 md:hidden">{activeFile?.name}</span>
+                {!isSidebarCollapsed && <span className="text-xs font-bold text-gray-500 font-mono hidden md:inline-block">/ {activeFile?.name}</span>}
              </div>
 
              <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none opacity-50 md:opacity-100">

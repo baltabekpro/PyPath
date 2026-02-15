@@ -1,35 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Crown, TrendingUp, ChevronUp, ChevronDown, Minus, Globe, Users, School, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
-import { CURRENT_USER } from '../constants';
-
-interface Leader {
-  rank: number;
-  name: string;
-  xp: number;
-  level: number;
-  avatar: string;
-  streak: number;
-  change: 'up' | 'down' | 'same';
-  changeAmount?: number;
-  league: string;
-  title: string;
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
-  isFriend?: boolean;
-  isSchool?: boolean;
-}
-
-const ALL_LEADERS: Leader[] = [
-  { rank: 1, name: "CyberNinja", xp: 45200, level: 42, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", streak: 150, change: "up", changeAmount: 2, league: "Diamond", title: "Гроза Циклов", tier: 'diamond', isFriend: true, isSchool: true },
-  { rank: 2, name: "Pythonista", xp: 44100, level: 40, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka", streak: 89, change: "up", changeAmount: 1, league: "Platinum", title: "Мастер Функций", tier: 'platinum', isSchool: true },
-  { rank: 3, name: "CodeMaster", xp: 42500, level: 38, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jude", streak: 45, change: "down", changeAmount: 1, league: "Gold", title: "Баг-Хантер", tier: 'gold', isFriend: true },
-  { rank: 4, name: "DevOps_King", xp: 38000, level: 35, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kyle", streak: 12, change: "same", league: "Gold", title: "Архитектор", tier: 'gold', isSchool: true },
-  { rank: 5, name: "AlgoQueen", xp: 36500, level: 34, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe", streak: 30, change: "up", changeAmount: 5, league: "Silver", title: "Алгоритмик", tier: 'silver', isFriend: true, isSchool: true },
-  { rank: 6, name: "BugHunter", xp: 34200, level: 32, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max", streak: 5, change: "down", changeAmount: 2, league: "Silver", title: "Тестировщик", tier: 'silver' },
-  { rank: 7, name: "Rusty", xp: 31000, level: 29, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tyler", streak: 21, change: "same", league: "Bronze", title: "Новичок", tier: 'bronze', isFriend: true },
-  { rank: 8, name: "NetRunner", xp: 29500, level: 28, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Maria", streak: 14, change: "up", changeAmount: 1, league: "Bronze", title: "Скриптер", tier: 'bronze', isSchool: true },
-  { rank: 9, name: "PixelArt", xp: 28200, level: 27, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo", streak: 3, change: "down", changeAmount: 3, league: "Bronze", title: "Дизайнер", tier: 'bronze' },
-  { rank: 42, name: CURRENT_USER.name, xp: CURRENT_USER.xp, level: CURRENT_USER.levelNum, avatar: CURRENT_USER.avatar, streak: CURRENT_USER.streak, change: 'up', changeAmount: 5, league: "Diamond", title: "Кибер-Ниндзя", tier: 'diamond', isFriend: true, isSchool: true },
-];
+import { Crown, ChevronUp, ChevronDown, Minus, Globe, Users, School, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
+import { CURRENT_USER, LEADERBOARD } from '../constants';
 
 const formatXP = (num: number) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -62,12 +33,12 @@ export const Leaderboard: React.FC = () => {
   const [period, setPeriod] = useState<'all' | 'month'>('all');
 
   const displayedLeaders = useMemo(() => {
-      let filtered = ALL_LEADERS;
+      let filtered = [...LEADERBOARD]; // Create a copy from the constant
       
       if (scope === 'friends') {
-          filtered = ALL_LEADERS.filter(l => l.isFriend || l.name === CURRENT_USER.name);
+          filtered = LEADERBOARD.filter((l: any) => l.isFriend || l.name === CURRENT_USER.name);
       } else if (scope === 'school') {
-          filtered = ALL_LEADERS.filter(l => l.isSchool || l.name === CURRENT_USER.name);
+          filtered = LEADERBOARD.filter((l: any) => l.isSchool || l.name === CURRENT_USER.name);
       }
 
       // Re-rank after filtering for display purposes

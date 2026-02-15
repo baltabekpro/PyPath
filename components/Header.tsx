@@ -1,13 +1,15 @@
 import React from 'react';
-import { Search, Bell, Crown, Menu, Zap } from 'lucide-react';
+import { Search, Bell, Crown, Menu } from 'lucide-react';
 import { CURRENT_USER } from '../constants';
 
 interface HeaderProps {
     onMenuClick?: () => void;
     onProfileClick?: () => void;
+    onNotificationsClick?: () => void;
+    onPremiumClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick, onPremiumClick }) => {
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-4 sticky top-0 bg-arcade-bg/80 backdrop-blur-md z-30 border-b border-white/5">
       
@@ -49,10 +51,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick }) =
       {/* Actions */}
       <div className="flex items-center gap-3 md:gap-6">
         <div className="flex gap-3">
-          <button className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-arcade-card border border-white/5 text-gray-400 hover:text-arcade-success hover:border-arcade-success/50 transition-all active:scale-95 shadow-sm">
-            <Bell size={22} strokeWidth={2.5} />
+          {/* Notification Button */}
+          <button 
+            onClick={onNotificationsClick}
+            className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-arcade-card border border-white/5 text-gray-300 hover:text-white hover:bg-white/5 transition-all active:scale-95 shadow-lg group relative"
+          >
+            <Bell size={22} strokeWidth={2.5} className="group-hover:animate-shake" />
+            <div className="absolute top-2 right-3 size-2 bg-red-500 rounded-full border border-[#1E293B] hidden group-hover:block"></div>
           </button>
-          <button className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-neon-orange transition-transform hover:scale-110 active:scale-95 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1">
+          
+          {/* Premium/Crown Button */}
+          <button 
+            onClick={onPremiumClick}
+            className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-neon-orange transition-transform hover:scale-110 active:scale-95 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 relative group overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
             <Crown size={24} strokeWidth={3} />
           </button>
         </div>
@@ -64,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick }) =
         >
           <div className="text-right hidden sm:block group-hover:opacity-80 transition-opacity">
             <p className="text-sm font-display font-bold leading-none text-white mb-1">{CURRENT_USER.name}</p>
-            <p className="text-[10px] font-bold text-arcade-mentor uppercase tracking-wide">{CURRENT_USER.level}</p>
+            <p className="text-xs font-bold text-arcade-mentor uppercase tracking-wide">{CURRENT_USER.level}</p>
           </div>
           <div className="relative">
               <div className="absolute inset-0 bg-arcade-primary rounded-2xl blur-md opacity-50 group-hover:opacity-100 transition-opacity"></div>
