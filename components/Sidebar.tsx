@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from '../types';
-import { LayoutGrid, Map, Code, Settings, Trophy, Crown, Bot, Gamepad2, Volume2, User, Menu } from 'lucide-react';
+import { Gamepad2, Volume2 } from 'lucide-react';
+import { SIDEBAR_NAV_ITEMS, UI_TEXTS, getIconComponent } from '../constants';
 
 interface SidebarProps {
   currentView: View;
@@ -10,16 +11,13 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
+  const text = UI_TEXTS?.sidebar ?? {};
   
-  const navItems = [
-    { view: View.DASHBOARD, label: 'Лобби', icon: LayoutGrid, mobile: true },
-    { view: View.COURSES, label: 'Карта', icon: Map, mobile: true },
-    { view: View.PRACTICE, label: 'Арена', icon: Code, mobile: false }, // Hidden on mobile bar, accessible via FAB or Map
-    { view: View.AI_CHAT, label: 'Оракул', icon: Bot, mobile: true },
-    { view: View.PROFILE, label: 'Герой', icon: User, mobile: true },
-    { view: View.LEADERBOARD, label: 'Топ', icon: Crown, mobile: false },
-    { view: View.ACHIEVEMENTS, label: 'Трофеи', icon: Trophy, mobile: false },
-  ];
+  const navItems = (SIDEBAR_NAV_ITEMS || []).map((item: any) => ({
+    ...item,
+    view: item.view as View,
+    Icon: getIconComponent(item.icon),
+  }));
 
   // --- DESKTOP SIDEBAR ---
   return (
@@ -37,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
               <Gamepad2 size={28} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col justify-center">
-              <h1 className="text-2xl font-display font-black leading-none tracking-tight text-white mb-0.5 group-hover:text-arcade-action transition-colors">Code<br/>Arcade</h1>
+              <h1 className="text-2xl font-display font-black leading-none tracking-tight text-white mb-0.5 group-hover:text-arcade-action transition-colors">{text.logoLine1}<br/>{text.logoLine2}</h1>
             </div>
           </div>
 
@@ -53,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
                     : 'text-arcade-muted hover:text-white hover:bg-white/10'
                 }`}
               >
-                <item.icon 
+                <item.Icon 
                   size={24} 
                   className={`transition-transform duration-300 ${currentView === item.view ? 'scale-110' : 'group-hover:scale-110'}`}
                   strokeWidth={2.5} 
@@ -72,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
                   <div className="bg-arcade-mentor/20 p-2 rounded-lg text-arcade-mentor">
                       <Volume2 size={20} />
                   </div>
-                  <span className="text-sm font-bold text-gray-300">Звуки</span>
+                    <span className="text-sm font-bold text-gray-300">{text.soundLabel}</span>
               </div>
               <div className="w-10 h-5 bg-arcade-success rounded-full relative cursor-pointer shadow-neon-green">
                   <div className="absolute right-1 top-1 size-3 bg-white rounded-full"></div>
@@ -95,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
                     }`}
                  >
                     <div className={`p-1.5 rounded-xl transition-all ${currentView === item.view ? 'bg-arcade-primary/20 -translate-y-2 scale-110 shadow-neon-purple' : ''}`}>
-                        <item.icon size={24} strokeWidth={currentView === item.view ? 2.5 : 2} />
+                        <item.Icon size={24} strokeWidth={currentView === item.view ? 2.5 : 2} />
                     </div>
                     <span className={`text-[10px] font-bold ${currentView === item.view ? 'opacity-100' : 'opacity-0'}`}>
                         {item.label}

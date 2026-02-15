@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Crown, ChevronUp, ChevronDown, Minus, Globe, Users, School, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
-import { CURRENT_USER, LEADERBOARD } from '../constants';
+import { CURRENT_USER, LEADERBOARD, UI_TEXTS } from '../constants';
 
 const formatXP = (num: number) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -31,6 +31,7 @@ const getTierColor = (tier: string) => {
 export const Leaderboard: React.FC = () => {
   const [scope, setScope] = useState<'global' | 'friends' | 'school'>('global');
   const [period, setPeriod] = useState<'all' | 'month'>('all');
+    const text = UI_TEXTS?.leaderboard ?? {};
 
   const displayedLeaders = useMemo(() => {
       let filtered = [...LEADERBOARD]; // Create a copy from the constant
@@ -59,9 +60,9 @@ export const Leaderboard: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-8">
               <div>
                   <h1 className="text-3xl md:text-4xl font-display font-black text-white italic uppercase tracking-tighter transform -skew-x-6">
-                      Арена <span className="text-transparent bg-clip-text bg-gradient-to-r from-arcade-action to-red-500">Чемпионов</span>
+                      {text.titlePrefix} <span className="text-transparent bg-clip-text bg-gradient-to-r from-arcade-action to-red-500">{text.titleHighlight}</span>
                   </h1>
-                  <p className="text-arcade-muted font-bold mt-1">Сезон 4: Эра Нейросетей</p>
+                  <p className="text-arcade-muted font-bold mt-1">{text.season}</p>
               </div>
 
               {/* Filters */}
@@ -70,19 +71,19 @@ export const Leaderboard: React.FC = () => {
                     onClick={() => setScope('global')}
                     className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${scope === 'global' ? 'bg-arcade-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
                   >
-                      <Globe size={16} /> Мир
+                                            <Globe size={16} /> {text?.scopes?.global}
                   </button>
                   <button 
                     onClick={() => setScope('friends')}
                     className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${scope === 'friends' ? 'bg-arcade-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
                   >
-                      <Users size={16} /> Друзья
+                                            <Users size={16} /> {text?.scopes?.friends}
                   </button>
                   <button 
                     onClick={() => setScope('school')}
                     className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${scope === 'school' ? 'bg-arcade-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
                   >
-                      <School size={16} /> Школа
+                                            <School size={16} /> {text?.scopes?.school}
                   </button>
               </div>
           </div>
@@ -93,13 +94,13 @@ export const Leaderboard: React.FC = () => {
                      onClick={() => setPeriod('all')}
                      className={`px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${period === 'all' ? 'bg-white text-black shadow-neon-white' : 'text-gray-500 hover:text-white'}`}
                    >
-                       За все время
+                                             {text?.periods?.all}
                    </button>
                    <button 
                      onClick={() => setPeriod('month')}
                      className={`px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${period === 'month' ? 'bg-white text-black shadow-neon-white' : 'text-gray-500 hover:text-white'}`}
                    >
-                       Этот месяц
+                                             {text?.periods?.month}
                    </button>
                </div>
           </div>
@@ -224,17 +225,17 @@ export const Leaderboard: React.FC = () => {
                    <div className="font-mono font-black text-white text-xl w-8 text-center">42</div>
                    <div className="size-12 rounded-full border-2 border-arcade-primary p-0.5 shadow-neon-purple relative">
                         <img src={CURRENT_USER.avatar} className="size-full rounded-full bg-black object-cover" />
-                        <div className="absolute -top-1 -right-1 bg-arcade-primary text-white text-[10px] font-bold px-1.5 rounded-full border border-[#1E293B]">YOU</div>
+                        <div className="absolute -top-1 -right-1 bg-arcade-primary text-white text-[10px] font-bold px-1.5 rounded-full border border-[#1E293B]">{text.youBadge}</div>
                    </div>
                    <div className="hidden sm:block">
                        <h3 className="font-bold text-white">{CURRENT_USER.name}</h3>
-                       <p className="text-xs text-arcade-mentor font-medium">Кибер-ниндзя • Diamond League</p>
+                       <p className="text-xs text-arcade-mentor font-medium">{text.currentUserSubtitle}</p>
                    </div>
                </div>
                
                <div className="flex items-center gap-6">
                    <div className="text-right hidden md:block">
-                       <p className="text-[10px] text-gray-400 font-bold uppercase">До след. ранга</p>
+                       <p className="text-[10px] text-gray-400 font-bold uppercase">{text.nextRank}</p>
                        <div className="w-32 h-1.5 bg-gray-700 rounded-full mt-1 overflow-hidden">
                            <div className="h-full bg-arcade-primary w-[75%] rounded-full shadow-[0_0_10px_#A855F7]"></div>
                        </div>

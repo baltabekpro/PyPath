@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { CURRENT_USER, SKILLS, FRIENDS, STATS, getIconComponent } from '../constants';
-import { Shield, Target, Flame, Medal, Bug, Edit3, Settings, Share2, MapPin, Github, Code, Zap, Trophy, UserPlus, Circle, Swords, Lock, Search, Plus } from 'lucide-react';
+import { CURRENT_USER, SKILLS, FRIENDS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
+import { Shield, Target, Flame, Medal, Edit3, Share2, MapPin, Github, Zap, Trophy, UserPlus, Swords, Search, Plus } from 'lucide-react';
 import { View } from '../types';
 
 interface ProfileProps {
@@ -15,14 +15,6 @@ const RARITY = {
     epic: 'border-purple-500 bg-purple-900/20 shadow-[0_0_10px_rgba(168,85,247,0.3)]',
     legendary: 'border-yellow-400 bg-yellow-900/20 shadow-[0_0_15px_rgba(250,204,21,0.4)] animate-pulse-glow',
 };
-
-const SHOWCASE_TROPHIES = [
-    { id: 1, icon: Trophy, rarity: 'legendary', name: 'Первый Турнир' },
-    { id: 2, icon: Bug, rarity: 'epic', name: 'Охотник' },
-    { id: 3, icon: Code, rarity: 'rare', name: 'Чистый Код' },
-    null, // Locked slot
-    null  // Locked slot
-];
 
 // Helper for counting animation
 const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' }) => {
@@ -43,6 +35,9 @@ const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' 
 
 export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   const [loadRadar, setLoadRadar] = useState(false);
+    const showcaseTrophies = PROFILE_UI?.showcaseTrophies ?? [];
+    const text = UI_TEXTS?.profile ?? {};
+        const battleStatText = text.battleStats ?? {};
 
   useEffect(() => {
       // Small delay to trigger radar animation
@@ -50,10 +45,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   }, []);
 
   const battleStats = [
-    { label: 'Стрик', value: CURRENT_USER.streak, suffix: 'дн', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-    { label: 'Квесты', value: STATS.problemsSolved, suffix: '', icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-    { label: 'Ранг Лиги', value: CURRENT_USER.rank, suffix: '#', icon: Medal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
-    { label: 'Точность', value: STATS.accuracy, suffix: '%', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
+        { label: battleStatText.streak, value: CURRENT_USER.streak, suffix: 'дн', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+        { label: battleStatText.quests, value: STATS.problemsSolved, suffix: '', icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+        { label: battleStatText.leagueRank, value: CURRENT_USER.rank, suffix: '#', icon: Medal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+        { label: battleStatText.accuracy, value: STATS.accuracy, suffix: '%', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
   ];
 
   return (
@@ -78,7 +73,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     className="p-2 bg-black/30 backdrop-blur-md rounded-xl text-white hover:bg-white/10 transition-colors border border-white/10 hover:border-white/30 flex items-center gap-2"
                 >
                     <Edit3 size={20} />
-                    <span className="text-sm font-bold hidden md:inline">Редактировать</span>
+                    <span className="text-sm font-bold hidden md:inline">{text.edit}</span>
                 </button>
             </div>
         </div>
@@ -115,16 +110,16 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                         {CURRENT_USER.name}
                     </h1>
                     <p className="text-gray-400 font-medium max-w-lg mx-auto md:mx-0 leading-relaxed">
-                        {CURRENT_USER.bio || "Кибер-странник в поисках идеального алгоритма."}
+                        {CURRENT_USER.bio || text.defaultBio}
                     </p>
                     
                     {/* Tags / Badges */}
                     <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
                         <div className="px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20 flex items-center gap-2">
-                             <MapPin size={12} /> Moscow, Cyber City
+                            <MapPin size={12} /> {PROFILE_UI?.location}
                         </div>
                         <div className="px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-bold border border-purple-500/20 flex items-center gap-2">
-                             <Github size={12} /> @neo_coder
+                            <Github size={12} /> {PROFILE_UI?.github}
                         </div>
                     </div>
                 </div>
@@ -132,10 +127,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 {/* Action Buttons */}
                 <div className="flex gap-3 w-full md:w-auto">
                     <button className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-white text-black font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                        Добавить
+                        {text.add}
                     </button>
                     <button className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-arcade-card border border-white/10 text-white font-bold uppercase tracking-wide hover:bg-white/10 transition-colors">
-                        Сообщение
+                        {text.message}
                     </button>
                 </div>
             </div>
@@ -166,9 +161,9 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-display font-black text-xl text-white flex items-center gap-2">
                             <Zap size={20} className="text-yellow-400" />
-                            Матрица Навыков
+                            {text.skillsMatrix}
                         </h3>
-                        <div className="text-xs font-bold text-gray-500 bg-black/30 px-2 py-1 rounded">Last Updated: 1h ago</div>
+                        <div className="text-xs font-bold text-gray-500 bg-black/30 px-2 py-1 rounded">{text.lastUpdated}</div>
                     </div>
                     
                     <div className="h-[300px] w-full relative z-10">
@@ -203,22 +198,26 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 <div>
                      <h3 className="font-display font-black text-xl text-white mb-4 flex items-center gap-2">
                         <Trophy size={20} className="text-arcade-action" />
-                        Витрина Трофеев
+                                {text.showcase}
                      </h3>
                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                         {SHOWCASE_TROPHIES.map((item, i) => (
-                             <div key={i} className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 relative group cursor-pointer ${item ? RARITY[item.rarity as keyof typeof RARITY] : 'border-white/5 bg-white/5 border-dashed'}`}>
-                                 {item ? (
-                                     <>
-                                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <item.icon size={28} className="text-white drop-shadow-md group-hover:scale-110 transition-transform" />
-                                        <span className="text-[10px] font-bold text-gray-300 text-center leading-tight px-1">{item.name}</span>
-                                     </>
-                                 ) : (
-                                     <Plus size={24} className="text-gray-600" />
-                                 )}
-                             </div>
-                         ))}
+                         {showcaseTrophies.map((item: any, i: number) => {
+                             const isLocked = !item || item.locked;
+                             const TrophyIcon = item?.icon ? getIconComponent(item.icon) : null;
+                             return (
+                                <div key={i} className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 relative group cursor-pointer ${!isLocked ? RARITY[item.rarity as keyof typeof RARITY] : 'border-white/5 bg-white/5 border-dashed'}`}>
+                                    {!isLocked && TrophyIcon ? (
+                                        <>
+                                           <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                           <TrophyIcon size={28} className="text-white drop-shadow-md group-hover:scale-110 transition-transform" />
+                                           <span className="text-[10px] font-bold text-gray-300 text-center leading-tight px-1">{item.name}</span>
+                                        </>
+                                    ) : (
+                                        <Plus size={24} className="text-gray-600" />
+                                    )}
+                                </div>
+                             );
+                         })}
                      </div>
                 </div>
 
@@ -235,22 +234,22 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                             <div className="size-20 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg mb-4 rotate-3 border border-white/20">
                                 <Swords size={32} className="text-white" />
                             </div>
-                            <h3 className="text-white font-black text-lg uppercase tracking-wider">Cyber_School_1337</h3>
-                            <p className="text-indigo-300 text-xs font-bold mb-6">Класс A • Топ 5% Школ</p>
+                            <h3 className="text-white font-black text-lg uppercase tracking-wider">{text.schoolName}</h3>
+                            <p className="text-indigo-300 text-xs font-bold mb-6">{text.schoolClass}</p>
                             
                             <div className="w-full space-y-3">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">Участников</span>
+                                    <span className="text-gray-400">{text.members}</span>
                                     <span className="text-white font-bold">24</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">Общий XP</span>
+                                    <span className="text-gray-400">{text.totalXp}</span>
                                     <span className="text-arcade-primary font-bold">1.2M</span>
                                 </div>
                             </div>
 
                             <button className="w-full mt-6 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition-colors">
-                                Профиль Школы
+                                {text.schoolProfile}
                             </button>
                         </div>
                     </div>
@@ -259,7 +258,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 {/* Friends List */}
                 <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white">Друзья</h3>
+                        <h3 className="font-bold text-white">{text.friends}</h3>
                         <div className="bg-black/30 px-2 py-1 rounded-lg text-xs font-bold text-gray-400 border border-white/5">{FRIENDS.length}</div>
                     </div>
                     
@@ -273,7 +272,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-white group-hover:text-arcade-primary transition-colors">{friend.name}</p>
-                                        <p className="text-[10px] text-gray-500 font-bold uppercase">{friend.status === 'coding' ? 'Пишет код...' : `Lvl ${friend.level}`}</p>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase">{friend.status === 'coding' ? text.codingStatus : `Lvl ${friend.level}`}</p>
                                     </div>
                                 </div>
                                 <button className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
@@ -284,7 +283,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     </div>
                     
                     <button className="w-full mt-6 py-3 border-t border-white/5 text-xs font-bold text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
-                        <Search size={14} /> Найти друзей
+                        <Search size={14} /> {text.findFriends}
                     </button>
                 </div>
 

@@ -4,7 +4,7 @@ import { AIChat } from './AIChat';
 import MonacoEditor from '@monaco-editor/react';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
-import { MISSIONS } from '../constants';
+import { EDITOR_UI, MISSIONS, UI_TEXTS } from '../constants';
 
 // --- Types ---
 interface FileNode {
@@ -26,6 +26,11 @@ const getFileIcon = (name: string) => {
 export const EditorComponent: React.FC = () => {
   // Use the first mission from DB as default for now
   const mission = MISSIONS[0];
+    const learningData = EDITOR_UI?.learning ?? {};
+    const botMessages = EDITOR_UI?.botMessages ?? {};
+        const text = UI_TEXTS?.editor ?? {};
+        const textLearning = text.learning ?? {};
+        const textBot = text.botMessages ?? {};
   
   // Transform DB files to FileNode format if necessary, or just use them
   const initialFiles: FileNode[] = [
@@ -47,11 +52,12 @@ export const EditorComponent: React.FC = () => {
   
   // AI Bot State
   const [botEmotion, setBotEmotion] = useState<'idle' | 'thinking' | 'happy' | 'alert'>('idle');
-  const [botMessage, setBotMessage] = useState<string | null>("Я загрузил данные миссии. Ознакомься с задачами слева.");
+    const [botMessage, setBotMessage] = useState<string | null>(botMessages.initial || textBot.initial);
 
   const editorRef = useRef<any>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<Terminal | null>(null);
+    const fitAddonRef = useRef<FitAddon | null>(null);
 
   const activeFile = files.find(f => f.id === activeFileId);
 
@@ -84,37 +90,87 @@ export const EditorComponent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!terminalRef.current) return;
-    const term = new Terminal({
-      cursorBlink: true,
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: 12,
-      theme: {
-        background: '#0F172A',
-        foreground: '#10B981',
-      },
-      rows: 6,
-    });
-    const fit = new FitAddon();
-    term.loadAddon(fit);
-    term.open(terminalRef.current);
-    setTimeout(() => fit.fit(), 100);
-    xtermInstance.current = term;
-    
-    term.writeln('\x1b[1;36mNeural Link Established...\x1b[0m');
-    term.write('$ ');
+        if (!terminalRef.current) return;
 
-    const handleResize = () => fit.fit();
-    window.addEventListener('resize', handleResize);
-    return () => { window.removeEventListener('resize', handleResize); term.dispose(); };
+        let disposed = false;
+        let term: Terminal | null = null;
+        let fitTimeout: number | null = null;
+
+        const handleResize = () => {
+            const container = terminalRef.current;
+            if (!container || container.clientWidth === 0 || container.clientHeight === 0 || !fitAddonRef.current) return;
+            try {
+                fitAddonRef.current.fit();
+            } catch {
+            }
+        };
+
+        const initTimeout = window.setTimeout(() => {
+            if (disposed || !terminalRef.current || xtermInstance.current) return;
+
+            term = new Terminal({
+                cursorBlink: true,
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: 12,
+                theme: {
+                    background: '#0F172A',
+                    foreground: '#10B981',
+                },
+                rows: 6,
+            });
+
+            const fit = new FitAddon();
+            fitAddonRef.current = fit;
+            term.loadAddon(fit);
+            term.open(terminalRef.current);
+
+            fitTimeout = window.setTimeout(() => {
+                const container = terminalRef.current;
+                if (!container || container.clientWidth === 0 || container.clientHeight === 0 || !fitAddonRef.current) return;
+                try {
+                    fitAddonRef.current.fit();
+                } catch {
+                }
+            }, 100);
+
+            xtermInstance.current = term;
+            term.writeln('\x1b[1;36mNeural Link Established...\x1b[0m');
+            term.write('$ ');
+        }, 0);
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            disposed = true;
+            window.removeEventListener('resize', handleResize);
+            window.clearTimeout(initTimeout);
+            if (fitTimeout !== null) window.clearTimeout(fitTimeout);
+            fitAddonRef.current = null;
+            if (term) term.dispose();
+            xtermInstance.current = null;
+        };
   }, []);
+
+    useEffect(() => {
+        if (!isTerminalOpen || !fitAddonRef.current) return;
+        const raf = window.requestAnimationFrame(() => {
+            const container = terminalRef.current;
+            if (!container || container.clientWidth === 0 || container.clientHeight === 0 || !fitAddonRef.current) return;
+            try {
+                fitAddonRef.current.fit();
+            } catch {
+            }
+        });
+
+        return () => window.cancelAnimationFrame(raf);
+    }, [isTerminalOpen]);
 
   const runCode = () => {
     if (!xtermInstance.current) return;
     setIsRunning(true);
     setIsTerminalOpen(true);
     setBotEmotion('thinking');
-    setBotMessage("Компилирую твое решение...");
+    setBotMessage(botMessages.running || textBot.running);
     
     const term = xtermInstance.current;
     term.writeln('');
@@ -127,7 +183,7 @@ export const EditorComponent: React.FC = () => {
            term.writeln('Hint: Change return value to "GRANTED"');
            term.write('$ ');
            setBotEmotion('alert');
-           setBotMessage("Внимание! Код работает, но цель не достигнута. Проверь условие выхода.");
+           setBotMessage(botMessages.error || textBot.error);
        } else {
            term.writeln('Checking port 80... Closed');
            term.writeln('Checking port 443... Closed');
@@ -135,7 +191,7 @@ export const EditorComponent: React.FC = () => {
            term.writeln('\x1b[35m[OUTPUT]\x1b[0m ACCESS GRANTED');
            term.writeln('\x1b[1;32m> Mission Complete!\x1b[0m');
            setBotEmotion('happy');
-           setBotMessage("Отлично! Мы внутри. +50 XP");
+           setBotMessage(botMessages.success || textBot.success);
            setShowSuccess(true);
            setTimeout(() => setShowSuccess(false), 3000);
        }
@@ -158,13 +214,13 @@ export const EditorComponent: React.FC = () => {
                 onClick={() => setSidebarTab('mission')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'mission' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
             >
-                <Flag size={14} /> Миссия
+                <Flag size={14} /> {text.missionTab}
             </button>
             <button 
                 onClick={() => setSidebarTab('files')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'files' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
             >
-                <Folder size={14} /> Файлы
+                <Folder size={14} /> {text.filesTab}
             </button>
             <button onClick={() => setIsSidebarCollapsed(true)} className="p-2 text-gray-500 hover:text-white"><PanelLeftClose size={16}/></button>
         </div>
@@ -184,7 +240,7 @@ export const EditorComponent: React.FC = () => {
                 <div className="bg-[#1E293B] rounded-xl p-4 border border-white/5">
                     <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <CheckCircle2 size={14} className="text-arcade-success"/>
-                        Цели
+                        {text.goalsTitle}
                     </h3>
                     <div className="space-y-3">
                         {mission.objectives.map((obj: any) => (
@@ -202,7 +258,7 @@ export const EditorComponent: React.FC = () => {
                 <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 rounded-xl p-4 border border-indigo-500/30">
                     <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <BookOpen size={14} />
-                        База Знаний
+                        {text.knowledgeBaseTitle}
                     </h3>
                     <div className="text-sm text-gray-300 space-y-2">
                          <p className="font-bold text-white">{mission.theory.title}</p>
@@ -210,13 +266,44 @@ export const EditorComponent: React.FC = () => {
                              {mission.theory.content}
                          </div>
                     </div>
+
+                    <div className="mt-4 space-y-3">
+                        <div className="bg-[#0F172A]/70 border border-white/5 rounded-lg p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 mb-2">{text.expectedOutputLabel}</p>
+                            <div className="font-mono text-xs text-emerald-200 bg-black/30 rounded-md p-2 border border-emerald-500/20">
+                                {learningData.expectedOutput || textLearning.expectedOutput}
+                            </div>
+                        </div>
+
+                        <div className="bg-[#0F172A]/70 border border-white/5 rounded-lg p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-orange-300 mb-2 flex items-center gap-1.5">
+                                <AlertTriangle size={12} />
+                                {text.commonErrorsTitle}
+                            </p>
+                            <ul className="text-xs text-gray-300 space-y-1.5 list-disc pl-4">
+                                {(learningData.commonErrors || []).map((error: string, idx: number) => (
+                                    <li key={idx}>{error}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-lg p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-1 flex items-center gap-1.5">
+                                <HelpCircle size={12} />
+                                {text.miniCheckTitle}
+                            </p>
+                            <p className="text-xs text-gray-300 leading-relaxed">
+                                    {learningData.miniCheck || textLearning.miniCheck}
+                            </p>
+                        </div>
+                    </div>
                     
                     <button 
                         onClick={() => { setAiChatOpen(true); }}
                         className="mt-4 w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 text-xs font-bold rounded-lg transition-colors border border-indigo-500/30 flex items-center justify-center gap-2"
                     >
                         <Bot size={14} />
-                        Спросить Ментора
+                        {text.askMentor}
                     </button>
                 </div>
 
@@ -249,7 +336,7 @@ export const EditorComponent: React.FC = () => {
              </div>
 
              <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none opacity-50 md:opacity-100">
-                <span className="text-[10px] text-arcade-primary font-bold uppercase tracking-[0.2em] animate-pulse">Миссия 04</span>
+                     <span className="text-[10px] text-arcade-primary font-bold uppercase tracking-[0.2em] animate-pulse">{mission.chapter}</span>
              </div>
 
              <button 
@@ -258,7 +345,7 @@ export const EditorComponent: React.FC = () => {
                   className="bg-arcade-action text-white px-4 py-1.5 rounded-lg font-black uppercase text-xs flex items-center gap-2 shadow-neon-orange hover:scale-105 transition-transform"
                >
                   {isRunning ? <Sparkles size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-                  <span>RUN</span>
+                  <span>{text.run}</span>
                </button>
         </div>
 
@@ -292,8 +379,8 @@ export const EditorComponent: React.FC = () => {
                              <div className="size-16 bg-arcade-success rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_#34D399]">
                                 <CheckCircle2 size={32} strokeWidth={3} className="text-[#0F172A]" />
                              </div>
-                             <h2 className="text-2xl font-black mb-1 text-arcade-success">System Hacked!</h2>
-                             <p className="font-mono text-sm">+100 XP</p>
+                             <h2 className="text-2xl font-black mb-1 text-arcade-success">{text.successTitle}</h2>
+                             <p className="font-mono text-sm">{text.successXp}</p>
                          </div>
                      </div>
                  )}
@@ -330,7 +417,7 @@ export const EditorComponent: React.FC = () => {
                 >
                     <div className="flex items-center gap-2">
                         <TerminalIcon size={12} className="text-arcade-mentor" />
-                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest font-mono">Terminal Output</span>
+                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest font-mono">{text.terminalTitle}</span>
                     </div>
                     {isTerminalOpen ? <ChevronDown size={14} className="text-gray-500"/> : <ChevronDown size={14} className="text-gray-500 rotate-180"/>}
                 </div>
@@ -352,7 +439,7 @@ export const EditorComponent: React.FC = () => {
                   >
                       <Minimize2 size={20} />
                   </button>
-                  <AIChat /> 
+                  <AIChat embedded /> 
               </div>
           </div>
       )}

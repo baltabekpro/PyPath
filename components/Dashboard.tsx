@@ -1,6 +1,6 @@
 import React from 'react';
-import { Flame, Bot, ChevronRight, Zap, Target, Play, Award, Sparkles, Gift, Clock, Swords, Lock } from 'lucide-react';
-import { COURSES, CURRENT_USER, STATS } from '../constants';
+import { Flame, Bot, ChevronRight, Zap, Target, Play, Award, Sparkles, Clock, Swords } from 'lucide-react';
+import { COURSES, CURRENT_USER, DASHBOARD_UI, MISSIONS, STATS, UI_TEXTS, getIconComponent } from '../constants';
 import { View } from '../types';
 
 interface DashboardProps {
@@ -8,6 +8,12 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
+    const mission = MISSIONS[0];
+    const activeCourse = COURSES.find((c: any) => !c.locked && c.progress < 100) || COURSES[0];
+    const progressPercent = activeCourse?.progress ?? 0;
+    const dailyQuests = DASHBOARD_UI?.dailyQuests ?? [];
+    const text = UI_TEXTS?.dashboard ?? {};
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
       
@@ -24,9 +30,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-white/5">
-                    <p className="text-sm md:text-base text-white font-medium">👋 Привет, {CURRENT_USER.name}! Готов покорять код?</p>
+                    <p className="text-sm md:text-base text-white font-medium">{text.greeting?.replace('{name}', CURRENT_USER.name)}</p>
                  </div>
-                 <h1 className="text-3xl md:text-4xl font-display font-black text-white leading-none">Твоя База</h1>
+                 <h1 className="text-3xl md:text-4xl font-display font-black text-white leading-none">{text.baseTitle}</h1>
              </div>
         </div>
 
@@ -40,7 +46,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <p className="text-2xl font-black text-white leading-none">{CURRENT_USER.streak}</p>
-                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Дней в огне</p>
+                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{text.streakLabel}</p>
              </div>
         </div>
       </div>
@@ -69,20 +75,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                      <div className="flex-1 text-center md:text-left">
                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-arcade-action/20 text-arcade-action rounded-full border border-arcade-action/20 mb-3">
                              <Swords size={14} />
-                             <span className="text-xs font-black uppercase tracking-wider">Текущая миссия</span>
+                             <span className="text-xs font-black uppercase tracking-wider">{text.currentMission}</span>
                          </div>
-                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">Петли Времени</h2>
-                         <p className="text-gray-300 mb-6 font-medium">Уровень 5 • Босс: Бесконечный Цикл</p>
+                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">{mission?.title ?? text.fallbackMissionTitle}</h2>
+                         <p className="text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter}</p>
                          
                          {/* Progress Bar styled as HP */}
                          <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10 relative">
-                             <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-arcade-action to-yellow-400 w-[45%] rounded-full shadow-[0_0_15px_rgba(249,115,22,0.8)]"></div>
+                             <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-arcade-action to-yellow-400 rounded-full shadow-[0_0_15px_rgba(249,115,22,0.8)]" style={{ width: `${progressPercent}%` }}></div>
                              {/* Glare effect */}
                              <div className="absolute top-0 left-0 w-full h-[50%] bg-white/10 rounded-full"></div>
                          </div>
                          <div className="flex justify-between mt-2 text-xs font-bold text-gray-500 uppercase">
-                             <span>Прогресс</span>
-                             <span className="text-white">45%</span>
+                             <span>{text.progress}</span>
+                             <span className="text-white">{progressPercent}%</span>
                          </div>
                      </div>
 
@@ -90,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         <button className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
                             <ChevronRight size={32} strokeWidth={3} />
                         </button>
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">Start</span>
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start}</span>
                      </div>
                 </div>
             </div>
@@ -99,21 +105,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div>
                 <h3 className="text-xl font-display font-black text-white mb-4 flex items-center gap-2">
                     <Target className="text-arcade-danger" />
-                    Ежедневные Квесты
+                    {text.dailyQuests}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                        { title: "Реши 3 задачи", reward: "50 XP", icon: Zap, done: true, color: "text-yellow-400", border: "border-yellow-400/20", link: View.PRACTICE },
-                        { title: "Без ошибок", reward: "Сундук", icon: Gift, done: false, color: "text-arcade-primary", border: "border-arcade-primary/20", link: View.COURSES },
-                        { title: "Помоги другу", reward: "20 XP", icon: Bot, done: false, color: "text-arcade-mentor", border: "border-arcade-mentor/20", link: View.AI_CHAT },
-                    ].map((quest, i) => (
+                    {dailyQuests.map((quest: any, i: number) => {
+                        const QuestIcon = getIconComponent(quest.icon);
+                        return (
                         <div 
                             key={i} 
-                            onClick={() => setView(quest.link)}
+                            onClick={() => setView(quest.link as View)}
                             className={`bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform cursor-pointer hover:border-white/20`}
                         >
                             <div className={`size-12 rounded-full flex items-center justify-center ${quest.done ? 'bg-arcade-success text-white' : 'bg-white/5 ' + quest.color}`}>
-                                {quest.done ? <Award size={24} /> : <quest.icon size={24} />}
+                                {quest.done ? <Award size={24} /> : <QuestIcon size={24} />}
                             </div>
                             <div>
                                 <h4 className={`font-bold text-sm ${quest.done ? 'text-arcade-success line-through' : 'text-white'}`}>{quest.title}</h4>
@@ -122,7 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    )})}
                 </div>
             </div>
 
@@ -134,31 +138,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             {/* Player Stats */}
             <div className="bg-arcade-card border border-white/5 rounded-3xl p-6 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-display font-black text-white">Статистика</h3>
-                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">Подробнее</button>
+                    <h3 className="font-display font-black text-white">{text.stats}</h3>
+                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">{text.details}</button>
                 </div>
                 
                 <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
-                            <span className="font-bold text-gray-300 text-sm">Всего XP</span>
+                            <span className="font-bold text-gray-300 text-sm">{text.statsTotalXp}</span>
                         </div>
                         <span className="font-mono font-bold text-white">{STATS.totalXp.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
-                            <span className="font-bold text-gray-300 text-sm">Задач решено</span>
+                            <span className="font-bold text-gray-300 text-sm">{text.statsSolved}</span>
                         </div>
                         <span className="font-mono font-bold text-white">{STATS.problemsSolved}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
-                            <span className="font-bold text-gray-300 text-sm">Время в коде</span>
+                            <span className="font-bold text-gray-300 text-sm">{text.statsTime}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{STATS.codingHours}ч</span>
+                        <span className="font-mono font-bold text-white">{STATS.codingHours}{text.hoursSuffix}</span>
                     </div>
                 </div>
             </div>
@@ -172,11 +176,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 <Sparkles className="absolute top-4 left-4 text-white/40 animate-pulse" />
                 <Sparkles className="absolute bottom-4 right-4 text-white/40 animate-pulse delay-700" />
                 
-                <h3 className="text-2xl font-display font-black mb-2 relative z-10">Блиц-Турнир</h3>
-                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">Реши 5 задач за 5 минут и получи удвоенный XP!</p>
+                <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle}</h3>
+                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle}</p>
                 
                 <button className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
-                    Начать
+                    {text.blitzStart}
                 </button>
             </div>
         </div>

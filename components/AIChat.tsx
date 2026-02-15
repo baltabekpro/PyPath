@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Sparkles, Zap, Bot, Code, Search, AlertCircle, ChevronRight } from 'lucide-react';
+import { Send, X, Zap, Bot, ChevronRight } from 'lucide-react';
+import { AI_CHAT_DATA, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 
 interface Message {
   id: string;
@@ -8,19 +9,21 @@ interface Message {
   type?: 'text' | 'hint' | 'error';
 }
 
-const QUICK_ACTIONS = [
-    { label: "Что не так?", icon: AlertCircle, prompt: "Найди ошибку в моем коде." },
-    { label: "Теория", icon: Search, prompt: "Объясни, как это работает." },
-    { label: "Подсказка", icon: Sparkles, prompt: "Дай наводку, но не решение." },
-];
+interface AIChatProps {
+    embedded?: boolean;
+}
 
-export const AIChat: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
+    const [isOpen, setIsOpen] = useState(embedded);
   const [oracleState, setOracleState] = useState<'idle' | 'analyzing' | 'alert'>('idle');
   const [energy, setEnergy] = useState(5);
   const [inputValue, setInputValue] = useState('');
+    const quickActions = AI_CHAT_DATA?.quickActions ?? [];
+    const responses = AI_CHAT_DATA?.responses ?? {};
+        const text = UI_TEXTS?.aiChat ?? {};
+        const initialMessage = (AI_CHAT_DATA?.welcomeMessage || '').replace('{name}', CURRENT_USER.name);
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: "Системы прогреты. Готов к взлому кода, Neo_Coder?", sender: 'ai' }
+        { id: '1', text: initialMessage, sender: 'ai' }
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,6 +31,12 @@ export const AIChat: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping, isOpen]);
+
+    useEffect(() => {
+        if (embedded && !isOpen) {
+            setIsOpen(true);
+        }
+    }, [embedded, isOpen]);
 
   const handleSend = (text: string = inputValue) => {
     if (!text.trim()) return;
@@ -41,29 +50,29 @@ export const AIChat: React.FC = () => {
 
     // Simulate AI Processing
     setTimeout(() => {
-        let responseText = "Интересный запрос. Дай подумать...";
+        let responseText = responses.default || '';
         let state: 'idle' | 'alert' = 'idle';
         let msgType: 'text' | 'hint' | 'error' = 'text';
 
         const lower = text.toLowerCase();
         if (lower.includes('ошибк') || lower.includes('не так') || lower.includes('bug')) {
-            responseText = "Анализирую твои алгоритмы... Вижу небольшую аномалию в логике! Проверь отступы в 5-й строке.";
+            responseText = responses.error || responses.default || '';
             state = 'alert';
             msgType = 'error';
         } else if (lower.includes('подсказк') || lower.includes('hint')) {
             if (energy > 0) {
                 setEnergy(e => e - 1);
-                responseText = "Хмм, попробуй использовать цикл while вместо for здесь. Это сэкономит память.";
+                responseText = responses.hint || responses.default || '';
                 msgType = 'hint';
             } else {
-                responseText = "Мои энергоблоки разряжены. Реши пару задач самостоятельно, чтобы зарядить меня!";
+                responseText = responses.noEnergy || responses.default || '';
                 state = 'idle';
             }
         } else if (lower.includes('теори')) {
-            responseText = "Генераторы — это функции, которые возвращают итератор. Они не хранят все значения в памяти, а генерируют их на лету.";
+            responseText = responses.theory || responses.default || '';
             state = 'idle';
         } else {
-            responseText = "Идеально! Твой код чист, как слеза робота. Продолжай в том же духе!";
+            responseText = responses.success || responses.default || '';
             state = 'idle';
         }
 
@@ -86,6 +95,7 @@ export const AIChat: React.FC = () => {
   return (
     <>
         {/* Floating Orb Trigger */}
+        {!embedded && (
         <div className={`fixed bottom-8 right-8 z-50 flex flex-col items-center gap-4 transition-all duration-500 ${isOpen ? 'translate-y-[20px] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
             <button 
                 onClick={() => setIsOpen(true)}
@@ -110,13 +120,14 @@ export const AIChat: React.FC = () => {
                 <div className={`absolute top-0 left-0 size-full rounded-full border border-cyan-500/20 -z-10 scale-110 animate-ping opacity-20 ${oracleState !== 'analyzing' ? 'block' : 'hidden'}`}></div>
             </button>
             <div className="bg-black/60 backdrop-blur text-cyan-400 text-xs font-bold px-3 py-1 rounded-full border border-cyan-500/30 shadow-lg animate-float" style={{animationDelay: '1s'}}>
-                Oracle Lvl. 12
+                {AI_CHAT_DATA?.oracleBadge || text.oracleBadge}
             </div>
         </div>
+        )}
 
         {/* Chat Overlay */}
-        {isOpen && (
-            <div className="fixed bottom-8 right-8 z-[60] w-[380px] h-[600px] flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 origin-bottom-right">
+        {(isOpen || embedded) && (
+            <div className={embedded ? 'w-full h-full flex flex-col' : 'fixed bottom-8 right-8 z-[60] w-[380px] h-[600px] flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 origin-bottom-right'}>
                 
                 {/* Glassmorphism Container */}
                 <div className="relative flex-1 bg-slate-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden ring-1 ring-white/10">
@@ -129,26 +140,28 @@ export const AIChat: React.FC = () => {
                                 <Bot size={20} className="text-cyan-400" />
                             </div>
                             <div>
-                                <h3 className="text-white font-display font-black tracking-wide text-sm">ОРАКУЛ</h3>
+                                <h3 className="text-white font-display font-black tracking-wide text-sm">{text.title}</h3>
                                 <p className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
                                     <span className="size-1.5 bg-cyan-400 rounded-full animate-pulse"></span>
-                                    ONLINE • LVL 12
+                                    {AI_CHAT_DATA?.statusLabel || text.statusLabel}
                                 </p>
                             </div>
                         </div>
                         
                         {/* Energy Bar */}
-                        <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
+                        <div className={`flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5 ${embedded ? 'mr-10' : ''}`}>
                             <Zap size={12} className={energy > 0 ? "text-yellow-400 fill-yellow-400" : "text-gray-600"} />
                             <span className="text-xs font-mono font-bold text-yellow-100">{energy}/5</span>
                         </div>
 
-                        <button 
-                            onClick={() => setIsOpen(false)}
-                            className="absolute -top-2 -right-2 p-4 text-gray-400 hover:text-white transition-colors"
-                        >
-                            <X size={18} />
-                        </button>
+                        {!embedded && (
+                            <button 
+                                onClick={() => setIsOpen(false)}
+                                className="absolute -top-2 -right-2 p-4 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <X size={18} />
+                            </button>
+                        )}
                     </div>
 
                     {/* Messages Body */}
@@ -192,16 +205,19 @@ export const AIChat: React.FC = () => {
                     <div className="p-4 bg-slate-900/90 border-t border-white/5 backdrop-blur-md">
                         {/* Quick Actions */}
                         <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar-none mb-2">
-                            {QUICK_ACTIONS.map((action, i) => (
-                                <button 
-                                    key={i} 
-                                    onClick={() => handleSend(action.prompt)}
-                                    className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-cyan-900/30 border border-cyan-500/20 hover:border-cyan-500/50 rounded-lg text-xs text-cyan-300 font-bold transition-all flex items-center gap-1.5 group active:scale-95"
-                                >
-                                    <action.icon size={12} className="group-hover:text-cyan-400" />
-                                    {action.label}
-                                </button>
-                            ))}
+                            {quickActions.map((action: any, i: number) => {
+                                const ActionIcon = getIconComponent(action.icon);
+                                return (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => handleSend(action.prompt)}
+                                        className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-cyan-900/30 border border-cyan-500/20 hover:border-cyan-500/50 rounded-lg text-xs text-cyan-300 font-bold transition-all flex items-center gap-1.5 group active:scale-95"
+                                    >
+                                        <ActionIcon size={12} className="group-hover:text-cyan-400" />
+                                        {action.label}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Input Field */}
@@ -211,7 +227,7 @@ export const AIChat: React.FC = () => {
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyPress} 
-                                placeholder="Задай вопрос ментору..." 
+                                placeholder={AI_CHAT_DATA?.inputPlaceholder || text.inputPlaceholder} 
                                 className="w-full bg-transparent border-b border-white/10 py-3 pl-2 pr-10 text-white placeholder-gray-600 focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
                             />
                             <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500 w-0 group-focus-within:w-full transition-all duration-500"></div>

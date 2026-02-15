@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Database, Bug } from 'lucide-react';
-import { CURRENT_USER, LOGS } from '../constants';
+import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles } from 'lucide-react';
+import { AI_CHAT_PAGE_DATA, CURRENT_USER, LOGS, UI_TEXTS, getIconComponent } from '../constants';
 
 interface Message {
   id: string;
@@ -10,17 +10,14 @@ interface Message {
   type?: 'log' | 'response' | 'error';
 }
 
-const ABILITIES = [
-    { id: 'debug', icon: Bug, label: 'DEBUG', color: 'text-red-400', prompt: "Найди ошибку в коде:" },
-    { id: 'learn', icon: Database, label: 'THEORY', color: 'text-purple-400', prompt: "Объясни тему:" },
-    { id: 'optimize', icon: Zap, label: 'BOOST', color: 'text-yellow-400', prompt: "Оптимизируй этот код:" },
-];
-
 export const AIChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [coreState, setCoreState] = useState<'idle' | 'processing' | 'active'>('idle');
+    const abilities = AI_CHAT_PAGE_DATA?.abilities ?? [];
+    const responses = AI_CHAT_PAGE_DATA?.responses ?? {};
+        const text = UI_TEXTS?.aiChatPage ?? {};
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -48,9 +45,9 @@ export const AIChatPage: React.FC = () => {
       const lowerText = text.toLowerCase();
       
       if (lowerText.includes("цикл") || lowerText.includes("while")) {
-          aiResponseText = "АНАЛИЗ ЗАВЕРШЕН.\n\nЦикл `while` выполняется, пока условие истинно. Будь осторожен с бесконечными циклами — они могут перегрузить ядро.";
+          aiResponseText = responses.loop || responses.default || '';
       } else {
-          aiResponseText = "Данные приняты. Обрабатываю запрос через нейросеть... \n\nОтвет сгенерирован.";
+          aiResponseText = responses.default || '';
       }
 
       const newAiMsg: Message = {
@@ -85,7 +82,7 @@ export const AIChatPage: React.FC = () => {
       <aside className="hidden md:flex w-72 bg-[#0F172A]/90 border-r border-cyan-900/30 flex-col backdrop-blur-md relative z-20">
           <div className="h-16 flex items-center px-6 border-b border-cyan-900/30 bg-cyan-950/10">
               <Activity size={18} className="text-cyan-400 mr-3 animate-pulse" />
-              <span className="text-xs font-bold text-cyan-100 tracking-[0.2em]">NEURAL_HISTORY</span>
+              <span className="text-xs font-bold text-cyan-100 tracking-[0.2em]">{text.neuralHistory}</span>
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
@@ -106,7 +103,7 @@ export const AIChatPage: React.FC = () => {
                   </div>
               ))}
               <div className="border-t border-dashed border-gray-700/50 my-4"></div>
-              <div className="text-[10px] text-slate-500 font-bold text-center uppercase tracking-wide">Архив записей (3.2 TB)</div>
+              <div className="text-[10px] text-slate-500 font-bold text-center uppercase tracking-wide">{AI_CHAT_PAGE_DATA?.archiveLabel || text.archiveLabel}</div>
           </div>
 
           <div className="p-4 border-t border-cyan-900/30 bg-cyan-950/5">
@@ -115,8 +112,8 @@ export const AIChatPage: React.FC = () => {
                       <Hash size={16} className="text-cyan-500"/>
                   </div>
                   <div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase">System Uptime</div>
-                      <div className="text-xs font-bold text-cyan-300">42:12:05</div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">{text.systemUptimeLabel}</div>
+                      <div className="text-xs font-bold text-cyan-300">{AI_CHAT_PAGE_DATA?.systemUptime || text.systemUptime}</div>
                   </div>
               </div>
           </div>
@@ -130,18 +127,18 @@ export const AIChatPage: React.FC = () => {
               <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-cyan-400">
                       <Cpu size={20} />
-                      <h1 className="font-display font-black tracking-wider text-lg">SYNC_CENTER</h1>
+                      <h1 className="font-display font-black tracking-wider text-lg">{text.syncCenter}</h1>
                   </div>
                   <div className="h-4 w-px bg-cyan-900/50"></div>
                   <div className="flex items-center gap-2">
                       <span className={`size-2 rounded-full ${coreState === 'processing' ? 'bg-yellow-400 animate-ping' : 'bg-green-500'}`}></span>
                       <span className="text-[10px] font-bold text-cyan-200 uppercase tracking-widest">
-                          {coreState === 'processing' ? 'PROCESSING DATA...' : 'SYSTEM READY'}
+                          {coreState === 'processing' ? text.processing : text.ready}
                       </span>
                   </div>
               </div>
               <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-cyan-600 font-mono">V.2.0.4</span>
+                  <span className="text-[10px] text-cyan-600 font-mono">{AI_CHAT_PAGE_DATA?.version || text.version}</span>
               </div>
           </header>
 
@@ -180,20 +177,23 @@ export const AIChatPage: React.FC = () => {
                       <div className="m-auto text-center max-w-md animate-fade-in relative mt-[400px] md:mt-[350px]">
                           <div className="inline-flex items-center gap-2 bg-cyan-950/50 text-cyan-300 px-4 py-2 rounded-full border border-cyan-500/30 mb-6 backdrop-blur-md shadow-lg">
                               <Sparkles size={16} />
-                              <span className="text-xs font-bold uppercase tracking-wider">ИИ-Ментор Активирован</span>
+                              <span className="text-xs font-bold uppercase tracking-wider">{text.mentorActivated}</span>
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              {ABILITIES.map(ability => (
-                                  <button 
-                                    key={ability.id}
-                                    onClick={() => handleSend(ability.prompt)}
-                                    className="bg-[#0F172A]/80 border border-cyan-900/50 p-4 rounded-xl hover:bg-cyan-900/20 hover:border-cyan-500/50 transition-all group backdrop-blur-sm"
-                                  >
-                                      <ability.icon size={24} className={`${ability.color} mb-2 mx-auto`} />
-                                      <div className="text-[10px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider">{ability.label}</div>
-                                  </button>
-                              ))}
+                              {abilities.map((ability: any) => {
+                                  const AbilityIcon = getIconComponent(ability.icon);
+                                  return (
+                                      <button 
+                                        key={ability.id}
+                                        onClick={() => handleSend(ability.prompt)}
+                                        className="bg-[#0F172A]/80 border border-cyan-900/50 p-4 rounded-xl hover:bg-cyan-900/20 hover:border-cyan-500/50 transition-all group backdrop-blur-sm"
+                                      >
+                                          <AbilityIcon size={24} className={`${ability.color} mb-2 mx-auto`} />
+                                          <div className="text-[10px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider">{ability.label}</div>
+                                      </button>
+                                  );
+                              })}
                           </div>
                       </div>
                   )}
@@ -222,7 +222,7 @@ export const AIChatPage: React.FC = () => {
                                       : 'bg-[#0F172A]/80 border-cyan-500/20 text-cyan-50 rounded-tl-none'
                                   }
                               `}>
-                                  {msg.sender === 'ai' && <div className="text-[10px] font-bold text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> Response Output</div>}
+                                  {msg.sender === 'ai' && <div className="text-[10px] font-bold text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> {text.responseOutput}</div>}
                                   <div className="whitespace-pre-wrap">{msg.text}</div>
                               </div>
                           </div>
@@ -256,7 +256,7 @@ export const AIChatPage: React.FC = () => {
                               value={inputValue}
                               onChange={(e) => setInputValue(e.target.value)}
                               onKeyDown={handleKeyPress}
-                              placeholder="Введите команду или вопрос..." 
+                              placeholder={AI_CHAT_PAGE_DATA?.inputPlaceholder || text.inputPlaceholder} 
                               className="w-full bg-transparent border-none text-cyan-100 placeholder-cyan-900/50 focus:ring-0 outline-none h-10 font-mono text-sm"
                           />
                           <button 
@@ -269,7 +269,7 @@ export const AIChatPage: React.FC = () => {
                       </div>
                   </div>
                   <div className="text-center mt-3">
-                      <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">ИИ может допускать ошибки. Проверяйте важную информацию.</p>
+                      <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{text.safeNotice}</p>
                   </div>
               </div>
 

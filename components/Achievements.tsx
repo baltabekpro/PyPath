@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Sparkles, Share2, X } from 'lucide-react';
-import { ACHIEVEMENTS, getIconComponent } from '../constants';
+import { ACHIEVEMENTS, UI_TEXTS, getIconComponent } from '../constants';
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 type Category = 'all' | 'coding' | 'community' | 'streak' | 'secret';
@@ -11,48 +11,48 @@ const RARITY_STYLES = {
         bg: 'bg-slate-800',
         glow: '',
         text: 'text-slate-300',
-        iconBg: 'bg-slate-700',
-        name: 'Обычный'
+        iconBg: 'bg-slate-700'
     },
     rare: {
         border: 'border-cyan-500',
         bg: 'bg-slate-900',
         glow: 'shadow-[0_0_15px_rgba(6,182,212,0.3)]',
         text: 'text-cyan-400',
-        iconBg: 'bg-cyan-950',
-        name: 'Редкий'
+        iconBg: 'bg-cyan-950'
     },
     epic: {
         border: 'border-purple-500',
         bg: 'bg-[#1e1b2e]',
         glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]',
         text: 'text-purple-400',
-        iconBg: 'bg-purple-950',
-        name: 'Эпический'
+        iconBg: 'bg-purple-950'
     },
     legendary: {
         border: 'border-amber-400',
         bg: 'bg-gradient-to-br from-slate-900 to-amber-950',
         glow: 'shadow-[0_0_30px_rgba(251,191,36,0.5)] animate-pulse-glow',
         text: 'text-amber-400',
-        iconBg: 'bg-amber-900/50',
-        name: 'Легендарный'
+        iconBg: 'bg-amber-900/50'
     }
 };
 
 export const Achievements: React.FC = () => {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [filter, setFilter] = useState<Category>('all');
+    const text = UI_TEXTS?.achievements ?? {};
+    const rarity = text.rarity ?? {};
+    const ranks = text.ranks ?? [];
+    const stats = text.stats ?? {};
+    const filterTabs = text.filters ?? [];
 
     const unlockedCount = ACHIEVEMENTS.filter((a: any) => a.unlocked).length;
     const totalCount = ACHIEVEMENTS.length;
     const completionPercent = Math.round((unlockedCount / totalCount) * 100);
     
     // Calculate Rank
-    let rank = "Новичок";
-    if (completionPercent > 30) rank = "Искатель";
-    if (completionPercent > 60) rank = "Хранитель Байт";
-    if (completionPercent > 90) rank = "Легендарный Архивариус";
+    const rank = [...ranks]
+        .sort((a: any, b: any) => a.min - b.min)
+        .reduce((acc: string, current: any) => (completionPercent >= current.min ? current.label : acc), ranks[0]?.label);
 
     const filteredList = ACHIEVEMENTS.filter((a: any) => filter === 'all' || a.category === filter);
     const selectedAchievement = ACHIEVEMENTS.find((a: any) => a.id === selectedId);
@@ -74,26 +74,26 @@ export const Achievements: React.FC = () => {
                             </div>
                         </div>
                         <div>
-                            <p className="text-arcade-muted text-sm font-bold uppercase tracking-widest mb-1">Ранг Коллекционера</p>
+                            <p className="text-arcade-muted text-sm font-bold uppercase tracking-widest mb-1">{text.collectorRank}</p>
                             <h1 className="text-3xl md:text-4xl font-display font-black text-white">{rank}</h1>
-                            <p className="text-sm text-gray-400 mt-1">Собрано <span className="text-white font-bold">{unlockedCount}</span> из <span className="text-white font-bold">{totalCount}</span> артефактов</p>
+                            <p className="text-sm text-gray-400 mt-1">{text.collectedPrefix} <span className="text-white font-bold">{unlockedCount}</span> {text.collectedMiddle} <span className="text-white font-bold">{totalCount}</span> {text.collectedSuffix}</p>
                         </div>
                     </div>
 
                     <div className="flex gap-4 md:gap-8 text-center bg-black/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
                         <div>
-                            <p className="text-2xl font-black text-white">1250</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Очки (AP)</p>
+                            <p className="text-2xl font-black text-white">{stats.points ?? 1250}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">{text.pointsLabel}</p>
                         </div>
                         <div className="w-px h-10 bg-white/10"></div>
                         <div>
-                            <p className="text-2xl font-black text-arcade-action">4</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Редких</p>
+                            <p className="text-2xl font-black text-arcade-action">{stats.rare ?? 4}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">{text.rareLabel}</p>
                         </div>
                         <div className="w-px h-10 bg-white/10"></div>
                         <div>
-                            <p className="text-2xl font-black text-amber-400">0</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Легенд</p>
+                            <p className="text-2xl font-black text-amber-400">{stats.legendary ?? 0}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">{text.legendaryLabel}</p>
                         </div>
                     </div>
                 </div>
@@ -101,13 +101,7 @@ export const Achievements: React.FC = () => {
 
             {/* Filter Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar-none">
-                {[
-                    { id: 'all', label: 'Все' },
-                    { id: 'coding', label: 'Кодинг' },
-                    { id: 'community', label: 'Сообщество' },
-                    { id: 'streak', label: 'Стрик' },
-                    { id: 'secret', label: 'Скрытые' }
-                ].map(tab => (
+                {filterTabs.map((tab: any) => (
                     <button
                         key={tab.id}
                         onClick={() => setFilter(tab.id as Category)}
@@ -161,11 +155,11 @@ export const Achievements: React.FC = () => {
                                 <div className="w-full flex justify-between items-start z-10">
                                     {ach.unlocked ? (
                                         <div className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/40 border border-white/10 ${style.text}`}>
-                                            {style.name}
+                                                {rarity[ach.rarity as keyof typeof rarity]}
                                         </div>
                                     ) : (
                                         <div className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/40 text-gray-500">
-                                            Locked
+                                            {text.locked}
                                         </div>
                                     )}
                                     {ach.unlocked && ach.rarity === 'legendary' && (
@@ -193,7 +187,7 @@ export const Achievements: React.FC = () => {
                                 {/* Text */}
                                 <div className="z-10 text-center w-full">
                                     <h3 className={`font-bold text-sm md:text-base leading-tight mb-1 truncate ${ach.unlocked ? 'text-white' : 'text-gray-500'}`}>
-                                        {isSecret ? '?? ??? ??' : ach.title}
+                                        {isSecret ? text.secretMask : ach.title}
                                     </h3>
                                     {!ach.unlocked && (
                                         <div className="w-full h-1 bg-slate-700 rounded-full mt-2 overflow-hidden">
@@ -235,7 +229,7 @@ export const Achievements: React.FC = () => {
 
                                 {/* Rarity Badge */}
                                 <div className={`relative z-10 px-3 py-1 rounded-full border border-white/10 bg-black/40 text-xs font-black uppercase tracking-widest mb-6 ${selectedAchievement.unlocked ? style.text : 'text-gray-500'}`}>
-                                    {style.name}
+                                    {rarity[selectedAchievement.rarity as keyof typeof rarity]}
                                 </div>
 
                                 {/* Big Icon */}
@@ -250,11 +244,11 @@ export const Achievements: React.FC = () => {
 
                                 {/* Content */}
                                 <h2 className={`relative z-10 text-2xl md:text-3xl font-display font-black mb-2 ${selectedAchievement.unlocked ? 'text-white' : 'text-gray-400'}`}>
-                                    {isSecret ? 'Засекречено' : selectedAchievement.title}
+                                    {isSecret ? text.secretTitle : selectedAchievement.title}
                                 </h2>
                                 
                                 <p className="relative z-10 text-gray-400 text-sm mb-4 max-w-xs">
-                                    {isSecret ? 'Выполните скрытое условие, чтобы открыть этот артефакт.' : selectedAchievement.description}
+                                    {isSecret ? text.secretDescription : selectedAchievement.description}
                                 </p>
 
                                 {/* Flavor Text (Only unlocked) */}
@@ -277,11 +271,11 @@ export const Achievements: React.FC = () => {
                                 {/* Stats Footer */}
                                 <div className="w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
                                     <div className="flex flex-col items-center">
-                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Владеют</span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase">{text.owners}</span>
                                         <span className="text-white font-bold">{selectedAchievement.globalRate}%</span>
                                     </div>
                                     <div className="flex flex-col items-center">
-                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Награда</span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase">{text.reward}</span>
                                         <span className="text-arcade-primary font-bold">+{selectedAchievement.xpReward} XP</span>
                                     </div>
                                 </div>
@@ -290,7 +284,7 @@ export const Achievements: React.FC = () => {
                                 {selectedAchievement.unlocked && (
                                     <button className="mt-6 w-full py-3 bg-white text-black rounded-xl font-black uppercase tracking-wider hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 shadow-lg">
                                         <Share2 size={18} />
-                                        Похвастаться
+                                        {text.share}
                                     </button>
                                 )}
                             </div>
