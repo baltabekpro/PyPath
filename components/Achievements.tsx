@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Sparkles, Share2, X } from 'lucide-react';
 import { ACHIEVEMENTS, UI_TEXTS, getIconComponent } from '../constants';
+import { ActionToast } from './ActionToast';
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 type Category = 'all' | 'coding' | 'community' | 'streak' | 'secret';
@@ -39,6 +40,7 @@ const RARITY_STYLES = {
 export const Achievements: React.FC = () => {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [filter, setFilter] = useState<Category>('all');
+    const [shareStatus, setShareStatus] = useState('');
     const text = UI_TEXTS?.achievements ?? {};
     const rarity = text.rarity ?? {};
     const ranks = text.ranks ?? [];
@@ -57,8 +59,29 @@ export const Achievements: React.FC = () => {
     const filteredList = ACHIEVEMENTS.filter((a: any) => filter === 'all' || a.category === filter);
     const selectedAchievement = ACHIEVEMENTS.find((a: any) => a.id === selectedId);
 
+    const handleShare = async (achievement: any) => {
+        const shareText = `${achievement.title} — +${achievement.xpReward} XP`;
+        const shareUrl = window.location.href;
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'PyPath Achievement',
+                    text: shareText,
+                    url: shareUrl,
+                });
+            } else {
+                await navigator.clipboard.writeText(shareText);
+            }
+            setShareStatus(text.share);
+            setTimeout(() => setShareStatus(''), 2000);
+        } catch {
+            setShareStatus('');
+        }
+    };
+
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6 min-h-screen">
+            <ActionToast visible={Boolean(shareStatus)} message={shareStatus} tone="info" />
             
             {/* Header: Collector's Dashboard */}
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden shadow-2xl">
@@ -282,7 +305,7 @@ export const Achievements: React.FC = () => {
 
                                 {/* Share Button */}
                                 {selectedAchievement.unlocked && (
-                                    <button className="mt-6 w-full py-3 bg-white text-black rounded-xl font-black uppercase tracking-wider hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 shadow-lg">
+                                    <button onClick={() => handleShare(selectedAchievement)} className="mt-6 w-full py-3 bg-white text-black rounded-xl font-black uppercase tracking-wider hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 shadow-lg">
                                         <Share2 size={18} />
                                         {text.share}
                                     </button>

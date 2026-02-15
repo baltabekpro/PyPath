@@ -493,7 +493,10 @@
         "dangerText": "Действия в этой зоне необратимы. Будьте осторожны.",
         "deleteAccount": "Удалить аккаунт",
         "deleteAccountHint": "Все данные будут потеряны безвозвратно",
-        "deleteForever": "Удалить навсегда"
+        "deleteForever": "Удалить навсегда",
+        "toastPasswordChanged": "Переход к смене пароля",
+        "toastTwofaEnabled": "2FA будет включена после подтверждения",
+        "toastDeleteRequested": "Запрос на удаление отправлен"
       },
       "profile": {
         "defaultBio": "Кибер-странник в поисках идеального алгоритма.",
@@ -511,6 +514,10 @@
         "friends": "Друзья",
         "codingStatus": "Пишет код...",
         "findFriends": "Найти друзей",
+        "toastShared": "Профиль скопирован в буфер обмена",
+        "toastAdded": "Запрос на добавление отправлен",
+        "toastFriendAdded": "Запрос в друзья отправлен",
+        "toastFriendRemoved": "Запрос в друзья отменён",
         "battleStats": {
           "streak": "Стрик",
           "quests": "Квесты",
@@ -658,7 +665,8 @@
         "premiumTitle": "Стань Легендой",
         "premiumSubtitle": "Разблокируй полный потенциал и получи доступ к элитным миссиям.",
         "premiumBenefitsTitle": "Преимущества PRO",
-        "activatePro": "Активировать PRO"
+        "activatePro": "Активировать PRO",
+        "proActivated": "PRO активирован"
       }
     }
   },

@@ -93,7 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                      </div>
 
                      <div className="hidden md:flex flex-col items-center gap-1">
-                        <button className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
+                        <button onClick={() => setView(View.PRACTICE)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
                             <ChevronRight size={32} strokeWidth={3} />
                         </button>
                         <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start}</span>
@@ -179,7 +179,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle}</h3>
                 <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle}</p>
                 
-                <button className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
+                <button onClick={() => setView(View.PRACTICE)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
                     {text.blitzStart}
                 </button>
             </div>

@@ -1,12 +1,98 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { MessageSquare, Heart, Share2, MoreHorizontal, Image, Code, Hash, TrendingUp, Search, Filter } from 'lucide-react';
 import { COMMUNITY_UI, CURRENT_USER, POSTS, UI_TEXTS } from '../constants';
 
 export const Community: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'popular' | 'new'>('popular');
+    const [posts, setPosts] = useState<any[]>(POSTS);
+    const [draftPost, setDraftPost] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showPreview, setShowPreview] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
     const topTags = COMMUNITY_UI?.topTags ?? [];
     const topContributors = COMMUNITY_UI?.topContributors ?? [];
     const text = UI_TEXTS?.community ?? {};
+
+  useEffect(() => {
+    const savedPosts = localStorage.getItem('posts');
+    if (savedPosts) setPosts(JSON.parse(savedPosts));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('posts', JSON.stringify(posts));
+  }, [posts]);
+
+  const visiblePosts = useMemo(() => {
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+      const filtered = posts.filter((post: any) => {
+          if (!normalizedQuery) return true;
+          const pool = [
+              post.author?.name,
+              post.content,
+              ...(post.tags ?? [])
+          ].join(' ').toLowerCase();
+          return pool.includes(normalizedQuery);
+      });
+
+      return [...filtered].sort((a: any, b: any) => {
+          if (activeTab === 'popular') return b.likes - a.likes;
+          return b.id - a.id;
+      });
+  }, [activeTab, posts, searchQuery]);
+
+  const handleCreatePost = () => {
+      const textValue = draftPost.trim();
+      if (!textValue) {
+          inputRef.current?.focus();
+          return;
+      }
+
+      const newPost = {
+          id: Date.now(),
+          author: { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, level: CURRENT_USER.levelNum },
+          time: 'только что',
+          content: textValue,
+          tags: ['НовыйПост'],
+          likes: 0,
+          comments: 0,
+          liked: false,
+          code: null
+      };
+
+      setPosts((prev) => [newPost, ...prev]);
+      setDraftPost('');
+      setShowPreview(false);
+      setActiveTab('new');
+  };
+
+  const toggleLike = (postId: number) => {
+      setPosts((prev) => prev.map((post: any) => {
+          if (post.id !== postId) return post;
+          const nextLiked = !post.liked;
+          return { ...post, liked: nextLiked, likes: nextLiked ? post.likes + 1 : Math.max(0, post.likes - 1) };
+      }));
+  };
+
+  const incrementComments = (postId: number) => {
+      setPosts((prev) => prev.map((post: any) => post.id === postId ? { ...post, comments: post.comments + 1 } : post));
+  };
+
+  const sharePost = async (post: any) => {
+      const shareText = `${post.author.name}: ${post.content}`;
+      const shareUrl = window.location.href; // or a specific URL
+      try {
+          if (navigator.share) {
+              await navigator.share({
+                  title: 'PyPath Post',
+                  text: shareText,
+                  url: shareUrl,
+              });
+          } else {
+              await navigator.clipboard.writeText(shareText);
+          }
+      } catch {
+      }
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -15,7 +101,7 @@ export const Community: React.FC = () => {
                             <h1 className="text-3xl font-bold text-white mb-2">{text.title}</h1>
                             <p className="text-py-muted">{text.subtitle}</p>
         </div>
-        <button className="bg-py-green text-py-dark px-6 py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity">
+        <button onClick={handleCreatePost} className="bg-py-green text-py-dark px-6 py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity">
                                 {text.newPost}
         </button>
       </div>
@@ -30,18 +116,26 @@ export const Community: React.FC = () => {
                     <img src={CURRENT_USER.avatar} className="size-10 rounded-full border border-py-accent" alt="Me" />
                     <div className="flex-1">
                         <input 
+                            ref={inputRef}
                             type="text" 
+                            value={draftPost}
+                            onChange={(e) => setDraftPost(e.target.value)}
                             placeholder={text.createPostPlaceholder} 
                             className="w-full bg-transparent text-white placeholder-py-muted/70 outline-none text-sm mb-4"
                         />
                         <div className="flex items-center justify-between border-t border-white/5 pt-3">
                             <div className="flex gap-2">
-                                <button className="p-2 hover:bg-white/5 rounded-lg text-py-green transition-colors"><Image size={18}/></button>
-                                <button className="p-2 hover:bg-white/5 rounded-lg text-py-green transition-colors"><Code size={18}/></button>
-                                <button className="p-2 hover:bg-white/5 rounded-lg text-py-green transition-colors"><Hash size={18}/></button>
+                                <button onClick={() => setDraftPost((prev) => `${prev} #image`)} className="p-2 hover:bg-white/5 rounded-lg text-py-green transition-colors"><Image size={18}/></button>
+                                <button onClick={() => setDraftPost((prev) => `${prev}\n\`\`\`python\nprint('hello')\n\`\`\``)} className="p-2 hover:bg-white/5 rounded-lg text-py-green transition-colors"><Code size={18}/></button>
+                                <button onClick={() => setDraftPost((prev) => `${prev} #python`)} className="p-2 hover:bg-white/5 rounded-lg text-py-green transition-colors"><Hash size={18}/></button>
                             </div>
-                            <button className="text-xs font-bold text-py-muted hover:text-white transition-colors">{text.preview}</button>
+                            <button onClick={() => setShowPreview((prev) => !prev)} className="text-xs font-bold text-py-muted hover:text-white transition-colors">{text.preview}</button>
                         </div>
+                        {showPreview && draftPost.trim() && (
+                            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-gray-300 whitespace-pre-wrap">
+                                {draftPost}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -70,7 +164,7 @@ export const Community: React.FC = () => {
 
             {/* Posts */}
             <div className="space-y-4">
-                {POSTS.map((post: any) => (
+                {visiblePosts.map((post: any) => (
                     <div key={post.id} className="bg-py-surface border border-py-accent rounded-2xl p-6 hover:border-py-green/30 transition-colors">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
@@ -80,7 +174,7 @@ export const Community: React.FC = () => {
                                     <p className="text-xs text-py-muted">{post.time} • {text.levelPrefix} {post.author.level}</p>
                                 </div>
                             </div>
-                            <button className="text-py-muted hover:text-white"><MoreHorizontal size={18}/></button>
+                            <button onClick={() => sharePost(post)} className="text-py-muted hover:text-white"><MoreHorizontal size={18}/></button>
                         </div>
 
                         <p className="text-gray-300 text-sm leading-relaxed mb-4">
@@ -102,15 +196,15 @@ export const Community: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-6 border-t border-white/5 pt-4">
-                            <button className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.liked ? 'text-red-500' : 'text-py-muted hover:text-red-500'}`}>
+                            <button onClick={() => toggleLike(post.id)} className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.liked ? 'text-red-500' : 'text-py-muted hover:text-red-500'}`}>
                                 <Heart size={18} fill={post.liked ? "currentColor" : "none"} />
                                 <span>{post.likes}</span>
                             </button>
-                            <button className="flex items-center gap-2 text-sm font-medium text-py-muted hover:text-py-green transition-colors">
+                            <button onClick={() => incrementComments(post.id)} className="flex items-center gap-2 text-sm font-medium text-py-muted hover:text-py-green transition-colors">
                                 <MessageSquare size={18} />
                                 <span>{post.comments}</span>
                             </button>
-                            <button className="flex items-center gap-2 text-sm font-medium text-py-muted hover:text-white transition-colors ml-auto">
+                            <button onClick={() => sharePost(post)} className="flex items-center gap-2 text-sm font-medium text-py-muted hover:text-white transition-colors ml-auto">
                                 <Share2 size={18} />
                                 <span>{text.share}</span>
                             </button>
@@ -127,6 +221,8 @@ export const Community: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-py-muted" size={16} />
                 <input 
                     type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={text.searchPlaceholder} 
                     className="w-full bg-py-surface border border-py-accent rounded-xl py-3 pl-10 pr-4 text-sm focus:border-py-green text-white placeholder-py-muted outline-none transition-all"
                 />

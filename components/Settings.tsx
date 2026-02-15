@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, Moon, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
 import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
+import { ActionToast } from './ActionToast';
 
 type SettingsTab = 'profile' | 'notifications' | 'billing' | 'api' | 'security';
 
@@ -21,13 +22,36 @@ export const Settings: React.FC = () => {
   
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+    const [actionMessage, setActionMessage] = useState('');
+    const [notificationState, setNotificationState] = useState(notificationOptions);
+    const [isDarkTheme, setIsDarkTheme] = useState(true);
+
+  useEffect(() => {
+    // Load from localStorage
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme !== null) setIsDarkTheme(savedTheme === 'dark');
+
+    const savedNotifications = localStorage.getItem('notifications');
+    if (savedNotifications) setNotificationState(JSON.parse(savedNotifications));
+
+    const savedAvatar = localStorage.getItem('avatar');
+    if (savedAvatar) setFormData(prev => ({ ...prev, avatar: savedAvatar }));
+
+    const savedProfile = localStorage.getItem('profile');
+    if (savedProfile) {
+      const profile = JSON.parse(savedProfile);
+      setFormData(prev => ({ ...prev, ...profile }));
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleAvatarChange = (seed: string) => {
-      setFormData({ ...formData, avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}` });
+      const newAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+      setFormData({ ...formData, avatar: newAvatar });
+      localStorage.setItem('avatar', newAvatar);
   };
 
   const generateRandomAvatar = () => {
@@ -41,21 +65,42 @@ export const Settings: React.FC = () => {
       setTimeout(() => {
           setIsSaving(false);
           setShowSuccess(true);
+          localStorage.setItem('profile', JSON.stringify(formData));
           // In a real app, update global context here
           setTimeout(() => setShowSuccess(false), 3000);
       }, 1500);
   };
 
+  const showAction = (message: string) => {
+      setActionMessage(message);
+      setShowSuccess(false);
+      setTimeout(() => setActionMessage(''), 2500);
+  };
+
+  const toggleNotification = (index: number) => {
+      setNotificationState((prev: any[]) => {
+        const newState = prev.map((item, i) => i === index ? { ...item, enabled: !item.enabled } : item);
+        localStorage.setItem('notifications', JSON.stringify(newState));
+        return newState;
+      });
+  };
+
+  const handleDeleteAccount = () => {
+      const confirmed = window.confirm(text.dangerText);
+      if (confirmed) {
+          showAction(text.toastDeleteRequested);
+      }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-fade-in pt-6 pb-20">
+            <ActionToast
+                visible={showSuccess || Boolean(actionMessage)}
+                message={showSuccess ? text.saved : actionMessage}
+                tone={showSuccess ? 'success' : 'info'}
+            />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-white">{text.title}</h1>
-        {showSuccess && (
-            <div className="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-2 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
-                <Check size={16} />
-                <span className="text-sm font-bold">{text.saved}</span>
-            </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
@@ -187,9 +232,16 @@ export const Settings: React.FC = () => {
                                     <p className="text-xs text-py-muted">{text.themeValue}</p>
                                 </div>
                             </div>
-                            <div className="w-10 h-6 bg-arcade-primary/20 rounded-full relative border border-arcade-primary/50 opacity-80 cursor-not-allowed">
-                                <div className="absolute right-1 top-1 size-3.5 bg-arcade-primary rounded-full shadow-[0_0_8px_#A855F7]"></div>
-                            </div>
+                            <button
+                              onClick={() => {
+                                const newTheme = !isDarkTheme;
+                                setIsDarkTheme(newTheme);
+                                localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+                              }}
+                              className={`w-10 h-6 rounded-full relative border transition-colors ${isDarkTheme ? 'bg-arcade-primary/20 border-arcade-primary/50' : 'bg-gray-700 border-gray-600'}`}
+                            >
+                                <div className={`absolute top-1 size-3.5 rounded-full transition-all ${isDarkTheme ? 'right-1 bg-arcade-primary shadow-[0_0_8px_#A855F7]' : 'left-1 bg-white'}`}></div>
+                            </button>
                         </div>
 
                         {/* Save Button */}
@@ -212,8 +264,8 @@ export const Settings: React.FC = () => {
                   <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in">
                       <h2 className="text-lg font-bold text-white mb-6">{text.notificationsTitle}</h2>
                       <div className="space-y-4">
-                          {notificationOptions.map((option: any, i: number) => (
-                              <div key={i} className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                          {notificationState.map((option: any, i: number) => (
+                              <div key={i} onClick={() => toggleNotification(i)} className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
                                   <span className="text-gray-300 font-medium">{option.label}</span>
                                   <div className={`w-12 h-6 rounded-full relative transition-colors ${option.enabled ? 'bg-arcade-success' : 'bg-gray-700'}`}>
                                       <div className={`absolute top-1 size-4 bg-white rounded-full transition-all shadow-md ${option.enabled ? 'right-1' : 'left-1'}`}></div>
@@ -238,7 +290,7 @@ export const Settings: React.FC = () => {
                                         <p className="text-xs text-py-muted">{text.passwordChanged}</p>
                                     </div>
                                 </div>
-                                <button className="text-xs font-bold text-white bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/5">{text.change}</button>
+                                <button onClick={() => showAction(text.toastPasswordChanged)} className="text-xs font-bold text-white bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/5">{text.change}</button>
                             </div>
 
                             <div className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5">
@@ -249,7 +301,7 @@ export const Settings: React.FC = () => {
                                         <p className="text-xs text-py-muted">{text.twofaHint}</p>
                                     </div>
                                 </div>
-                                <button className="text-xs font-bold text-arcade-success bg-arcade-success/10 px-3 py-1.5 rounded-lg hover:bg-arcade-success/20 transition-colors border border-arcade-success/20">{text.enable}</button>
+                                <button onClick={() => showAction(text.toastTwofaEnabled)} className="text-xs font-bold text-arcade-success bg-arcade-success/10 px-3 py-1.5 rounded-lg hover:bg-arcade-success/20 transition-colors border border-arcade-success/20">{text.enable}</button>
                             </div>
                         </div>
                     </div>
@@ -267,7 +319,7 @@ export const Settings: React.FC = () => {
                                 <p className="text-white font-bold text-sm">{text.deleteAccount}</p>
                                 <p className="text-xs text-gray-500">{text.deleteAccountHint}</p>
                             </div>
-                            <button className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold whitespace-nowrap">
+                            <button onClick={handleDeleteAccount} className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold whitespace-nowrap">
                                 {text.deleteForever}
                             </button>
                         </div>

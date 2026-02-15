@@ -3,6 +3,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { CURRENT_USER, SKILLS, FRIENDS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { Shield, Target, Flame, Medal, Edit3, Share2, MapPin, Github, Zap, Trophy, UserPlus, Swords, Search, Plus } from 'lucide-react';
 import { View } from '../types';
+import { ActionToast } from './ActionToast';
 
 interface ProfileProps {
   setView: (view: View) => void;
@@ -35,9 +36,33 @@ const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' 
 
 export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   const [loadRadar, setLoadRadar] = useState(false);
+        const [actionMessage, setActionMessage] = useState('');
+        const [requestedFriends, setRequestedFriends] = useState<number[]>([]);
+
+  useEffect(() => {
+    const savedFriends = localStorage.getItem('requestedFriends');
+    if (savedFriends) setRequestedFriends(JSON.parse(savedFriends));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('requestedFriends', JSON.stringify(requestedFriends));
+  }, [requestedFriends]);
     const showcaseTrophies = PROFILE_UI?.showcaseTrophies ?? [];
     const text = UI_TEXTS?.profile ?? {};
         const battleStatText = text.battleStats ?? {};
+
+    const showAction = (message: string) => {
+            setActionMessage(message);
+            setTimeout(() => setActionMessage(''), 2200);
+    };
+
+    const toggleFriendRequest = (id: number) => {
+          setRequestedFriends((prev) => {
+              const exists = prev.includes(id);
+              showAction(exists ? text.toastFriendRemoved : text.toastFriendAdded);
+              return exists ? prev.filter((friendId) => friendId !== id) : [...prev, id];
+          });
+    };
 
   useEffect(() => {
       // Small delay to trigger radar animation
@@ -53,6 +78,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in relative bg-[#0F172A]">
+                <ActionToast visible={Boolean(actionMessage)} message={actionMessage} tone="info" />
         
         {/* --- Hero Banner --- */}
         <div className="h-64 w-full relative overflow-hidden group">
@@ -65,7 +91,24 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             
             {/* Top Actions */}
             <div className="absolute top-6 right-6 flex gap-3 z-20">
-                <button className="p-2 bg-black/30 backdrop-blur-md rounded-xl text-white hover:bg-white/10 transition-colors border border-white/10 hover:border-white/30">
+                <button onClick={async () => {
+                    const shareText = `Check out ${CURRENT_USER.name}'s profile on PyPath!`;
+                    const shareUrl = window.location.href;
+                    try {
+                        if (navigator.share) {
+                            await navigator.share({
+                                title: 'PyPath Profile',
+                                text: shareText,
+                                url: shareUrl,
+                            });
+                        } else {
+                            await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+                        }
+                        showAction(text.toastShared);
+                    } catch {
+                        showAction(text.toastShared);
+                    }
+                }} className="p-2 bg-black/30 backdrop-blur-md rounded-xl text-white hover:bg-white/10 transition-colors border border-white/10 hover:border-white/30">
                     <Share2 size={20} />
                 </button>
                 <button 
@@ -77,7 +120,6 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 </button>
             </div>
         </div>
-
         {/* --- Identity Section (Overlapping Banner) --- */}
         <div className="max-w-7xl mx-auto px-4 sm:px-8 -mt-24 relative z-10 mb-12">
             <div className="flex flex-col md:flex-row items-end md:items-center gap-6 md:gap-8">
@@ -126,10 +168,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 w-full md:w-auto">
-                    <button className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-white text-black font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                    <button onClick={() => showAction(text.toastAdded)} className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-white text-black font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
                         {text.add}
                     </button>
-                    <button className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-arcade-card border border-white/10 text-white font-bold uppercase tracking-wide hover:bg-white/10 transition-colors">
+                    <button onClick={() => setView(View.AI_CHAT)} className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-arcade-card border border-white/10 text-white font-bold uppercase tracking-wide hover:bg-white/10 transition-colors">
                         {text.message}
                     </button>
                 </div>
@@ -248,7 +290,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                 </div>
                             </div>
 
-                            <button className="w-full mt-6 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition-colors">
+                            <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-6 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition-colors">
                                 {text.schoolProfile}
                             </button>
                         </div>
@@ -275,14 +317,14 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                         <p className="text-[10px] text-gray-500 font-bold uppercase">{friend.status === 'coding' ? text.codingStatus : `Lvl ${friend.level}`}</p>
                                     </div>
                                 </div>
-                                <button className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                <button onClick={() => toggleFriendRequest(friend.id)} className={`p-2 rounded-lg transition-colors ${requestedFriends.includes(friend.id) ? 'text-green-400 bg-green-500/10' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
                                     <UserPlus size={16} />
                                 </button>
                             </div>
                         ))}
                     </div>
                     
-                    <button className="w-full mt-6 py-3 border-t border-white/5 text-xs font-bold text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-6 py-3 border-t border-white/5 text-xs font-bold text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
                         <Search size={14} /> {text.findFriends}
                     </button>
                 </div>

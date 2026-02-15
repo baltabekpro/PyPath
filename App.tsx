@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -12,15 +12,33 @@ import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
 import { Menu, X, Check, Crown, Bell } from 'lucide-react';
 import { APP_UI, UI_TEXTS } from './constants';
+import { ActionToast } from './components/ActionToast';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
-  const appNotifications = APP_UI?.notifications ?? [];
+  const [appNotifications, setAppNotifications] = useState<any[]>(APP_UI?.notifications ?? []);
   const premiumData = APP_UI?.premium ?? {};
   const appText = UI_TEXTS?.app ?? {};
+  const [premiumActivated, setPremiumActivated] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastTone, setToastTone] = useState<'success' | 'info' | 'warning'>('info');
+
+  useEffect(() => {
+    const savedPremium = localStorage.getItem('premiumActivated');
+    if (savedPremium === 'true') setPremiumActivated(true);
+
+    const savedNotifications = localStorage.getItem('appNotifications');
+    if (savedNotifications) setAppNotifications(JSON.parse(savedNotifications));
+  }, []);
+
+  const showToast = (message: string, tone: 'success' | 'info' | 'warning' = 'info') => {
+    setToastTone(tone);
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 2200);
+  };
 
   const handleViewChange = (view: View) => {
     setCurrentView(view);
@@ -52,6 +70,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-py-dark font-sans text-py-text selection:bg-py-green/30 selection:text-white relative">
+      <ActionToast visible={Boolean(toastMessage)} message={toastMessage} tone={toastTone} />
       
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
@@ -88,7 +107,7 @@ const App: React.FC = () => {
               onMenuClick={() => setIsMobileMenuOpen(true)} 
               onProfileClick={() => handleViewChange(View.PROFILE)}
               onNotificationsClick={() => setShowNotifications(!showNotifications)}
-              onPremiumClick={() => setShowPremium(true)}
+              onPremiumClick={() => { setPremiumActivated(false); setShowPremium(true); }}
             />
         )}
         
@@ -109,7 +128,7 @@ const App: React.FC = () => {
             <div className="absolute top-20 right-4 md:right-24 z-50 w-80 bg-[#1E293B] border border-white/10 rounded-2xl shadow-2xl p-4 animate-in fade-in slide-in-from-top-5">
                 <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                     <Bell size={16} className="text-arcade-primary"/>
-                  {appText.notificationsTitle || 'Уведомления'}
+                  {appText.notificationsTitle}
                 </h3>
                 <div className="space-y-3">
                    {appNotifications.map((item: any, index: number) => (
@@ -119,8 +138,16 @@ const App: React.FC = () => {
                     </div>
                    ))}
                 </div>
-                <button onClick={() => setShowNotifications(false)} className="w-full mt-3 py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors">
-                  {appText.markAllRead || 'Пометить все как прочитанные'}
+                <button
+                  onClick={() => {
+                    setAppNotifications([]);
+                    localStorage.setItem('appNotifications', JSON.stringify([]));
+                    setShowNotifications(false);
+                    showToast(appText.markAllRead, 'success');
+                  }}
+                  className="w-full mt-1 py-2 text-xs font-bold text-arcade-primary hover:text-white transition-colors"
+                >
+                  {appText.markAllRead}
                 </button>
             </div>
             </>
@@ -138,18 +165,18 @@ const App: React.FC = () => {
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
                             <div className="relative z-10">
                                  <div className="inline-flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border border-white/10 shadow-lg">
-                                 <Crown size={12} fill="currentColor" /> {appText.premiumStatus || 'Pro Status'}
+                                 <Crown size={12} fill="currentColor" /> {appText.premiumStatus}
                                  </div>
-                               <h2 className="text-3xl font-display font-black mb-2 leading-none">{appText.premiumTitle || 'Стань Легендой'}</h2>
-                               <p className="text-orange-100 text-sm font-medium">{appText.premiumSubtitle || 'Разблокируй полный потенциал и получи доступ к элитным миссиям.'}</p>
+                               <h2 className="text-3xl font-display font-black mb-2 leading-none">{appText.premiumTitle}</h2>
+                               <p className="text-orange-100 text-sm font-medium">{appText.premiumSubtitle}</p>
                             </div>
                             <div className="relative z-10 mt-8">
-                               <div className="text-4xl font-black">{premiumData.price || '299₽'} <span className="text-sm font-bold text-orange-200 uppercase tracking-wider">{premiumData.period || '/ мес'}</span></div>
+                               <div className="text-4xl font-black">{premiumData.price} <span className="text-sm font-bold text-orange-200 uppercase tracking-wider">{premiumData.period}</span></div>
                             </div>
                         </div>
 
                         <div className="p-8 bg-[#1E293B]">
-              <h3 className="font-bold text-white mb-4 uppercase tracking-widest text-xs text-gray-400">{appText.premiumBenefitsTitle || 'Преимущества PRO'}</h3>
+              <h3 className="font-bold text-white mb-4 uppercase tracking-widest text-xs text-gray-400">{appText.premiumBenefitsTitle}</h3>
                             <ul className="space-y-3 mb-8">
                               {(premiumData.benefits || []).map((item: string, i: number) => (
                                      <li key={i} className="flex items-center gap-3 text-sm text-gray-300 font-medium">
@@ -160,8 +187,8 @@ const App: React.FC = () => {
                                      </li>
                                 ))}
                             </ul>
-                            <button className="w-full py-3 rounded-xl bg-white text-orange-600 font-black uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg active:scale-95">
-                              {appText.activatePro || 'Активировать PRO'}
+                            <button onClick={() => { setPremiumActivated(true); localStorage.setItem('premiumActivated', 'true'); showToast(appText.proActivated, 'success'); setTimeout(() => setShowPremium(false), 900); }} className="w-full py-3 rounded-xl bg-white text-orange-600 font-black uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg active:scale-95">
+                              {premiumActivated ? appText.proActivated : appText.activatePro}
                             </button>
                         </div>
                     </div>
