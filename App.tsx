@@ -10,12 +10,17 @@ import { Settings } from './components/Settings';
 import { Leaderboard } from './components/Leaderboard';
 import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
+import { Admin } from './components/Admin';
+import { Login } from './components/Login';
+import { Register } from './components/Register';
 import { Menu, X, Check, Crown, Bell } from 'lucide-react';
 import { APP_UI, UI_TEXTS } from './constants';
 import { ActionToast } from './components/ActionToast';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
+  const [currentView, setCurrentView] = useState<View>(View.LOGIN);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{email: string, username: string} | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
@@ -27,6 +32,16 @@ const App: React.FC = () => {
   const [toastTone, setToastTone] = useState<'success' | 'info' | 'warning'>('info');
 
   useEffect(() => {
+    // Check if user is already logged in
+    const savedAuth = localStorage.getItem('isAuthenticated');
+    const savedUser = localStorage.getItem('currentUser');
+    
+    if (savedAuth === 'true' && savedUser) {
+      setIsAuthenticated(true);
+      setCurrentUser(JSON.parse(savedUser));
+      setCurrentView(View.DASHBOARD);
+    }
+
     const savedPremium = localStorage.getItem('premiumActivated');
     if (savedPremium === 'true') setPremiumActivated(true);
 
@@ -40,6 +55,52 @@ const App: React.FC = () => {
     setTimeout(() => setToastMessage(''), 2200);
   };
 
+  const handleLogin = (email: string, password: string) => {
+    // Здесь будет запрос к API
+    // Пока просто симулируем вход
+    const user = {
+      email,
+      username: email.split('@')[0]
+    };
+    
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    setCurrentView(View.DASHBOARD);
+    
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    
+    showToast(`Добро пожаловать, ${user.username}!`, 'success');
+  };
+
+  const handleRegister = (email: string, password: string, username: string) => {
+    // Здесь будет запрос к API
+    const user = {
+      email,
+      username
+    };
+    
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    setCurrentView(View.DASHBOARD);
+    
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    
+    showToast(`Регистрация успешна! Добро пожаловать, ${username}!`, 'success');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setCurrentView(View.LOGIN);
+    
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('currentUser');
+    
+    showToast('Вы вышли из системы', 'info');
+  };
+
   const handleViewChange = (view: View) => {
     setCurrentView(view);
     setIsMobileMenuOpen(false); // Close menu on navigation
@@ -47,6 +108,10 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
+      case View.LOGIN:
+        return <Login setView={handleViewChange} onLogin={handleLogin} />;
+      case View.REGISTER:
+        return <Register setView={handleViewChange} onRegister={handleRegister} />;
       case View.DASHBOARD:
         return <Dashboard setView={handleViewChange} />;
       case View.PRACTICE:
@@ -62,7 +127,9 @@ const App: React.FC = () => {
       case View.LEADERBOARD:
         return <Leaderboard />;
       case View.SETTINGS:
-        return <Settings />;
+        return <Settings onLogout={handleLogout} />;
+      case View.ADMIN:
+        return <Admin />;
       default:
         return <Dashboard setView={handleViewChange} />;
     }
@@ -72,21 +139,28 @@ const App: React.FC = () => {
     <div className="flex min-h-screen bg-py-dark font-sans text-py-text selection:bg-py-green/30 selection:text-white relative">
       <ActionToast visible={Boolean(toastMessage)} message={toastMessage} tone={toastTone} />
       
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {/* If not authenticated, show only Login/Register */}
+      {!isAuthenticated && (currentView === View.LOGIN || currentView === View.REGISTER) ? (
+        <div className="w-full">
+          {renderView()}
+        </div>
+      ) : (
+        <>
+          {/* Mobile Menu Overlay */}
+          {isMobileMenuOpen && (
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
 
-      {/* Sidebar - Responsive */}
-      <Sidebar 
-        currentView={currentView} 
-        setView={handleViewChange} 
-        isMobileOpen={isMobileMenuOpen} 
-        closeMobileMenu={() => setIsMobileMenuOpen(false)}
-      />
+          {/* Sidebar - Responsive */}
+          <Sidebar 
+            currentView={currentView} 
+            setView={handleViewChange} 
+            isMobileOpen={isMobileMenuOpen} 
+            closeMobileMenu={() => setIsMobileMenuOpen(false)}
+          />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden w-full transition-all duration-300 relative">
         {/* Mobile Header Toggle for Immersive Views */}
@@ -197,6 +271,8 @@ const App: React.FC = () => {
         )}
 
       </main>
+      </>
+      )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

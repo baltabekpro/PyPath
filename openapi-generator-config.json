@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/modules/openapi-generator/src/main/resources/JSON/config-schema.json",
+  "generatorName": "typescript-fetch",
+  "inputSpec": "./swagger.json",
+  "outputDir": "./src/api/generated",
+  "additionalProperties": {
+    "supportsES6": true,
+    "npmName": "@pypath/api-client",
+    "npmVersion": "1.0.0",
+    "typescriptThreePlus": true,
+    "withInterfaces": true,
+    "useSingleRequestParameter": true,
+    "enumPropertyNaming": "UPPERCASE"
+  },
+  "globalProperties": {
+    "models": "",
+    "apis": "",
+    "modelDocs": "false",
+    "apiDocs": "false"
+  }
+}

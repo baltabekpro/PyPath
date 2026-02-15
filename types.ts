@@ -1,4 +1,6 @@
 export enum View {
+  LOGIN = 'LOGIN',
+  REGISTER = 'REGISTER',
   DASHBOARD = 'DASHBOARD',
   COURSES = 'COURSES',
   PRACTICE = 'PRACTICE', // Editor
@@ -6,7 +8,8 @@ export enum View {
   PROFILE = 'PROFILE',
   LEADERBOARD = 'LEADERBOARD',
   ACHIEVEMENTS = 'ACHIEVEMENTS',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  ADMIN = 'ADMIN'
 }
 
 export interface User {

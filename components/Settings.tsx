@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Moon, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
+import { Lock, Moon, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText, LogOut } from 'lucide-react';
 import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
 
 type SettingsTab = 'profile' | 'notifications' | 'billing' | 'api' | 'security';
 
-export const Settings: React.FC = () => {
+interface SettingsProps {
+  onLogout?: () => void;
+}
+
+export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const presetAvatars = SETTINGS_UI?.presetAvatars ?? [];
   const tabs = SETTINGS_UI?.tabs ?? [];
@@ -305,6 +309,29 @@ export const Settings: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Logout Section */}
+                    {onLogout && (
+                      <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6">
+                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                          <LogOut size={20} />
+                          Сессия
+                        </h2>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div>
+                            <p className="text-white font-bold text-sm">Выйти из аккаунта</p>
+                            <p className="text-xs text-gray-500">Завершить текущую сессию</p>
+                          </div>
+                          <button
+                            onClick={onLogout}
+                            className="px-6 py-2.5 rounded-lg bg-py-green text-py-dark hover:bg-py-green/90 transition-colors text-sm font-bold whitespace-nowrap flex items-center gap-2 justify-center"
+                          >
+                            <LogOut size={16} />
+                            Выйти
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Danger Zone */}
                     <div className="border border-red-500/20 rounded-2xl p-4 md:p-6 bg-red-500/5">

@@ -324,7 +324,8 @@
       { "view": "AI_CHAT", "label": "Оракул", "icon": "Bot", "mobile": true },
       { "view": "PROFILE", "label": "Герой", "icon": "User", "mobile": true },
       { "view": "LEADERBOARD", "label": "Топ", "icon": "Crown", "mobile": false },
-      { "view": "ACHIEVEMENTS", "label": "Трофеи", "icon": "Trophy", "mobile": false }
+      { "view": "ACHIEVEMENTS", "label": "Трофеи", "icon": "Trophy", "mobile": false },
+      { "view": "ADMIN", "label": "Админка", "icon": "Shield", "mobile": false }
     ],
     "settings": {
       "presetAvatars": ["Felix", "Aneka", "Zoe", "Max", "Liam", "Sky", "River", "Jude"],
