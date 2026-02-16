@@ -1,11 +1,11 @@
 """Authentication routes"""
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 
 from app.core.auth import (
     create_access_token,
@@ -13,52 +13,46 @@ from app.core.auth import (
     get_password_hash,
     verify_password,
 )
-from app.core.config import get_settings
+from app.core.database import get_db
 from app.schemas.auth import Token, UserLogin, UserRegister
-from app.services.repository import JsonRepository
+from app.services.database_service import DatabaseService
+from app.api.dependencies import get_db_service
 
 security = HTTPBearer()
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-def get_repository() -> JsonRepository:
-    """Get repository instance"""
-    settings = get_settings()
-    root_dir = Path(__file__).resolve().parents[2]
-    data_file = root_dir / settings.data_file
-    return JsonRepository(data_file)
-
-
 @router.post("/register", response_model=Token, status_code=201)
-def register(payload: UserRegister, repo: JsonRepository = Depends(get_repository)):
+def register(payload: UserRegister, service: DatabaseService = Depends(get_db_service)):
     """Register a new user"""
-    db = repo.load()
-    
     # Check if username exists
-    users = db.get("users", [])
-    if any(u.get("username") == payload.username for u in users):
+    if service.get_user_by_username(payload.username):
         raise HTTPException(status_code=400, detail="Username already exists")
     
     # Check if email exists
-    if any(u.get("email") == payload.email for u in users):
+    if service.get_user_by_email(payload.email):
         raise HTTPException(status_code=400, detail="Email already exists")
     
+    # Get user count for ID
+    from app.models.models import User
+    user_count = service.db.query(User).count()
+    
     # Create new user
-    new_user = {
-        "id": f"u_{len(users) + 1}",
+    user_data = {
+        "id": f"u_{user_count + 1}",
         "username": payload.username,
         "email": payload.email,
         "password": get_password_hash(payload.password),
-        "fullName": payload.fullName,
+        "full_name": payload.fullName,
         "name": payload.username,
         "avatar": f"https://api.dicebear.com/7.x/avataaars/svg?seed={payload.username}",
         "bio": "Новый путник в мире кода",
         "level": "Новичок",
-        "levelNum": 1,
+        "level_num": 1,
         "xp": 0,
-        "maxXp": 100,
+        "max_xp": 100,
         "streak": 0,
-        "rank": len(users) + 1,
+        "rank": user_count + 1,
         "league": "Bronze",
         "settings": {
             "theme": "dark",
@@ -67,13 +61,7 @@ def register(payload: UserRegister, repo: JsonRepository = Depends(get_repositor
         }
     }
     
-    users.append(new_user)
-    
-    def updater(data):
-        data["users"] = users
-        return data
-    
-    repo.update_db(updater)
+    service.create_user(user_data)
     
     # Create access token
     access_token = create_access_token(data={"sub": payload.username})
@@ -81,18 +69,15 @@ def register(payload: UserRegister, repo: JsonRepository = Depends(get_repositor
 
 
 @router.post("/login", response_model=Token)
-def login(payload: UserLogin, repo: JsonRepository = Depends(get_repository)):
+def login(payload: UserLogin, service: DatabaseService = Depends(get_db_service)):
     """Login user"""
-    db = repo.load()
-    users = db.get("users", [])
-    
     # Find user
-    user = next((u for u in users if u.get("username") == payload.username), None)
+    user = service.get_user_by_username(payload.username)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Verify password
-    if not verify_password(payload.password, user.get("password", "")):
+    if not verify_password(payload.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Create access token
@@ -103,7 +88,7 @@ def login(payload: UserLogin, repo: JsonRepository = Depends(get_repository)):
 @router.get("/me")
 def get_current_user(
     authorization: Optional[str] = Header(None),
-    repo: JsonRepository = Depends(get_repository)
+    service: DatabaseService = Depends(get_db_service)
 ):
     """Get current authenticated user"""
     if not authorization or not authorization.startswith("Bearer "):
@@ -120,16 +105,30 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token")
     
     # Get user from database
-    db = repo.load()
-    users = db.get("users", [])
-    user = next((u for u in users if u.get("username") == username), None)
+    user = service.get_user_by_username(username)
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Remove password from response
-    user_response = {k: v for k, v in user.items() if k != "password"}
-    return user_response
+    # Convert to dict and remove password
+    user_dict = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "fullName": user.full_name,
+        "name": user.name,
+        "avatar": user.avatar,
+        "bio": user.bio,
+        "level": user.level,
+        "levelNum": user.level_num,
+        "xp": user.xp,
+        "maxXp": user.max_xp,
+        "streak": user.streak,
+        "rank": user.rank,
+        "league": user.league,
+        "settings": user.settings
+    }
+    return user_dict
 
 
 @router.post("/logout")
