@@ -698,5 +698,6 @@
       { "id": "2", "code": "MEM_OPT", "status": "warning", "msg": "Garbage collection pending", "time": "10:45:12" },
       { "id": "3", "code": "NET_PING", "status": "success", "msg": "Latency: 12ms", "time": "10:48:30" },
       { "id": "4", "code": "ERR_404", "status": "error", "msg": "Module not found", "time": "11:02:01" }
-  ]
+  ],
+  "users": []
 }

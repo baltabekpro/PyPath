@@ -1,15 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flame, Bot, ChevronRight, Zap, Target, Play, Award, Sparkles, Clock, Swords } from 'lucide-react';
 import { COURSES, CURRENT_USER, DASHBOARD_UI, MISSIONS, STATS, UI_TEXTS, getIconComponent } from '../constants';
 import { View } from '../types';
+import { apiGet } from '../api';
 
 interface DashboardProps {
   setView: (view: View) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-    const mission = MISSIONS[0];
-    const activeCourse = COURSES.find((c: any) => !c.locked && c.progress < 100) || COURSES[0];
+    const [currentUser, setCurrentUser] = useState(CURRENT_USER);
+    const [stats, setStats] = useState(STATS);
+    const [missions, setMissions] = useState(MISSIONS);
+    const [courses, setCourses] = useState(COURSES);
+
+    useEffect(() => {
+        const loadDashboardData = async () => {
+            try {
+                const [user, statsData, missionsData, coursesData] = await Promise.all([
+                    apiGet<any>('/currentUser'),
+                    apiGet<any>('/stats'),
+                    apiGet<any[]>('/missions'),
+                    apiGet<any[]>('/courses')
+                ]);
+                setCurrentUser(user);
+                setStats(statsData);
+                setMissions(missionsData);
+                setCourses(coursesData);
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        };
+        loadDashboardData();
+    }, []);
+
+    const mission = missions[0];
+    const activeCourse = courses.find((c: any) => !c.locked && c.progress < 100) || courses[0];
     const progressPercent = activeCourse?.progress ?? 0;
     const dailyQuests = DASHBOARD_UI?.dailyQuests ?? [];
     const text = UI_TEXTS?.dashboard ?? {};
@@ -30,7 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-white/5">
-                    <p className="text-sm md:text-base text-white font-medium">{text.greeting?.replace('{name}', CURRENT_USER.name)}</p>
+                    <p className="text-sm md:text-base text-white font-medium">{text.greeting?.replace('{name}', currentUser.name)}</p>
                  </div>
                  <h1 className="text-3xl md:text-4xl font-display font-black text-white leading-none">{text.baseTitle}</h1>
              </div>
@@ -45,7 +71,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                  <Flame size={28} className="text-white fill-white" />
              </div>
              <div>
-                 <p className="text-2xl font-black text-white leading-none">{CURRENT_USER.streak}</p>
+                 <p className="text-2xl font-black text-white leading-none">{currentUser.streak}</p>
                  <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{text.streakLabel}</p>
              </div>
         </div>
@@ -148,21 +174,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                             <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
                             <span className="font-bold text-gray-300 text-sm">{text.statsTotalXp}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{STATS.totalXp.toLocaleString()}</span>
+                        <span className="font-mono font-bold text-white">{stats.totalXp?.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
                             <span className="font-bold text-gray-300 text-sm">{text.statsSolved}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{STATS.problemsSolved}</span>
+                        <span className="font-mono font-bold text-white">{stats.problemsSolved}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
                             <span className="font-bold text-gray-300 text-sm">{text.statsTime}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{STATS.codingHours}{text.hoursSuffix}</span>
+                        <span className="font-mono font-bold text-white">{stats.codingHours}{text.hoursSuffix}</span>
                     </div>
                 </div>
             </div>

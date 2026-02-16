@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { COURSES, UI_TEXTS, getIcon } from '../constants';
 import { Lock, Star, Play, ChevronLeft, Award, Zap, Skull, Map as MapIcon, X, EyeOff } from 'lucide-react';
 import { View, Course } from '../types';
+import { apiGet } from '../api';
 
 interface CoursesProps {
   setView: (view: View) => void;
@@ -11,15 +12,28 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedLevel, setSelectedLevel] = useState<Course | null>(null);
   const [shakingId, setShakingId] = useState<number | null>(null);
+  const [courses, setCourses] = useState(COURSES);
     const text = UI_TEXTS?.courses ?? {};
 
   useEffect(() => {
-    const activeLevel = COURSES.find(c => !c.locked && c.progress < 100) || COURSES[0];
-    const element = document.getElementById(`level-${activeLevel.id}`);
+    const loadCourses = async () => {
+        try {
+            const coursesData = await apiGet<any[]>('/courses');
+            setCourses(coursesData);
+        } catch (error) {
+            console.error('Failed to load courses:', error);
+        }
+    };
+    loadCourses();
+  }, []);
+
+  useEffect(() => {
+    const activeLevel = courses.find(c => !c.locked && c.progress < 100) || courses[0];
+    const element = document.getElementById(`level-${activeLevel?.id}`);
     if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, []);
+  }, [courses]);
 
   const handleLevelClick = (course: Course) => {
       if (course.locked) {
@@ -38,7 +52,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   };
 
   const generatePath = () => {
-    const points = COURSES.map((_, i) => {
+    const points = courses.map((_, i) => {
         const xPercent = i % 4 === 1 ? 80 : (i % 4 === 3 ? 20 : 50);
         return { x: xPercent, y: i * 180 + 100 };
     });
@@ -78,19 +92,19 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
        {/* Map Container */}
        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar relative py-20 pb-40">
-           <div className="max-w-md mx-auto relative min-h-screen" style={{ height: `${COURSES.length * 180 + 200}px` }}>
+           <div className="max-w-md mx-auto relative min-h-screen" style={{ height: `${courses.length * 180 + 200}px` }}>
                
                {/* Connection Line */}
             <svg
                 className="absolute inset-0 size-full pointer-events-none z-0"
-                viewBox={`0 0 100 ${COURSES.length * 180 + 200}`}
+                viewBox={`0 0 100 ${courses.length * 180 + 200}`}
                 preserveAspectRatio="none"
             >
                     <path d={generatePath()} fill="none" stroke="#334155" strokeWidth="4" strokeDasharray="8 8" strokeLinecap="round" />
                </svg>
 
                {/* Nodes */}
-               {COURSES.map((course, index) => {
+               {courses.map((course, index) => {
                    const xPos = index % 4 === 1 ? '80%' : (index % 4 === 3 ? '20%' : '50%');
                    const yPos = index * 180 + 100;
                    const isLocked = course.locked;

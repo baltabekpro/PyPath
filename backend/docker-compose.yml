@@ -1,0 +1,11 @@
+services:
+  pypath-backend:
+    build: .
+    container_name: pypath-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

@@ -2,30 +2,114 @@ import { Course, User } from './types';
 import { Terminal, Database, Cpu, Globe, Code2, LineChart, Gamepad2, Rocket, Ghost, Zap, Skull, Lock, Box, Layers, ShieldAlert, Key, Flame, Bug, Gift, LockKeyhole, Target, Sword, Crown, AlertCircle, Search, Sparkles, LayoutGrid, Map, Code, Bot, User as UserIcon, Trophy, Bell, CreditCard, Shield } from 'lucide-react';
 import React from 'react';
 import DB from './db.json';
+import { apiGet } from './api';
+
+let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
 
 // Export Data from JSON
-export const CURRENT_USER: User = DB.currentUser as unknown as User;
-export const STATS = DB.stats;
-export const ACTIVITY_DATA = DB.activity;
-export const SKILLS = DB.skills;
-export const COURSES: Course[] = DB.courses;
-export const LEADERBOARD = DB.leaderboard;
-export const FRIENDS = DB.friends;
-export const POSTS = DB.posts;
-export const ACHIEVEMENTS = DB.achievements;
-export const MISSIONS = DB.missions;
-export const LOGS = DB.logs;
-export const UI_DATA = DB.uiData as any;
-export const SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
-export const SETTINGS_UI = UI_DATA?.settings ?? {};
-export const PROFILE_UI = UI_DATA?.profile ?? {};
-export const COMMUNITY_UI = UI_DATA?.community ?? {};
-export const DASHBOARD_UI = UI_DATA?.dashboard ?? {};
-export const APP_UI = UI_DATA?.app ?? {};
-export const AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
-export const AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
-export const EDITOR_UI = UI_DATA?.editor ?? {};
-export const UI_TEXTS = UI_DATA?.texts ?? {};
+export let CURRENT_USER: User = DB.currentUser as unknown as User;
+export let STATS = DB.stats;
+export let ACTIVITY_DATA = DB.activity;
+export let SKILLS = DB.skills;
+export let COURSES: Course[] = DB.courses as unknown as Course[];
+export let LEADERBOARD = DB.leaderboard;
+export let FRIENDS = DB.friends;
+export let POSTS = DB.posts;
+export let ACHIEVEMENTS = DB.achievements;
+export let MISSIONS = DB.missions;
+export let LOGS = DB.logs;
+export let UI_DATA = DB.uiData as any;
+export let SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
+export let SETTINGS_UI = UI_DATA?.settings ?? {};
+export let PROFILE_UI = UI_DATA?.profile ?? {};
+export let COMMUNITY_UI = UI_DATA?.community ?? {};
+export let DASHBOARD_UI = UI_DATA?.dashboard ?? {};
+export let APP_UI = UI_DATA?.app ?? {};
+export let AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
+export let AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
+export let EDITOR_UI = UI_DATA?.editor ?? {};
+export let UI_TEXTS = UI_DATA?.texts ?? {};
+
+const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
+    try {
+        return await apiGet<T>(path);
+    } catch {
+        return null;
+    }
+};
+
+const applyUiData = (uiData: any) => {
+    UI_DATA = uiData;
+    SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
+    SETTINGS_UI = UI_DATA?.settings ?? {};
+    PROFILE_UI = UI_DATA?.profile ?? {};
+    COMMUNITY_UI = UI_DATA?.community ?? {};
+    DASHBOARD_UI = UI_DATA?.dashboard ?? {};
+    APP_UI = UI_DATA?.app ?? {};
+    AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
+    AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
+    EDITOR_UI = UI_DATA?.editor ?? {};
+    UI_TEXTS = UI_DATA?.texts ?? {};
+};
+
+export const initializeAppData = async (): Promise<void> => {
+    if (isInitialized) {
+        return;
+    }
+    if (initializationPromise) {
+        return initializationPromise;
+    }
+
+    initializationPromise = (async () => {
+        const [
+            currentUser,
+            stats,
+            activity,
+            skills,
+            courses,
+            leaderboard,
+            friends,
+            posts,
+            achievements,
+            missions,
+            logs,
+            uiData,
+        ] = await Promise.all([
+            safeFetchJson<User>('/currentUser'),
+            safeFetchJson<any>('/stats'),
+            safeFetchJson<any[]>('/activity'),
+            safeFetchJson<any[]>('/skills'),
+            safeFetchJson<Course[]>('/courses'),
+            safeFetchJson<any[]>('/leaderboard'),
+            safeFetchJson<any[]>('/friends'),
+            safeFetchJson<any[]>('/posts'),
+            safeFetchJson<any[]>('/achievements'),
+            safeFetchJson<any[]>('/missions'),
+            safeFetchJson<any[]>('/logs'),
+            safeFetchJson<any>('/uiData'),
+        ]);
+
+        if (currentUser) CURRENT_USER = currentUser;
+        if (stats) STATS = stats;
+        if (activity) ACTIVITY_DATA = activity;
+        if (skills) SKILLS = skills;
+        if (courses) COURSES = courses;
+        if (leaderboard) LEADERBOARD = leaderboard;
+        if (friends) FRIENDS = friends;
+        if (posts) POSTS = posts;
+        if (achievements) ACHIEVEMENTS = achievements;
+        if (missions) MISSIONS = missions;
+        if (logs) LOGS = logs;
+        if (uiData) applyUiData(uiData);
+
+        isInitialized = true;
+    })().finally(() => {
+        initializationPromise = null;
+    });
+
+    return initializationPromise;
+};
 
 // Helper to get React Component for Icon name
 export const getIcon = (name: string, props: any = {}) => {

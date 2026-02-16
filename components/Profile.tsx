@@ -4,6 +4,7 @@ import { CURRENT_USER, SKILLS, FRIENDS, STATS, PROFILE_UI, UI_TEXTS, getIconComp
 import { Shield, Target, Flame, Medal, Edit3, Share2, MapPin, Github, Zap, Trophy, UserPlus, Swords, Search, Plus } from 'lucide-react';
 import { View } from '../types';
 import { ActionToast } from './ActionToast';
+import { apiGet } from '../api';
 
 interface ProfileProps {
   setView: (view: View) => void;
@@ -38,10 +39,32 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   const [loadRadar, setLoadRadar] = useState(false);
         const [actionMessage, setActionMessage] = useState('');
         const [requestedFriends, setRequestedFriends] = useState<number[]>([]);
+        const [currentUser, setCurrentUser] = useState(CURRENT_USER);
+        const [stats, setStats] = useState(STATS);
+        const [skills, setSkills] = useState(SKILLS);
+        const [friends, setFriends] = useState(FRIENDS);
 
   useEffect(() => {
     const savedFriends = localStorage.getItem('requestedFriends');
     if (savedFriends) setRequestedFriends(JSON.parse(savedFriends));
+    
+    const loadProfileData = async () => {
+        try {
+            const [userData, statsData, skillsData, friendsData] = await Promise.all([
+                apiGet<any>('/currentUser'),
+                apiGet<any>('/stats'),
+                apiGet<any[]>('/skills'),
+                apiGet<any[]>('/friends')
+            ]);
+            setCurrentUser(userData);
+            setStats(statsData);
+            setSkills(skillsData);
+            setFriends(friendsData);
+        } catch (error) {
+            console.error('Failed to load profile data:', error);
+        }
+    };
+    loadProfileData();
   }, []);
 
   useEffect(() => {
@@ -70,10 +93,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   }, []);
 
   const battleStats = [
-        { label: battleStatText.streak, value: CURRENT_USER.streak, suffix: 'дн', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-        { label: battleStatText.quests, value: STATS.problemsSolved, suffix: '', icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-        { label: battleStatText.leagueRank, value: CURRENT_USER.rank, suffix: '#', icon: Medal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
-        { label: battleStatText.accuracy, value: STATS.accuracy, suffix: '%', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
+        { label: battleStatText.streak, value: currentUser.streak, suffix: 'дн', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+        { label: battleStatText.quests, value: stats.problemsSolved, suffix: '', icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+        { label: battleStatText.leagueRank, value: currentUser.rank, suffix: '#', icon: Medal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+        { label: battleStatText.accuracy, value: stats.accuracy, suffix: '%', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
   ];
 
   return (
@@ -92,7 +115,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             {/* Top Actions */}
             <div className="absolute top-6 right-6 flex gap-3 z-20">
                 <button onClick={async () => {
-                    const shareText = `Check out ${CURRENT_USER.name}'s profile on PyPath!`;
+                    const shareText = `Check out ${currentUser.name}'s profile on PyPath!`;
                     const shareUrl = window.location.href;
                     try {
                         if (navigator.share) {
@@ -127,7 +150,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 {/* Avatar with Rank Frame & Effects */}
                 <div className="relative group cursor-pointer">
                     {/* Fire Effect for Streak */}
-                    {CURRENT_USER.streak > 10 && (
+                    {currentUser.streak > 10 && (
                         <div className="absolute -top-6 -left-6 z-20 pointer-events-none">
                             <Flame size={48} className="text-orange-500 fill-orange-500 animate-bounce-sm drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
                         </div>
@@ -135,24 +158,24 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     
                     {/* Avatar Container */}
                     <div className="size-32 md:size-40 rounded-3xl bg-[#0F172A] p-1.5 relative z-10 shadow-[0_0_40px_rgba(168,85,247,0.4)] overflow-hidden border-2 border-arcade-primary group-hover:border-white transition-colors">
-                        <img src={CURRENT_USER.avatar} alt="Profile" className="size-full rounded-2xl object-cover bg-slate-800" />
+                        <img src={currentUser.avatar} alt="Profile" className="size-full rounded-2xl object-cover bg-slate-800" />
                         {/* Glitch Overlay on Hover */}
                         <div className="absolute inset-0 bg-arcade-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
                     </div>
                     
                     {/* Rank Badge */}
                     <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-arcade-primary text-white font-black px-4 py-1.5 rounded-xl text-xs uppercase tracking-widest shadow-lg border-2 border-[#0F172A] z-20 flex items-center gap-2 whitespace-nowrap">
-                        <Shield size={12} fill="currentColor"/> {CURRENT_USER.level}
+                        <Shield size={12} fill="currentColor"/> {currentUser.level}
                     </div>
                 </div>
 
                 {/* Name & Bio */}
                 <div className="flex-1 text-center md:text-left pt-12 md:pt-0">
                     <h1 className="text-3xl md:text-5xl font-display font-black text-white mb-2 tracking-tight">
-                        {CURRENT_USER.name}
+                        {currentUser.name}
                     </h1>
                     <p className="text-gray-400 font-medium max-w-lg mx-auto md:mx-0 leading-relaxed">
-                        {CURRENT_USER.bio || text.defaultBio}
+                        {currentUser.bio || text.defaultBio}
                     </p>
                     
                     {/* Tags / Badges */}
@@ -211,7 +234,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <div className="h-[300px] w-full relative z-10">
                         {loadRadar && (
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={SKILLS}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skills}>
                                 <PolarGrid stroke="#334155" />
                                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 'bold' }} />
                                 <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
@@ -301,11 +324,11 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold text-white">{text.friends}</h3>
-                        <div className="bg-black/30 px-2 py-1 rounded-lg text-xs font-bold text-gray-400 border border-white/5">{FRIENDS.length}</div>
+                        <div className="bg-black/30 px-2 py-1 rounded-lg text-xs font-bold text-gray-400 border border-white/5">{friends.length}</div>
                     </div>
                     
                     <div className="space-y-4">
-                        {FRIENDS.map((friend: any) => (
+                        {friends.map((friend: any) => (
                             <div key={friend.id} className="flex items-center justify-between group cursor-pointer">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">

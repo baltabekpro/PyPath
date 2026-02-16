@@ -5,6 +5,7 @@ import MonacoEditor from '@monaco-editor/react';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { EDITOR_UI, MISSIONS, UI_TEXTS } from '../constants';
+import { apiGet, apiPost } from '../api';
 
 // --- Types ---
 interface FileNode {
@@ -25,7 +26,7 @@ const getFileIcon = (name: string) => {
 
 export const EditorComponent: React.FC = () => {
   // Use the first mission from DB as default for now
-  const mission = MISSIONS[0];
+    const [mission, setMission] = useState<any>(MISSIONS[0]);
     const learningData = EDITOR_UI?.learning ?? {};
     const botMessages = EDITOR_UI?.botMessages ?? {};
         const text = UI_TEXTS?.editor ?? {};
@@ -67,6 +68,20 @@ export const EditorComponent: React.FC = () => {
           setIsSidebarCollapsed(true);
       }
   }, []);
+
+  useEffect(() => {
+      const loadMissionProgress = async () => {
+          try {
+              const progress = await apiGet<{ objectives?: any[] }>(`/missions/${mission.id}/progress`);
+              if (progress?.objectives) {
+                  setMission((prev: any) => ({ ...prev, objectives: progress.objectives }));
+              }
+          } catch {
+          }
+      };
+
+      loadMissionProgress();
+  }, [mission.id]);
 
   const handleEditorBeforeMount = (monaco: any) => {
     monaco.editor.defineTheme('cyberpunk', {
@@ -165,7 +180,7 @@ export const EditorComponent: React.FC = () => {
         return () => window.cancelAnimationFrame(raf);
     }, [isTerminalOpen]);
 
-  const runCode = () => {
+    const runCode = async () => {
     if (!xtermInstance.current) return;
     setIsRunning(true);
     setIsTerminalOpen(true);
@@ -175,9 +190,36 @@ export const EditorComponent: React.FC = () => {
     const term = xtermInstance.current;
     term.writeln('');
     term.writeln('\x1b[33m> Running script...\x1b[0m');
-    
-    setTimeout(() => {
-       // Mock logic check
+
+    try {
+       const code = activeFile?.content || '';
+       const result = await apiPost<{ success: boolean; message: string; xpEarned: number; objectives?: any[] }>(
+           `/missions/${mission.id}/submit`,
+           { code }
+       );
+
+       if (result.objectives) {
+           setMission((prev: any) => ({ ...prev, objectives: result.objectives }));
+       }
+
+       if (result.success) {
+           term.writeln('Checking port 80... Closed');
+           term.writeln('Checking port 443... Closed');
+           term.writeln('Checking port 8080... \x1b[1;32mOPEN\x1b[0m');
+           term.writeln('\x1b[35m[OUTPUT]\x1b[0m ACCESS GRANTED');
+           term.writeln(`\x1b[1;32m> ${result.message} (+${result.xpEarned} XP)\x1b[0m`);
+           setBotEmotion('happy');
+           setBotMessage(botMessages.success || textBot.success);
+           setShowSuccess(true);
+           setTimeout(() => setShowSuccess(false), 3000);
+       } else {
+           term.writeln('\x1b[31m[ERROR] Mission check failed.\x1b[0m');
+           term.writeln(result.message || 'Hint: Проверь условие и ожидаемый вывод.');
+           setBotEmotion('alert');
+           setBotMessage(result.message || botMessages.error || textBot.error);
+       }
+       term.write('$ ');
+    } catch {
        if (activeFile?.content?.includes('return "ACCESS DENIED"')) {
            term.writeln('\x1b[31m[ERROR] Firewall blocking connection.\x1b[0m');
            term.writeln('Hint: Change return value to "GRANTED"');
@@ -195,8 +237,9 @@ export const EditorComponent: React.FC = () => {
            setShowSuccess(true);
            setTimeout(() => setShowSuccess(false), 3000);
        }
+    } finally {
        setIsRunning(false);
-    }, 1500);
+    }
   };
 
   return (

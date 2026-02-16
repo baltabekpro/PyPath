@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Sparkles, Share2, X } from 'lucide-react';
 import { ACHIEVEMENTS, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
+import { apiGet } from '../api';
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 type Category = 'all' | 'coding' | 'community' | 'streak' | 'secret';
@@ -41,23 +42,37 @@ export const Achievements: React.FC = () => {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [filter, setFilter] = useState<Category>('all');
     const [shareStatus, setShareStatus] = useState('');
+    const [achievements, setAchievements] = useState<any[]>(ACHIEVEMENTS);
     const text = UI_TEXTS?.achievements ?? {};
     const rarity = text.rarity ?? {};
     const ranks = text.ranks ?? [];
     const stats = text.stats ?? {};
     const filterTabs = text.filters ?? [];
 
-    const unlockedCount = ACHIEVEMENTS.filter((a: any) => a.unlocked).length;
-    const totalCount = ACHIEVEMENTS.length;
-    const completionPercent = Math.round((unlockedCount / totalCount) * 100);
+    useEffect(() => {
+        const loadAchievements = async () => {
+            try {
+                const data = await apiGet<any[]>(`/achievements?category=${filter}`);
+                setAchievements(data);
+            } catch {
+                setAchievements(ACHIEVEMENTS.filter((a: any) => filter === 'all' || a.category === filter));
+            }
+        };
+
+        loadAchievements();
+    }, [filter]);
+
+    const unlockedCount = achievements.filter((a: any) => a.unlocked).length;
+    const totalCount = achievements.length;
+    const completionPercent = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
     
     // Calculate Rank
     const rank = [...ranks]
         .sort((a: any, b: any) => a.min - b.min)
         .reduce((acc: string, current: any) => (completionPercent >= current.min ? current.label : acc), ranks[0]?.label);
 
-    const filteredList = ACHIEVEMENTS.filter((a: any) => filter === 'all' || a.category === filter);
-    const selectedAchievement = ACHIEVEMENTS.find((a: any) => a.id === selectedId);
+    const filteredList = achievements;
+    const selectedAchievement = achievements.find((a: any) => a.id === selectedId);
 
     const handleShare = async (achievement: any) => {
         const shareText = `${achievement.title} — +${achievement.xpReward} XP`;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Moon, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
 import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
+import { apiPut } from '../api';
 
 type SettingsTab = 'profile' | 'notifications' | 'billing' | 'api' | 'security';
 
@@ -59,16 +60,26 @@ export const Settings: React.FC = () => {
       handleAvatarChange(randomSeed);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
       setIsSaving(true);
-      // Simulate API Call
-      setTimeout(() => {
+      try {
+          const updatedUser = await apiPut<any>('/currentUser', {
+              name: formData.name,
+              bio: formData.bio,
+              avatar: formData.avatar,
+          });
+
+          Object.assign(CURRENT_USER as any, updatedUser);
+          localStorage.setItem('profile', JSON.stringify(formData));
           setIsSaving(false);
           setShowSuccess(true);
-          localStorage.setItem('profile', JSON.stringify(formData));
-          // In a real app, update global context here
           setTimeout(() => setShowSuccess(false), 3000);
-      }, 1500);
+      } catch {
+          localStorage.setItem('profile', JSON.stringify(formData));
+          setIsSaving(false);
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 3000);
+      }
   };
 
   const showAction = (message: string) => {
@@ -302,6 +313,26 @@ export const Settings: React.FC = () => {
                                     </div>
                                 </div>
                                 <button onClick={() => showAction(text.toastTwofaEnabled)} className="text-xs font-bold text-arcade-success bg-arcade-success/10 px-3 py-1.5 rounded-lg hover:bg-arcade-success/20 transition-colors border border-arcade-success/20">{text.enable}</button>
+                            </div>
+
+                            {/* Logout Button */}
+                            <div className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5">
+                                <div className="flex items-center gap-4">
+                                    <ArrowRight size={18} className="text-arcade-action rotate-180"/>
+                                    <div>
+                                        <p className="text-sm font-bold text-white">Выход из аккаунта</p>
+                                        <p className="text-xs text-py-muted">Завершить текущую сессию</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        localStorage.removeItem('token');
+                                        window.location.reload();
+                                    }} 
+                                    className="text-xs font-bold text-white bg-arcade-action/10 px-3 py-1.5 rounded-lg hover:bg-arcade-action/20 transition-colors border border-arcade-action/20"
+                                >
+                                    Выйти
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -10,16 +10,20 @@ import { Settings } from './components/Settings';
 import { Leaderboard } from './components/Leaderboard';
 import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
+import { AuthPage } from './components/AuthPage';
 import { Menu, X, Check, Crown, Bell } from 'lucide-react';
-import { APP_UI, UI_TEXTS } from './constants';
+import { APP_UI, UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
 import { ActionToast } from './components/ActionToast';
 
 const App: React.FC = () => {
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(CURRENT_USER);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
-  const [appNotifications, setAppNotifications] = useState<any[]>(APP_UI?.notifications ?? []);
+  const [appNotifications, setAppNotifications] = useState<any[]>([]);
   const premiumData = APP_UI?.premium ?? {};
   const appText = UI_TEXTS?.app ?? {};
   const [premiumActivated, setPremiumActivated] = useState(false);
@@ -27,12 +31,66 @@ const App: React.FC = () => {
   const [toastTone, setToastTone] = useState<'success' | 'info' | 'warning'>('info');
 
   useEffect(() => {
-    const savedPremium = localStorage.getItem('premiumActivated');
-    if (savedPremium === 'true') setPremiumActivated(true);
+    let isMounted = true;
 
-    const savedNotifications = localStorage.getItem('appNotifications');
-    if (savedNotifications) setAppNotifications(JSON.parse(savedNotifications));
+    const bootstrap = async () => {
+      // Check for existing token
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await fetch('http://localhost:8000/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            setCurrentUser(userData);
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          localStorage.removeItem('token');
+        }
+      }
+
+      await initializeAppData();
+      if (!isMounted) return;
+
+      const savedPremium = localStorage.getItem('premiumActivated');
+      if (savedPremium === 'true') setPremiumActivated(true);
+
+      const savedNotifications = localStorage.getItem('appNotifications');
+      if (savedNotifications) {
+        setAppNotifications(JSON.parse(savedNotifications));
+      } else {
+        setAppNotifications(APP_UI?.notifications ?? []);
+      }
+
+      setIsBootstrapping(false);
+    };
+
+    bootstrap();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  const handleAuthSuccess = (token: string, user: any) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    showToast(`Добро пожаловать, ${user.name}!`, 'success');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    setCurrentUser(CURRENT_USER);
+    showToast('Вы вышли из аккаунта', 'info');
+  };
 
   const showToast = (message: string, tone: 'success' | 'info' | 'warning' = 'info') => {
     setToastTone(tone);
@@ -67,6 +125,21 @@ const App: React.FC = () => {
         return <Dashboard setView={handleViewChange} />;
     }
   };
+
+  if (isBootstrapping) {
+    return (
+      <div className="min-h-screen bg-py-dark text-py-text flex items-center justify-center">
+        <div className="text-center">
+          <div className="size-10 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-gray-300">Загружаем данные...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+  }
 
   return (
     <div className="flex min-h-screen bg-py-dark font-sans text-py-text selection:bg-py-green/30 selection:text-white relative">

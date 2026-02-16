@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Crown, ChevronUp, ChevronDown, Minus, Globe, Users, School, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
 import { CURRENT_USER, LEADERBOARD, UI_TEXTS } from '../constants';
+import { apiGet } from '../api';
 
 const formatXP = (num: number) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -31,20 +32,32 @@ const getTierColor = (tier: string) => {
 export const Leaderboard: React.FC = () => {
   const [scope, setScope] = useState<'global' | 'friends' | 'school'>('global');
   const [period, setPeriod] = useState<'all' | 'month'>('all');
+  const [leaders, setLeaders] = useState<any[]>(LEADERBOARD);
     const text = UI_TEXTS?.leaderboard ?? {};
 
-  const displayedLeaders = useMemo(() => {
-      let filtered = [...LEADERBOARD]; // Create a copy from the constant
-      
-      if (scope === 'friends') {
-          filtered = LEADERBOARD.filter((l: any) => l.isFriend || l.name === CURRENT_USER.name);
-      } else if (scope === 'school') {
-          filtered = LEADERBOARD.filter((l: any) => l.isSchool || l.name === CURRENT_USER.name);
-      }
+  useEffect(() => {
+      const loadLeaderboard = async () => {
+          try {
+              const data = await apiGet<any[]>(`/leaderboard?scope=${scope}&period=${period}`);
+              setLeaders(data);
+          } catch {
+              let fallback = [...LEADERBOARD];
+              if (scope === 'friends') {
+                  fallback = LEADERBOARD.filter((l: any) => l.isFriend || l.name === CURRENT_USER.name);
+              } else if (scope === 'school') {
+                  fallback = LEADERBOARD.filter((l: any) => l.isSchool || l.name === CURRENT_USER.name);
+              }
+              setLeaders(fallback);
+          }
+      };
 
+      loadLeaderboard();
+  }, [scope, period]);
+
+  const displayedLeaders = useMemo(() => {
       // Re-rank after filtering for display purposes
-      return filtered.sort((a, b) => b.xp - a.xp).map((l, idx) => ({ ...l, displayRank: idx + 1 }));
-  }, [scope]);
+      return [...leaders].sort((a, b) => b.xp - a.xp).map((l, idx) => ({ ...l, displayRank: idx + 1 }));
+  }, [leaders]);
 
   const topThree = displayedLeaders.slice(0, 3);
   const list = displayedLeaders.slice(3);

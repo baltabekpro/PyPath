@@ -1,9 +1,10 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { MessageSquare, Heart, Share2, MoreHorizontal, Image, Code, Hash, TrendingUp, Search, Filter } from 'lucide-react';
 import { COMMUNITY_UI, CURRENT_USER, POSTS, UI_TEXTS } from '../constants';
+import { apiGet, apiPost } from '../api';
 
 export const Community: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'popular' | 'new'>('popular');
+    const [activeTab, setActiveTab] = useState<'popular' | 'fresh'>('popular');
     const [posts, setPosts] = useState<any[]>(POSTS);
     const [draftPost, setDraftPost] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -13,14 +14,17 @@ export const Community: React.FC = () => {
     const topContributors = COMMUNITY_UI?.topContributors ?? [];
     const text = UI_TEXTS?.community ?? {};
 
-  useEffect(() => {
-    const savedPosts = localStorage.getItem('posts');
-    if (savedPosts) setPosts(JSON.parse(savedPosts));
-  }, []);
+    useEffect(() => {
+        const loadPosts = async () => {
+            try {
+                const loaded = await apiGet<any[]>(`/posts?sort=${activeTab}`);
+                setPosts(loaded);
+            } catch {
+            }
+        };
 
-  useEffect(() => {
-    localStorage.setItem('posts', JSON.stringify(posts));
-  }, [posts]);
+        loadPosts();
+    }, [activeTab]);
 
   const visiblePosts = useMemo(() => {
       const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -40,37 +44,52 @@ export const Community: React.FC = () => {
       });
   }, [activeTab, posts, searchQuery]);
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
       const textValue = draftPost.trim();
       if (!textValue) {
           inputRef.current?.focus();
           return;
       }
 
-      const newPost = {
-          id: Date.now(),
-          author: { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, level: CURRENT_USER.levelNum },
-          time: 'только что',
-          content: textValue,
-          tags: ['НовыйПост'],
-          likes: 0,
-          comments: 0,
-          liked: false,
-          code: null
-      };
+      try {
+          const created = await apiPost<any>('/posts', {
+              content: textValue,
+              tags: ['НовыйПост']
+          });
+          setPosts((prev) => [created, ...prev]);
+      } catch {
+          const newPost = {
+              id: Date.now(),
+              author: { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, level: CURRENT_USER.levelNum },
+              time: 'только что',
+              content: textValue,
+              tags: ['НовыйПост'],
+              likes: 0,
+              comments: 0,
+              liked: false,
+              code: null
+          };
+          setPosts((prev) => [newPost, ...prev]);
+      }
 
-      setPosts((prev) => [newPost, ...prev]);
       setDraftPost('');
       setShowPreview(false);
-      setActiveTab('new');
+      setActiveTab('fresh');
   };
 
-  const toggleLike = (postId: number) => {
-      setPosts((prev) => prev.map((post: any) => {
-          if (post.id !== postId) return post;
-          const nextLiked = !post.liked;
-          return { ...post, liked: nextLiked, likes: nextLiked ? post.likes + 1 : Math.max(0, post.likes - 1) };
-      }));
+  const toggleLike = async (postId: number) => {
+      const post = posts.find((item: any) => item.id === postId);
+      if (post?.liked) return;
+
+      try {
+          const result = await apiPost<{ success: boolean; likes: number }>(`/posts/${postId}/like`);
+          setPosts((prev) => prev.map((item: any) => item.id === postId ? { ...item, liked: true, likes: result.likes } : item));
+      } catch {
+          setPosts((prev) => prev.map((item: any) => {
+              if (item.id !== postId || item.liked) return item;
+              return { ...item, liked: true, likes: item.likes + 1 };
+          }));
+      }
   };
 
   const incrementComments = (postId: number) => {
@@ -150,11 +169,11 @@ export const Community: React.FC = () => {
                     {activeTab === 'popular' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-py-green rounded-full shadow-[0_0_8px_#0df259]"></div>}
                 </button>
                 <button 
-                    onClick={() => setActiveTab('new')}
-                    className={`pb-2 px-2 text-sm font-bold transition-colors relative ${activeTab === 'new' ? 'text-white' : 'text-py-muted hover:text-white'}`}
+                    onClick={() => setActiveTab('fresh')}
+                    className={`pb-2 px-2 text-sm font-bold transition-colors relative ${activeTab === 'fresh' ? 'text-white' : 'text-py-muted hover:text-white'}`}
                 >
                     {text.fresh}
-                    {activeTab === 'new' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-py-green rounded-full shadow-[0_0_8px_#0df259]"></div>}
+                    {activeTab === 'fresh' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-py-green rounded-full shadow-[0_0_8px_#0df259]"></div>}
                 </button>
                 <div className="ml-auto flex items-center gap-2 text-py-muted hover:text-white cursor-pointer">
                     <Filter size={16} />
