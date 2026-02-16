@@ -30,3 +30,12 @@ class PostCreate(BaseModel):
 
 class MissionSubmit(BaseModel):
     code: str
+
+
+class NotificationPreference(BaseModel):
+    label: str
+    enabled: bool
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    preferences: list[NotificationPreference] = Field(default_factory=list)

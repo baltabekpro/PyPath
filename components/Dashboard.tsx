@@ -13,20 +13,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const [stats, setStats] = useState(STATS);
     const [missions, setMissions] = useState(MISSIONS);
     const [courses, setCourses] = useState(COURSES);
+    const [dailyQuests, setDailyQuests] = useState<any[]>([]);
 
     useEffect(() => {
         const loadDashboardData = async () => {
             try {
-                const [user, statsData, missionsData, coursesData] = await Promise.all([
+                const [user, statsData, missionsData, coursesData, uiData] = await Promise.all([
                     apiGet<any>('/currentUser'),
                     apiGet<any>('/stats'),
                     apiGet<any[]>('/missions'),
-                    apiGet<any[]>('/courses')
+                    apiGet<any[]>('/courses'),
+                    apiGet<any>('/uiData')
                 ]);
                 setCurrentUser(user);
                 setStats(statsData);
                 setMissions(missionsData);
                 setCourses(coursesData);
+                setDailyQuests(uiData?.dashboard?.dailyQuests || []);
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
             }
@@ -37,7 +40,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const mission = missions[0];
     const activeCourse = courses.find((c: any) => !c.locked && c.progress < 100) || courses[0];
     const progressPercent = activeCourse?.progress ?? 0;
-    const dailyQuests = DASHBOARD_UI?.dailyQuests ?? [];
     const text = UI_TEXTS?.dashboard ?? {};
 
   return (
@@ -138,7 +140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         const QuestIcon = getIconComponent(quest.icon);
                         return (
                         <div 
-                            key={i} 
+                            key={quest.link || i} 
                             onClick={() => setView(quest.link as View)}
                             className={`bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform cursor-pointer hover:border-white/20`}
                         >

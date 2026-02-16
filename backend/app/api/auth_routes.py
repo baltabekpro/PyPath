@@ -14,9 +14,9 @@ from app.core.auth import (
     verify_password,
 )
 from app.core.database import get_db
-from app.schemas.auth import Token, UserLogin, UserRegister
+from app.schemas.auth import Token, UserLogin, UserRegister, PasswordChangeRequest
 from app.services.database_service import DatabaseService
-from app.api.dependencies import get_db_service
+from app.api.dependencies import get_db_service, get_current_user
 
 security = HTTPBearer()
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -24,7 +24,17 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=Token, status_code=201)
 def register(payload: UserRegister, service: DatabaseService = Depends(get_db_service)):
-    """Register a new user"""
+    """
+    Register new user account
+    
+    Creates new user with:
+    - Unique username and email validation
+    - Secure password hashing (BCrypt)
+    - JWT token generation
+    - Initial profile setup (avatar, level, XP)
+    
+    Returns access token for immediate authentication
+    """
     # Check if username exists
     if service.get_user_by_username(payload.username):
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -70,7 +80,15 @@ def register(payload: UserRegister, service: DatabaseService = Depends(get_db_se
 
 @router.post("/login", response_model=Token)
 def login(payload: UserLogin, service: DatabaseService = Depends(get_db_service)):
-    """Login user"""
+    """
+    Login with username and password
+    
+    - Validates credentials
+    - Verifies password hash
+    - Generates JWT access token
+    
+    Token expires in 7 days
+    """
     # Find user
     user = service.get_user_by_username(payload.username)
     if not user:
@@ -90,7 +108,17 @@ def get_current_user(
     authorization: Optional[str] = Header(None),
     service: DatabaseService = Depends(get_db_service)
 ):
-    """Get current authenticated user"""
+    """
+    Get current authenticated user
+    
+    Requires Authorization: Bearer <token> header
+    
+    Returns full user profile with:
+    - Personal info (username, email, name, bio)
+    - Progress tracking (level, XP, streak)
+    - Leaderboard position (rank, league)
+    - Settings preferences
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     
@@ -133,5 +161,24 @@ def get_current_user(
 
 @router.post("/logout")
 def logout():
-    """Logout user (client-side token removal)"""
+    """Logout user - Client should remove token from storage"""
     return {"message": "Successfully logged out"}
+
+
+@router.post("/change-password")
+def change_password(
+    payload: PasswordChangeRequest,
+    user=Depends(get_current_user),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Change current user password"""
+    if payload.newPassword != payload.confirmPassword:
+        raise HTTPException(status_code=400, detail="New password confirmation does not match")
+
+    if not verify_password(payload.currentPassword, user.password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    user.password = get_password_hash(payload.newPassword)
+    service.db.commit()
+
+    return {"message": "Password changed successfully"}

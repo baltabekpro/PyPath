@@ -11,9 +11,10 @@ import { Leaderboard } from './components/Leaderboard';
 import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
 import { AuthPage } from './components/AuthPage';
-import { Menu, X, Check, Crown, Bell } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 import { APP_UI, UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
 import { ActionToast } from './components/ActionToast';
+import { notificationsApi, type NotificationItem } from './api';
 
 const App: React.FC = () => {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -22,11 +23,8 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showPremium, setShowPremium] = useState(false);
-  const [appNotifications, setAppNotifications] = useState<any[]>([]);
-  const premiumData = APP_UI?.premium ?? {};
+  const [appNotifications, setAppNotifications] = useState<NotificationItem[]>([]);
   const appText = UI_TEXTS?.app ?? {};
-  const [premiumActivated, setPremiumActivated] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastTone, setToastTone] = useState<'success' | 'info' | 'warning'>('info');
 
@@ -59,14 +57,22 @@ const App: React.FC = () => {
       await initializeAppData();
       if (!isMounted) return;
 
-      const savedPremium = localStorage.getItem('premiumActivated');
-      if (savedPremium === 'true') setPremiumActivated(true);
-
-      const savedNotifications = localStorage.getItem('appNotifications');
-      if (savedNotifications) {
-        setAppNotifications(JSON.parse(savedNotifications));
-      } else {
-        setAppNotifications(APP_UI?.notifications ?? []);
+      try {
+        const notifications = await notificationsApi.getAll();
+        setAppNotifications(notifications.items || []);
+      } catch {
+        const savedNotifications = localStorage.getItem('appNotifications');
+        if (savedNotifications) {
+          setAppNotifications(JSON.parse(savedNotifications));
+        } else {
+          const fallback = (APP_UI?.notifications ?? []).map((n: any, idx: number) => ({
+            id: `fallback_${idx}`,
+            time: n.time,
+            text: n.text,
+            read: false,
+          }));
+          setAppNotifications(fallback);
+        }
       }
 
       setIsBootstrapping(false);
@@ -101,6 +107,14 @@ const App: React.FC = () => {
   const handleViewChange = (view: View) => {
     setCurrentView(view);
     setIsMobileMenuOpen(false); // Close menu on navigation
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const notifications = await notificationsApi.getAll();
+      setAppNotifications(notifications.items || []);
+    } catch {
+    }
   };
 
   const renderView = () => {
@@ -179,8 +193,13 @@ const App: React.FC = () => {
             <Header 
               onMenuClick={() => setIsMobileMenuOpen(true)} 
               onProfileClick={() => handleViewChange(View.PROFILE)}
-              onNotificationsClick={() => setShowNotifications(!showNotifications)}
-              onPremiumClick={() => { setPremiumActivated(false); setShowPremium(true); }}
+              onNotificationsClick={() => {
+                const next = !showNotifications;
+                setShowNotifications(next);
+                if (next) {
+                  loadNotifications();
+                }
+              }}
             />
         )}
         
@@ -203,19 +222,39 @@ const App: React.FC = () => {
                     <Bell size={16} className="text-arcade-primary"/>
                   {appText.notificationsTitle}
                 </h3>
-                <div className="space-y-3">
-                   {appNotifications.map((item: any, index: number) => (
-                    <div key={index} className="bg-black/20 p-3 rounded-xl border border-white/5 hover:bg-white/5 cursor-pointer transition-colors">
-                      <p className="text-[10px] text-gray-400 mb-1 font-bold">{item.time}</p>
-                      <p className="text-sm text-gray-200">{item.text}</p>
-                    </div>
-                   ))}
+                <div className="space-y-2 mb-3">
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Новые</p>
+                  <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
+                    {appNotifications.filter((n) => !n.read).map((item) => (
+                      <div key={item.id} className="bg-black/20 p-3 rounded-xl border border-white/5 hover:bg-white/5 cursor-pointer transition-colors">
+                        <p className="text-[10px] text-gray-400 mb-1 font-bold">{item.time}</p>
+                        <p className="text-sm text-gray-200">{item.text}</p>
+                      </div>
+                    ))}
+                    {appNotifications.filter((n) => !n.read).length === 0 && (
+                      <p className="text-xs text-gray-500">Нет новых уведомлений</p>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">История</p>
+                  <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
+                    {appNotifications.filter((n) => n.read).map((item) => (
+                      <div key={item.id} className="bg-black/10 p-3 rounded-xl border border-white/5 opacity-80">
+                        <p className="text-[10px] text-gray-500 mb-1 font-bold">{item.time}</p>
+                        <p className="text-sm text-gray-300">{item.text}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <button
-                  onClick={() => {
-                    setAppNotifications([]);
-                    localStorage.setItem('appNotifications', JSON.stringify([]));
-                    setShowNotifications(false);
+                  onClick={async () => {
+                    try {
+                      const result = await notificationsApi.markAllRead();
+                      setAppNotifications(result.items || []);
+                    } catch {
+                      setAppNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+                    }
                     showToast(appText.markAllRead, 'success');
                   }}
                   className="w-full mt-1 py-2 text-xs font-bold text-arcade-primary hover:text-white transition-colors"
@@ -224,49 +263,6 @@ const App: React.FC = () => {
                 </button>
             </div>
             </>
-        )}
-
-        {/* Premium Modal */}
-        {showPremium && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPremium(false)}></div>
-                <div className="relative bg-[#1E293B] border border-orange-500/30 w-full max-w-2xl rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(249,115,22,0.2)] animate-float-up transform transition-all">
-                    <button onClick={() => setShowPremium(false)} className="absolute top-4 right-4 p-2 bg-black/30 rounded-full text-white hover:bg-white/20 z-20"><X size={20}/></button>
-
-                    <div className="grid md:grid-cols-2">
-                        <div className="bg-gradient-to-br from-orange-600 to-red-700 p-8 text-white flex flex-col justify-between relative overflow-hidden">
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                            <div className="relative z-10">
-                                 <div className="inline-flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border border-white/10 shadow-lg">
-                                 <Crown size={12} fill="currentColor" /> {appText.premiumStatus}
-                                 </div>
-                               <h2 className="text-3xl font-display font-black mb-2 leading-none">{appText.premiumTitle}</h2>
-                               <p className="text-orange-100 text-sm font-medium">{appText.premiumSubtitle}</p>
-                            </div>
-                            <div className="relative z-10 mt-8">
-                               <div className="text-4xl font-black">{premiumData.price} <span className="text-sm font-bold text-orange-200 uppercase tracking-wider">{premiumData.period}</span></div>
-                            </div>
-                        </div>
-
-                        <div className="p-8 bg-[#1E293B]">
-              <h3 className="font-bold text-white mb-4 uppercase tracking-widest text-xs text-gray-400">{appText.premiumBenefitsTitle}</h3>
-                            <ul className="space-y-3 mb-8">
-                              {(premiumData.benefits || []).map((item: string, i: number) => (
-                                     <li key={i} className="flex items-center gap-3 text-sm text-gray-300 font-medium">
-                                         <div className="size-5 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-                                             <Check size={12} className="text-green-400" strokeWidth={4} />
-                                         </div>
-                                         {item}
-                                     </li>
-                                ))}
-                            </ul>
-                            <button onClick={() => { setPremiumActivated(true); localStorage.setItem('premiumActivated', 'true'); showToast(appText.proActivated, 'success'); setTimeout(() => setShowPremium(false), 900); }} className="w-full py-3 rounded-xl bg-white text-orange-600 font-black uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg active:scale-95">
-                              {premiumActivated ? appText.proActivated : appText.activatePro}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         )}
 
       </main>

@@ -113,7 +113,7 @@ export const Leaderboard: React.FC = () => {
                      onClick={() => setPeriod('month')}
                      className={`px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${period === 'month' ? 'bg-white text-black shadow-neon-white' : 'text-gray-500 hover:text-white'}`}
                    >
-                                             {text?.periods?.month}
+                                                                                         {text?.periods?.month || 'Этот месяц'}
                    </button>
                </div>
           </div>
@@ -185,7 +185,7 @@ export const Leaderboard: React.FC = () => {
           <div className="space-y-3 max-w-4xl mx-auto">
               {list.map((player) => (
                   <div 
-                    key={player.rank}
+                    key={player.name}
                     className={`bg-[#1E293B] hover:bg-[#283548] border ${player.name === CURRENT_USER.name ? 'border-arcade-primary/50 bg-arcade-primary/5' : 'border-white/5'} hover:border-white/10 rounded-xl p-4 flex items-center gap-4 md:gap-6 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg group`}
                   >
                       {/* Rank */}

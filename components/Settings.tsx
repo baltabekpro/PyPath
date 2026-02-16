@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Moon, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
 import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
-import { apiPut } from '../api';
+import { apiPut, authApi, notificationsApi } from '../api';
 
-type SettingsTab = 'profile' | 'notifications' | 'billing' | 'api' | 'security';
+type SettingsTab = 'profile' | 'notifications';
 
 export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
@@ -26,6 +26,8 @@ export const Settings: React.FC = () => {
     const [actionMessage, setActionMessage] = useState('');
     const [notificationState, setNotificationState] = useState(notificationOptions);
     const [isDarkTheme, setIsDarkTheme] = useState(true);
+        const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     // Load from localStorage
@@ -43,6 +45,18 @@ export const Settings: React.FC = () => {
       const profile = JSON.parse(savedProfile);
       setFormData(prev => ({ ...prev, ...profile }));
     }
+
+        const loadPreferences = async () => {
+            try {
+                const result = await notificationsApi.getPreferences();
+                if (result?.preferences?.length) {
+                    setNotificationState(result.preferences);
+                }
+            } catch {
+            }
+        };
+
+        loadPreferences();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -88,12 +102,40 @@ export const Settings: React.FC = () => {
       setTimeout(() => setActionMessage(''), 2500);
   };
 
-  const toggleNotification = (index: number) => {
+  const toggleNotification = async (index: number) => {
       setNotificationState((prev: any[]) => {
         const newState = prev.map((item, i) => i === index ? { ...item, enabled: !item.enabled } : item);
         localStorage.setItem('notifications', JSON.stringify(newState));
         return newState;
       });
+
+      try {
+        const next = notificationState.map((item: any, i: number) => i === index ? { ...item, enabled: !item.enabled } : item);
+        await notificationsApi.updatePreferences(next);
+      } catch {
+      }
+  };
+
+  const handleChangePassword = async () => {
+      if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
+          showAction('Заполните все поля пароля');
+          return;
+      }
+      if (passwords.newPassword !== passwords.confirmPassword) {
+          showAction('Новый пароль и подтверждение не совпадают');
+          return;
+      }
+
+      setIsChangingPassword(true);
+      try {
+          await authApi.changePassword(passwords.currentPassword, passwords.newPassword, passwords.confirmPassword);
+          setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+          showAction('Пароль успешно изменён');
+      } catch {
+          showAction('Не удалось изменить пароль');
+      } finally {
+          setIsChangingPassword(false);
+      }
   };
 
   const handleDeleteAccount = () => {
@@ -266,6 +308,45 @@ export const Settings: React.FC = () => {
                                 <span>{isSaving ? text.saving : text.save}</span>
                             </button>
                         </div>
+
+                        {/* Password Change */}
+                        <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+                            <h3 className="text-white font-bold flex items-center gap-2">
+                                <Lock size={16} /> Изменить пароль
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <input
+                                    type="password"
+                                    value={passwords.currentPassword}
+                                    onChange={(e) => setPasswords(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                    placeholder="Текущий пароль"
+                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner"
+                                />
+                                <input
+                                    type="password"
+                                    value={passwords.newPassword}
+                                    onChange={(e) => setPasswords(prev => ({ ...prev, newPassword: e.target.value }))}
+                                    placeholder="Новый пароль"
+                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner"
+                                />
+                                <input
+                                    type="password"
+                                    value={passwords.confirmPassword}
+                                    onChange={(e) => setPasswords(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                    placeholder="Подтвердите пароль"
+                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner"
+                                />
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={isChangingPassword}
+                                    className="px-5 py-2 rounded-xl text-sm font-bold bg-white/5 hover:bg-white/10 border border-white/10 text-white disabled:opacity-60"
+                                >
+                                    {isChangingPassword ? 'Изменение...' : 'Сменить пароль'}
+                                </button>
+                            </div>
+                        </div>
                    </div>
                 </div>
               )}
@@ -276,7 +357,7 @@ export const Settings: React.FC = () => {
                       <h2 className="text-lg font-bold text-white mb-6">{text.notificationsTitle}</h2>
                       <div className="space-y-4">
                           {notificationState.map((option: any, i: number) => (
-                              <div key={i} onClick={() => toggleNotification(i)} className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                              <div key={option.label} onClick={() => toggleNotification(i)} className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
                                   <span className="text-gray-300 font-medium">{option.label}</span>
                                   <div className={`w-12 h-6 rounded-full relative transition-colors ${option.enabled ? 'bg-arcade-success' : 'bg-gray-700'}`}>
                                       <div className={`absolute top-1 size-4 bg-white rounded-full transition-all shadow-md ${option.enabled ? 'right-1' : 'left-1'}`}></div>
@@ -284,77 +365,6 @@ export const Settings: React.FC = () => {
                               </div>
                           ))}
                       </div>
-                  </div>
-              )}
-
-              {/* SECURITY SETTINGS */}
-              {(activeTab === 'security' || activeTab === 'api' || activeTab === 'billing') && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6">
-                        <h2 className="text-lg font-bold text-white mb-6">{text.securityTitle}</h2>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5">
-                                <div className="flex items-center gap-4">
-                                    <Lock size={18} className="text-arcade-mentor"/>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">{text.passwordTitle}</p>
-                                        <p className="text-xs text-py-muted">{text.passwordChanged}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => showAction(text.toastPasswordChanged)} className="text-xs font-bold text-white bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/5">{text.change}</button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5">
-                                <div className="flex items-center gap-4">
-                                    <Smartphone size={18} className="text-arcade-mentor"/>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">{text.twofaTitle}</p>
-                                        <p className="text-xs text-py-muted">{text.twofaHint}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => showAction(text.toastTwofaEnabled)} className="text-xs font-bold text-arcade-success bg-arcade-success/10 px-3 py-1.5 rounded-lg hover:bg-arcade-success/20 transition-colors border border-arcade-success/20">{text.enable}</button>
-                            </div>
-
-                            {/* Logout Button */}
-                            <div className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5">
-                                <div className="flex items-center gap-4">
-                                    <ArrowRight size={18} className="text-arcade-action rotate-180"/>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">Выход из аккаунта</p>
-                                        <p className="text-xs text-py-muted">Завершить текущую сессию</p>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        localStorage.removeItem('token');
-                                        window.location.reload();
-                                    }} 
-                                    className="text-xs font-bold text-white bg-arcade-action/10 px-3 py-1.5 rounded-lg hover:bg-arcade-action/20 transition-colors border border-arcade-action/20"
-                                >
-                                    Выйти
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Danger Zone */}
-                    <div className="border border-red-500/20 rounded-2xl p-4 md:p-6 bg-red-500/5">
-                        <h2 className="text-lg font-bold text-red-400 mb-2 flex items-center gap-2">
-                            <AlertTriangle size={20}/>
-                            {text.dangerTitle}
-                        </h2>
-                        <p className="text-sm text-gray-400 mb-6">{text.dangerText}</p>
-                        
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <p className="text-white font-bold text-sm">{text.deleteAccount}</p>
-                                <p className="text-xs text-gray-500">{text.deleteAccountHint}</p>
-                            </div>
-                            <button onClick={handleDeleteAccount} className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold whitespace-nowrap">
-                                {text.deleteForever}
-                            </button>
-                        </div>
-                    </div>
                   </div>
               )}
           </div>

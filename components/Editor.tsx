@@ -25,8 +25,9 @@ const getFileIcon = (name: string) => {
 }
 
 export const EditorComponent: React.FC = () => {
-  // Use the first mission from DB as default for now
-    const [mission, setMission] = useState<any>(MISSIONS[0]);
+  // Load mission from API
+    const [mission, setMission] = useState<any>(null);
+    const [isLoadingMission, setIsLoadingMission] = useState(true);
     const learningData = EDITOR_UI?.learning ?? {};
     const botMessages = EDITOR_UI?.botMessages ?? {};
         const text = UI_TEXTS?.editor ?? {};
@@ -34,16 +35,19 @@ export const EditorComponent: React.FC = () => {
         const textBot = text.botMessages ?? {};
   
   // Transform DB files to FileNode format if necessary, or just use them
-  const initialFiles: FileNode[] = [
-      { id: 'root', name: mission.id, type: 'folder', parentId: null, isOpen: true },
+  const initialFiles: FileNode[] = mission?.files ? [
+      { id: 'root', name: mission.id || 'project', type: 'folder', parentId: null, isOpen: true },
       ...mission.files.map((f: any) => ({
           ...f,
           parentId: 'root'
       }))
+  ] : [
+      { id: 'root', name: 'project', type: 'folder', parentId: null, isOpen: true },
+      { id: '1', name: 'main.py', type: 'file', language: 'python', content: '# Write your code here\nprint("Hello, Python!")', parentId: 'root' }
   ];
 
   const [files, setFiles] = useState<FileNode[]>(initialFiles);
-  const [activeFileId, setActiveFileId] = useState<string>(mission.files[0].id);
+  const [activeFileId, setActiveFileId] = useState<string>(mission?.files?.[0]?.id || '1');
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<'mission' | 'files'>('mission');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -62,6 +66,55 @@ export const EditorComponent: React.FC = () => {
 
   const activeFile = files.find(f => f.id === activeFileId);
 
+  // Load first available mission from API
+  useEffect(() => {
+      const loadMission = async () => {
+          try {
+              const missions = await apiGet<any[]>('/missions');
+              if (missions && missions.length > 0) {
+                  const firstMission = missions[0];
+                  const mappedMission = {
+                      ...firstMission,
+                      files: firstMission.files && firstMission.files.length > 0
+                          ? firstMission.files
+                          : [
+                              {
+                                  id: '1',
+                                  name: 'main.py',
+                                  type: 'file',
+                                  language: 'python',
+                                  content: firstMission.starterCode || '# Write your code here\n',
+                              },
+                            ],
+                      objectives: firstMission.objectives || [],
+                      theory: firstMission.theory || {
+                          title: learningData.title || textLearning.title || 'Теория',
+                          content: learningData.content || textLearning.content || 'Материал загружается',
+                      },
+                  };
+
+                  setMission(mappedMission);
+                  if (mappedMission.files && mappedMission.files.length > 0) {
+                      const newFiles = [
+                          { id: 'root', name: mappedMission.id || 'project', type: 'folder' as const, parentId: null, isOpen: true },
+                          ...mappedMission.files.map((f: any) => ({
+                              ...f,
+                              parentId: 'root'
+                          }))
+                      ];
+                      setFiles(newFiles);
+                      setActiveFileId(mappedMission.files[0].id);
+                  }
+              }
+          } catch (error) {
+              console.error('Failed to load missions:', error);
+          } finally {
+              setIsLoadingMission(false);
+          }
+      };
+      loadMission();
+  }, []);
+
   // Auto-collapse sidebar on mobile
   useEffect(() => {
       if (window.innerWidth < 768) {
@@ -71,6 +124,7 @@ export const EditorComponent: React.FC = () => {
 
   useEffect(() => {
       const loadMissionProgress = async () => {
+          if (!mission?.id) return;
           try {
               const progress = await apiGet<{ objectives?: any[] }>(`/missions/${mission.id}/progress`);
               if (progress?.objectives) {
@@ -81,7 +135,7 @@ export const EditorComponent: React.FC = () => {
       };
 
       loadMissionProgress();
-  }, [mission.id]);
+  }, [mission?.id]);
 
   const handleEditorBeforeMount = (monaco: any) => {
     monaco.editor.defineTheme('cyberpunk', {
@@ -181,7 +235,7 @@ export const EditorComponent: React.FC = () => {
     }, [isTerminalOpen]);
 
     const runCode = async () => {
-    if (!xtermInstance.current) return;
+    if (!xtermInstance.current || !mission?.id) return;
     setIsRunning(true);
     setIsTerminalOpen(true);
     setBotEmotion('thinking');
@@ -241,6 +295,18 @@ export const EditorComponent: React.FC = () => {
        setIsRunning(false);
     }
   };
+
+  // Early return if mission is not loaded yet
+    if (isLoadingMission || !mission || !mission.files) {
+    return (
+      <div className="flex h-full items-center justify-center bg-[#0F172A]">
+        <div className="text-center">
+          <div className="inline-block size-12 border-4 border-arcade-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-400 text-sm">Загрузка миссии...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full overflow-hidden bg-[#0F172A] font-sans p-2 md:p-4 gap-4 relative pb-20 md:pb-4">

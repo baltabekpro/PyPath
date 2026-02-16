@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Zap, Bot, ChevronRight } from 'lucide-react';
 import { AI_CHAT_DATA, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
+import { aiChat } from '../api';
 
 interface Message {
   id: string;
@@ -28,6 +29,20 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const escapeHtml = (value: string) =>
+        value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+    const formatMessage = (value: string) => {
+        const escaped = escapeHtml(value);
+        const withCode = escaped.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/30 border border-white/10 rounded-lg p-2 my-2 overflow-x-auto text-xs"><code>$1</code></pre>');
+        const withBold = withCode.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        const withInlineCode = withBold.replace(/`([^`]+)`/g, '<code class="bg-black/30 px-1 py-0.5 rounded text-cyan-300">$1</code>');
+        return { __html: withInlineCode.replace(/\n/g, '<br/>') };
+    };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping, isOpen]);
@@ -38,7 +53,27 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
         }
     }, [embedded, isOpen]);
 
-  const handleSend = (text: string = inputValue) => {
+    useEffect(() => {
+        const loadHistory = async () => {
+            try {
+                const history = await aiChat.getHistory(CURRENT_USER.id);
+                const mapped = (history.items || []).map((item) => ({
+                    id: item.id,
+                    text: item.text,
+                    sender: item.sender,
+                    type: 'text' as const,
+                }));
+                if (mapped.length > 0) {
+                    setMessages(mapped);
+                }
+            } catch {
+            }
+        };
+
+        loadHistory();
+    }, []);
+
+  const handleSend = async (text: string = inputValue) => {
     if (!text.trim()) return;
 
     // Add User Message
@@ -48,44 +83,50 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
     setOracleState('analyzing');
     setIsTyping(true);
 
-    // Simulate AI Processing
-    setTimeout(() => {
-        let responseText = responses.default || '';
-        let state: 'idle' | 'alert' = 'idle';
-        let msgType: 'text' | 'hint' | 'error' = 'text';
-
-        const lower = text.toLowerCase();
-        if (lower.includes('ошибк') || lower.includes('не так') || lower.includes('bug')) {
-            responseText = responses.error || responses.default || '';
-            state = 'alert';
-            msgType = 'error';
-        } else if (lower.includes('подсказк') || lower.includes('hint')) {
-            if (energy > 0) {
-                setEnergy(e => e - 1);
-                responseText = responses.hint || responses.default || '';
-                msgType = 'hint';
-            } else {
-                responseText = responses.noEnergy || responses.default || '';
-                state = 'idle';
-            }
-        } else if (lower.includes('теори')) {
-            responseText = responses.theory || responses.default || '';
-            state = 'idle';
-        } else {
-            responseText = responses.success || responses.default || '';
-            state = 'idle';
+    try {
+      // Call real AI API
+      const response = await aiChat.sendMessage(text, CURRENT_USER.id);
+      
+      // Determine message type based on keywords
+      let msgType: 'text' | 'hint' | 'error' = 'text';
+      const lower = text.toLowerCase();
+      
+      if (lower.includes('ошибк') || lower.includes('не так') || lower.includes('bug')) {
+        msgType = 'error';
+        setOracleState('alert');
+        setTimeout(() => setOracleState('idle'), 5000);
+      } else if (lower.includes('подсказк') || lower.includes('hint')) {
+        msgType = 'hint';
+        if (energy > 0) {
+          setEnergy(e => e - 1);
         }
+      }
 
-        const aiMsg: Message = { id: (Date.now() + 1).toString(), text: responseText, sender: 'ai', type: msgType };
-        setMessages(prev => [...prev, aiMsg]);
-        setOracleState(state);
-        setIsTyping(false);
-
-        // Reset state after a while
-        if (state === 'alert') {
-            setTimeout(() => setOracleState('idle'), 5000);
-        }
-    }, 2000);
+      const aiMsg: Message = { 
+        id: (Date.now() + 1).toString(), 
+        text: response.response, 
+        sender: 'ai', 
+        type: msgType 
+      };
+      
+      setMessages(prev => [...prev, aiMsg]);
+      setIsTyping(false);
+      if (msgType === 'text') {
+        setOracleState('idle');
+      }
+    } catch (error) {
+      console.error('AI chat error:', error);
+      // Fallback to mock response on error
+      const fallbackMsg: Message = { 
+        id: (Date.now() + 1).toString(), 
+        text: responses.default || 'Извини, произошла ошибка. Попробуй еще раз!', 
+        sender: 'ai',
+        type: 'error'
+      };
+      setMessages(prev => [...prev, fallbackMsg]);
+      setIsTyping(false);
+      setOracleState('idle');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -182,7 +223,11 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                             : 'bg-slate-800 border border-white/5 text-gray-100 rounded-tl-none'
                                     }
                                 `}>
-                                    {msg.text}
+                                    {msg.sender === 'ai' ? (
+                                        <div dangerouslySetInnerHTML={formatMessage(msg.text)} />
+                                    ) : (
+                                        msg.text
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -209,7 +254,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                 const ActionIcon = getIconComponent(action.icon);
                                 return (
                                     <button 
-                                        key={i} 
+                                        key={action.label} 
                                         onClick={() => handleSend(action.prompt)}
                                         className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-cyan-900/30 border border-cyan-500/20 hover:border-cyan-500/50 rounded-lg text-xs text-cyan-300 font-bold transition-all flex items-center gap-1.5 group active:scale-95"
                                     >

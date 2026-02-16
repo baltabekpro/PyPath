@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles } from 'lucide-react';
 import { AI_CHAT_PAGE_DATA, CURRENT_USER, LOGS, UI_TEXTS, getIconComponent } from '../constants';
+import { aiChat } from '../api';
 
 interface Message {
   id: string;
@@ -20,11 +21,46 @@ export const AIChatPage: React.FC = () => {
         const text = UI_TEXTS?.aiChatPage ?? {};
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const escapeHtml = (value: string) =>
+        value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+    const formatMessage = (value: string) => {
+        const escaped = escapeHtml(value);
+        const withCode = escaped.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/30 border border-cyan-500/20 rounded-lg p-3 my-2 overflow-x-auto text-xs"><code>$1</code></pre>');
+        const withBold = withCode.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        const withInlineCode = withBold.replace(/`([^`]+)`/g, '<code class="bg-black/40 px-1 py-0.5 rounded text-cyan-300">$1</code>');
+        const withHeadings = withInlineCode.replace(/^###\s+(.*)$/gm, '<div class="font-bold text-cyan-300 mt-2 mb-1">$1</div>');
+        return { __html: withHeadings.replace(/\n/g, '<br/>') };
+    };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleSend = (text: string = inputValue) => {
+    useEffect(() => {
+        const loadHistory = async () => {
+            try {
+                const history = await aiChat.getHistory(CURRENT_USER.id);
+                const mapped = (history.items || []).map((item) => ({
+                    id: item.id,
+                    text: item.text,
+                    sender: item.sender,
+                    timestamp: new Date(item.timestamp),
+                })) as Message[];
+                if (mapped.length > 0) {
+                    setMessages(mapped);
+                }
+            } catch {
+            }
+        };
+
+        loadHistory();
+    }, []);
+
+  const handleSend = async (text: string = inputValue) => {
     if (!text.trim()) return;
 
     const newUserMsg: Message = {
@@ -39,20 +75,13 @@ export const AIChatPage: React.FC = () => {
     setIsTyping(true);
     setCoreState('processing');
 
-    // Simulate AI thinking
-    setTimeout(() => {
-      let aiResponseText = "";
-      const lowerText = text.toLowerCase();
+    try {
+      // Call real AI API
+      const response = await aiChat.sendMessage(text, CURRENT_USER.id);
       
-      if (lowerText.includes("цикл") || lowerText.includes("while")) {
-          aiResponseText = responses.loop || responses.default || '';
-      } else {
-          aiResponseText = responses.default || '';
-      }
-
       const newAiMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: aiResponseText,
+        text: response.response,
         sender: 'ai',
         timestamp: new Date()
       };
@@ -61,7 +90,20 @@ export const AIChatPage: React.FC = () => {
       setIsTyping(false);
       setCoreState('active');
       setTimeout(() => setCoreState('idle'), 2000);
-    }, 2000);
+    } catch (error) {
+      console.error('AI chat error:', error);
+      // Fallback to mock response
+      const fallbackMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: responses.default || 'Извини, произошла ошибка. Попробуй еще раз!',
+        sender: 'ai',
+        timestamp: new Date(),
+        type: 'error'
+      };
+      setMessages(prev => [...prev, fallbackMsg]);
+      setIsTyping(false);
+      setCoreState('idle');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -102,8 +144,6 @@ export const AIChatPage: React.FC = () => {
                       <p className="text-xs text-slate-300 font-medium group-hover:text-cyan-200 truncate">{log.msg}</p>
                   </div>
               ))}
-              <div className="border-t border-dashed border-gray-700/50 my-4"></div>
-              <div className="text-[10px] text-slate-500 font-bold text-center uppercase tracking-wide">{AI_CHAT_PAGE_DATA?.archiveLabel || text.archiveLabel}</div>
           </div>
 
           <div className="p-4 border-t border-cyan-900/30 bg-cyan-950/5">
@@ -223,7 +263,11 @@ export const AIChatPage: React.FC = () => {
                                   }
                               `}>
                                   {msg.sender === 'ai' && <div className="text-[10px] font-bold text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> {text.responseOutput}</div>}
-                                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                                  {msg.sender === 'ai' ? (
+                                      <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={formatMessage(msg.text)} />
+                                  ) : (
+                                      <div className="whitespace-pre-wrap">{msg.text}</div>
+                                  )}
                               </div>
                           </div>
                       ))}

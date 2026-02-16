@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           <nav className="flex flex-col gap-3">
             {navItems.map((item) => (
               <button
-                key={item.label}
+                key={item.view}
                 onClick={() => setView(item.view)}
                 className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group relative overflow-hidden font-display font-bold text-lg active:scale-95 ${
                   currentView === item.view
@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
              {/* Main Tabs */}
              {navItems.filter(i => i.mobile).map((item) => (
                  <button
-                    key={item.label}
+                    key={item.view}
                     onClick={() => setView(item.view)}
                     className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all ${
                         currentView === item.view ? 'text-arcade-primary' : 'text-gray-500'

@@ -209,7 +209,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 {/* Battle Stats Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {battleStats.map((stat, i) => (
-                        <div key={i} className={`rounded-2xl p-4 border ${stat.border} ${stat.bg} flex flex-col items-center justify-center gap-2 transition-transform hover:scale-105`}>
+                        <div key={stat.label} className={`rounded-2xl p-4 border ${stat.border} ${stat.bg} flex flex-col items-center justify-center gap-2 transition-transform hover:scale-105`}>
                             <stat.icon size={24} className={stat.color} />
                             <div className="text-center">
                                 <div className="text-2xl font-black text-white leading-none">
@@ -270,7 +270,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                              const isLocked = !item || item.locked;
                              const TrophyIcon = item?.icon ? getIconComponent(item.icon) : null;
                              return (
-                                <div key={i} className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 relative group cursor-pointer ${!isLocked ? RARITY[item.rarity as keyof typeof RARITY] : 'border-white/5 bg-white/5 border-dashed'}`}>
+                                <div key={item?.id || `trophy-${i}`} className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 relative group cursor-pointer ${!isLocked ? RARITY[item.rarity as keyof typeof RARITY] : 'border-white/5 bg-white/5 border-dashed'}`}>
                                     {!isLocked && TrophyIcon ? (
                                         <>
                                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>

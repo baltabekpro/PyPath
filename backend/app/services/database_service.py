@@ -241,6 +241,28 @@ class DatabaseService:
 
     def get_ui_data(self) -> dict:
         """Get UI metadata"""
+        import json
+        from pathlib import Path
+        
+        # Load UI data from JSON file
+        try:
+            json_path = Path(__file__).parent.parent.parent / "data" / "db.json"
+            if json_path.exists():
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('uiData', {
+                        "version": "1.0.0",
+                        "features": {
+                            "achievements": True,
+                            "leaderboard": True,
+                            "community": True,
+                            "ai_chat": True
+                        }
+                    })
+        except Exception as e:
+            print(f"Error loading UI data: {e}")
+        
+        # Fallback to minimal data
         return {
             "version": "1.0.0",
             "features": {

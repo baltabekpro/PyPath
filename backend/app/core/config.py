@@ -27,6 +27,10 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5174",
         ]
     )
+    
+    # Google Gemini AI
+    google_api_key: str = "AIzaSyAsF5L4QuI1uygD4Fc0U-A111K8NGZ1Isk"
+    gemini_model: str = "gemini-3-flash-preview"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

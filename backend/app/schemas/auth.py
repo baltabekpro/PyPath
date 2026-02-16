@@ -27,3 +27,9 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Token payload data"""
     username: Optional[str] = None
+
+
+class PasswordChangeRequest(BaseModel):
+    currentPassword: str = Field(..., min_length=1)
+    newPassword: str = Field(..., min_length=6)
+    confirmPassword: str = Field(..., min_length=6)

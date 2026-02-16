@@ -602,21 +602,6 @@
           "id": "notifications",
           "icon": "Bell",
           "label": "Уведомления"
-        },
-        {
-          "id": "billing",
-          "icon": "CreditCard",
-          "label": "Подписка"
-        },
-        {
-          "id": "api",
-          "icon": "Key",
-          "label": "API Ключи"
-        },
-        {
-          "id": "security",
-          "icon": "Shield",
-          "label": "Безопасность"
         }
       ],
       "notificationOptions": [

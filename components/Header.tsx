@@ -1,15 +1,14 @@
 import React from 'react';
-import { Search, Bell, Crown, Menu } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
 import { CURRENT_USER, UI_TEXTS } from '../constants';
 
 interface HeaderProps {
     onMenuClick?: () => void;
     onProfileClick?: () => void;
     onNotificationsClick?: () => void;
-    onPremiumClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick, onPremiumClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick }) => {
   const maxXp = CURRENT_USER.maxXp || 1000;
   const xpPercent = Math.min(100, Math.max(0, Math.round((CURRENT_USER.xp / maxXp) * 100)));
   const text = UI_TEXTS?.header ?? {};
@@ -62,15 +61,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
           >
             <Bell size={22} strokeWidth={2.5} className="group-hover:animate-shake" />
             <div className="absolute top-2 right-3 size-2 bg-red-500 rounded-full border border-[#1E293B] hidden group-hover:block"></div>
-          </button>
-          
-          {/* Premium/Crown Button */}
-          <button 
-            onClick={onPremiumClick}
-            className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-neon-orange transition-transform hover:scale-110 active:scale-95 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 relative group overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-            <Crown size={24} strokeWidth={3} />
           </button>
         </div>
 

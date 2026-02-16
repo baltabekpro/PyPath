@@ -255,7 +255,7 @@ export const Community: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                     {topTags.map((tag: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between group cursor-pointer">
+                        <div key={tag.name} className="flex items-center justify-between group cursor-pointer">
                             <span className="text-py-muted group-hover:text-py-green transition-colors text-sm">#{tag.name}</span>
                             <span className="text-xs text-py-accent bg-py-green/10 px-2 py-0.5 rounded-full text-py-green font-bold">{tag.count}</span>
                         </div>
