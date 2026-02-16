@@ -79,8 +79,8 @@ class AIService:
                 "timestamp": datetime.now().isoformat(),
             })
             return response.text
-        except Exception as e:
-            return f"Извини, произошла ошибка при обработке запроса: {str(e)}"
+        except Exception:
+            return "Извини, AI сейчас временно недоступен. Попробуй ещё раз чуть позже."
     
     def reset_session(self, user_id: str) -> None:
         """Reset chat session for user"""

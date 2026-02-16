@@ -40,6 +40,11 @@ export const apiPut = <T,>(path: string, body?: unknown) =>
     body: body ? JSON.stringify(body) : undefined,
   });
 
+export const apiDelete = <T,>(path: string) =>
+  request<T>(path, {
+    method: 'DELETE',
+  });
+
 export interface NotificationItem {
   id: string;
   time: string;
@@ -177,6 +182,24 @@ export interface MissionSubmitResponse {
   testResults: Array<{ passed: boolean; message: string }>;
   terminalOutput?: string;
   terminalError?: string;
+  courseProgress?: {
+    lessonAdvanced: boolean;
+    courseCompleted: boolean;
+    nextCourseUnlocked: boolean;
+    activeCourseId: number | null;
+    activeSeason: number | null;
+    nextSeasonUnlocked: boolean;
+    activeCourseProgress?: number;
+    completedLessons?: number;
+    totalLessons?: number;
+  };
+  attemptMeta?: {
+    totalAttempts?: number;
+    consecutiveFailures?: number;
+    cooldownUntil?: string | null;
+    cooldownActive?: boolean;
+    retryAfterSeconds?: number;
+  };
   runtime?: { returncode: number; timedOut: boolean };
   analysis?: string;
 }
@@ -187,6 +210,6 @@ export const missionApi = {
   getProgress: (missionId: string) => apiGet<{ missionId: string; objectives: MissionData['objectives']; testResults: any[] }>(`/missions/${missionId}/progress`),
   getWorkspace: (missionId: string) => apiGet<MissionWorkspace>(`/missions/${missionId}/code`),
   saveWorkspace: (missionId: string, payload: MissionWorkspace) => apiPut<MissionWorkspace>(`/missions/${missionId}/code`, payload),
-  submit: (missionId: string, payload: { code: string }) => apiPost<MissionSubmitResponse>(`/missions/${missionId}/submit`, payload),
+  submit: (missionId: string, payload: { code: string; courseId?: number }) => apiPost<MissionSubmitResponse>(`/missions/${missionId}/submit`, payload),
 };
 

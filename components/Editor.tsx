@@ -27,6 +27,7 @@ const getFileIcon = (name: string) => {
 export const EditorComponent: React.FC = () => {
     const [mission, setMission] = useState<MissionData | null>(null);
     const [missionList, setMissionList] = useState<MissionData[]>([]);
+    const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
     const [activeMissionIndex, setActiveMissionIndex] = useState(0);
     const [isLoadingMission, setIsLoadingMission] = useState(true);
     const [isSavingCode, setIsSavingCode] = useState(false);
@@ -149,6 +150,14 @@ export const EditorComponent: React.FC = () => {
   useEffect(() => {
       if (window.innerWidth < 768) {
           setIsSidebarCollapsed(true);
+      }
+
+      const storedCourse = localStorage.getItem('activeCourseId');
+      if (storedCourse) {
+          const parsed = Number(storedCourse);
+          if (Number.isFinite(parsed) && parsed > 0) {
+              setActiveCourseId(parsed);
+          }
       }
   }, []);
 
@@ -304,7 +313,7 @@ export const EditorComponent: React.FC = () => {
     try {
        await saveWorkspace();
        const code = activeFile?.content || '';
-       const result = await missionApi.submit(mission.id, { code });
+    const result = await missionApi.submit(mission.id, { code, courseId: activeCourseId ?? undefined });
 
        setMission((prev: any) => ({
           ...prev,
@@ -331,6 +340,9 @@ export const EditorComponent: React.FC = () => {
 
        if (result.success) {
            term.writeln(`\x1b[1;32m> ${result.message} (+${result.xpEarned} XP)\x1b[0m`);
+              if (result.courseProgress?.nextSeasonUnlocked) {
+                  term.writeln('\x1b[1;36m> Сезон завершён! Доступен следующий сезон.\x1b[0m');
+              }
            setBotEmotion('happy');
            if (!result.analysis) setBotMessage(botMessages.success || textBot.success);
            setShowSuccess(true);
@@ -338,6 +350,11 @@ export const EditorComponent: React.FC = () => {
        } else {
            term.writeln('\x1b[31m[ERROR] Mission check failed.\x1b[0m');
            term.writeln(result.message || 'Hint: Проверь условие и ожидаемый вывод.');
+              if (result.attemptMeta?.cooldownActive) {
+                  term.writeln(`\x1b[33mCooldown: повторите через ${result.attemptMeta.retryAfterSeconds ?? 0} сек.\x1b[0m`);
+              } else if (typeof result.attemptMeta?.consecutiveFailures === 'number') {
+                  term.writeln(`\x1b[33mНеудачных попыток подряд: ${result.attemptMeta.consecutiveFailures}\x1b[0m`);
+              }
            setBotEmotion('alert');
            if (!result.analysis) setBotMessage(result.message || botMessages.error || textBot.error);
        }

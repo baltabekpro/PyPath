@@ -33,6 +33,67 @@ class MissionSubmit(BaseModel):
     courseId: int | None = None
 
 
+class CourseCreate(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    description: str = Field(min_length=10, max_length=1000)
+    totalLessons: int = Field(default=5, ge=1, le=200)
+    icon: str = Field(default="Terminal")
+    color: str = Field(default="text-arcade-success")
+    difficulty: str = Field(default="Средний")
+    isBoss: bool = False
+    locked: bool = True
+
+
+class CourseUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=200)
+    description: str | None = Field(default=None, min_length=10, max_length=1000)
+    totalLessons: int | None = Field(default=None, ge=1, le=200)
+    icon: str | None = None
+    color: str | None = None
+    difficulty: str | None = None
+    isBoss: bool | None = None
+    locked: bool | None = None
+
+
+class MissionTestCase(BaseModel):
+    id: str
+    type: str = Field(description="code_regex | output_contains | output_regex | returncode_equals")
+    value: str | int
+    flags: str | None = Field(default=None, description="Regex flags, e.g. i,m,s")
+    label: str | None = None
+    points: int = Field(default=1, ge=1, le=10)
+
+
+class MissionObjectiveCreate(BaseModel):
+    text: str = Field(min_length=3, max_length=500)
+    testCaseId: str | None = None
+
+
+class MissionCreate(BaseModel):
+    id: str = Field(min_length=3, max_length=100)
+    title: str = Field(min_length=3, max_length=200)
+    chapter: str = Field(default="Глава")
+    description: str = Field(min_length=10, max_length=1500)
+    difficulty: str = Field(default="Средний")
+    xpReward: int = Field(default=50, ge=0, le=10000)
+    objectives: list[MissionObjectiveCreate] = Field(default_factory=list)
+    starterCode: str = Field(default="# Write your code here\n")
+    testCases: list[MissionTestCase] = Field(default_factory=list)
+    hints: list[str] = Field(default_factory=list)
+
+
+class MissionUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=200)
+    chapter: str | None = None
+    description: str | None = Field(default=None, min_length=10, max_length=1500)
+    difficulty: str | None = None
+    xpReward: int | None = Field(default=None, ge=0, le=10000)
+    objectives: list[MissionObjectiveCreate] | None = None
+    starterCode: str | None = None
+    testCases: list[MissionTestCase] | None = None
+    hints: list[str] | None = None
+
+
 class MissionFile(BaseModel):
     id: str
     name: str

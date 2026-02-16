@@ -6,18 +6,32 @@ import { SIDEBAR_NAV_ITEMS, UI_TEXTS, getIconComponent } from '../constants';
 interface SidebarProps {
   currentView: View;
   setView: (view: View) => void;
+  isAdmin?: boolean;
   isMobileOpen?: boolean;
   closeMobileMenu?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isAdmin = false }) => {
   const text = UI_TEXTS?.sidebar ?? {};
 
-  const navItems = (SIDEBAR_NAV_ITEMS || []).map((item: any) => ({
+  const baseItems = (SIDEBAR_NAV_ITEMS || []).map((item: any) => ({
     ...item,
     view: item.view as View,
     Icon: getIconComponent(item.icon),
   }));
+
+  const navItems = isAdmin
+    ? [
+        ...baseItems,
+        {
+          view: View.ADMIN,
+          label: 'Админка',
+          icon: 'ShieldAlert',
+          mobile: false,
+          Icon: getIconComponent('ShieldAlert'),
+        },
+      ]
+    : baseItems;
 
   // --- DESKTOP SIDEBAR ---
   return (

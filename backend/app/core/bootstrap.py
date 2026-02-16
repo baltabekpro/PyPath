@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.core.database import SessionLocal
-from app.models.models import Course
+from app.models.models import Course, Mission
 
 
 DEFAULT_COURSES = [
@@ -86,6 +86,64 @@ DEFAULT_COURSES = [
 ]
 
 
+DEFAULT_MISSIONS = [
+    {
+        "id": "mission-1",
+        "title": "Проверка портов",
+        "chapter": "Глава 1",
+        "description": "Создайте список ports, пройдитесь циклом for и выведите проверку каждого порта.",
+        "difficulty": "Лёгкий",
+        "xp_reward": 40,
+        "objectives": [
+            {"id": 1, "text": "Создайте список ports", "testCaseId": "tc_ports_list", "completed": False},
+            {"id": 2, "text": "Используйте цикл for", "testCaseId": "tc_for_loop", "completed": False},
+            {"id": 3, "text": "Выведите сообщение проверки порта", "testCaseId": "tc_output", "completed": False},
+            {"id": 4, "text": "Верните ACCESS GRANTED", "testCaseId": "tc_access", "completed": False},
+        ],
+        "starter_code": "ports = [22, 80, 443]\n\n# your code here\n",
+        "test_cases": [
+            {"id": "tc_ports_list", "type": "code_regex", "value": "\\bports\\s*=\\s*\\[[^\\]]+\\]", "flags": "m", "label": "Создан список ports", "points": 1},
+            {"id": "tc_for_loop", "type": "code_regex", "value": "\\bfor\\s+\\w+\\s+in\\s+ports\\b", "flags": "m", "label": "Добавлен цикл for по ports", "points": 1},
+            {"id": "tc_output", "type": "code_regex", "value": "\\bprint\\s*\\([^\\)]*port[^\\)]*\\)", "flags": "im", "label": "Выводится сообщение проверки порта", "points": 1},
+            {"id": "tc_access", "type": "code_regex", "value": "\\breturn\\s+[\"']ACCESS GRANTED[\"']", "flags": "m", "label": "Возвращается ACCESS GRANTED", "points": 1},
+            {"id": "tc_runtime", "type": "returncode_equals", "value": 0, "label": "Код выполняется без runtime ошибок", "points": 1},
+        ],
+        "hints": [
+            "Используйте for port in ports",
+            "Сделайте print для каждого порта",
+            "Создайте функцию, которая возвращает ACCESS GRANTED",
+        ],
+    },
+    {
+        "id": "mission-2",
+        "title": "Сканер сервиса",
+        "chapter": "Глава 1",
+        "description": "Проверьте список ports и выведите статус сервиса для каждого значения.",
+        "difficulty": "Лёгкий",
+        "xp_reward": 45,
+        "objectives": [
+            {"id": 1, "text": "Создайте список ports", "testCaseId": "tc_ports_list", "completed": False},
+            {"id": 2, "text": "Используйте цикл for", "testCaseId": "tc_for_loop", "completed": False},
+            {"id": 3, "text": "Выведите сообщение проверки порта", "testCaseId": "tc_output", "completed": False},
+            {"id": 4, "text": "Верните ACCESS GRANTED", "testCaseId": "tc_access", "completed": False},
+        ],
+        "starter_code": "ports = [21, 25, 110]\n\n# your code here\n",
+        "test_cases": [
+            {"id": "tc_ports_list", "type": "code_regex", "value": "\\bports\\s*=\\s*\\[[^\\]]+\\]", "flags": "m", "label": "Создан список ports", "points": 1},
+            {"id": "tc_for_loop", "type": "code_regex", "value": "\\bfor\\s+\\w+\\s+in\\s+ports\\b", "flags": "m", "label": "Добавлен цикл for по ports", "points": 1},
+            {"id": "tc_output", "type": "code_regex", "value": "\\bprint\\s*\\([^\\)]*port[^\\)]*\\)", "flags": "im", "label": "Выводится сообщение проверки порта", "points": 1},
+            {"id": "tc_access", "type": "code_regex", "value": "\\breturn\\s+[\"']ACCESS GRANTED[\"']", "flags": "m", "label": "Возвращается ACCESS GRANTED", "points": 1},
+            {"id": "tc_runtime", "type": "returncode_equals", "value": 0, "label": "Код выполняется без runtime ошибок", "points": 1},
+        ],
+        "hints": [
+            "Список ports обязателен",
+            "Добавьте печать статуса",
+            "Финальный результат: ACCESS GRANTED",
+        ],
+    },
+]
+
+
 def ensure_default_courses() -> None:
     db = SessionLocal()
     try:
@@ -95,6 +153,21 @@ def ensure_default_courses() -> None:
 
         for course_data in DEFAULT_COURSES:
             db.add(Course(**course_data))
+
+        db.commit()
+    finally:
+        db.close()
+
+
+def ensure_default_missions() -> None:
+    db = SessionLocal()
+    try:
+        has_missions = db.query(Mission).first() is not None
+        if has_missions:
+            return
+
+        for mission_data in DEFAULT_MISSIONS:
+            db.add(Mission(**mission_data))
 
         db.commit()
     finally:

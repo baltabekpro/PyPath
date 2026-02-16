@@ -6,11 +6,14 @@ export enum View {
   PROFILE = 'PROFILE',
   LEADERBOARD = 'LEADERBOARD',
   ACHIEVEMENTS = 'ACHIEVEMENTS',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  ADMIN = 'ADMIN'
 }
 
 export interface User {
   id?: string;
+  username?: string;
+  role?: string;
   name: string;
   email?: string;
   fullName?: string;
@@ -27,6 +30,8 @@ export interface User {
     theme: string;
     notifications: boolean;
     sound: boolean;
+    role?: string;
+    is_admin?: boolean;
   };
 }
 
@@ -42,4 +47,12 @@ export interface Course {
   stars: number;
   isBoss: boolean;
   locked: boolean;
+  season?: number;
+  status?: 'locked' | 'in_progress' | 'completed';
+  completedLessons?: number;
+  nextCourseId?: number | null;
+  unlockRequirement?: string;
+  seasonUnlocked?: boolean;
+  seasonCompleted?: boolean;
+  currentSeason?: number;
 }

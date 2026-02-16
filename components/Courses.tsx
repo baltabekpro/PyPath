@@ -14,6 +14,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   const [shakingId, setShakingId] = useState<number | null>(null);
   const [courses, setCourses] = useState(COURSES);
     const text = UI_TEXTS?.courses ?? {};
+        const currentSeason = courses.find((c: any) => typeof c.currentSeason === 'number')?.currentSeason ?? 1;
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -48,6 +49,9 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   const handleStartMission = () => {
       // Logic: Start mission -> Go to Practice (Editor)
       // Ideally pass "Briefing" context, for now we just switch view
+      if (selectedLevel) {
+          localStorage.setItem('activeCourseId', String(selectedLevel.id));
+      }
       setSelectedLevel(null);
       setView(View.PRACTICE);
   };
@@ -86,7 +90,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                <h1 className="text-white font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
                <div className="flex items-center gap-1.5 text-[10px] font-bold text-arcade-action uppercase tracking-widest">
                    <MapIcon size={12} />
-                   <span>{text.season || 'Сезон обучения'}</span>
+                   <span>{text.season || 'Сезон обучения'} {currentSeason}</span>
                </div>
            </div>
            <div className="w-16"></div>
@@ -216,8 +220,8 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                            <div className="bg-[#0F172A] p-3 rounded-xl border border-white/5 flex items-center gap-3">
                                <Award size={20} className="text-yellow-400" />
                                <div>
-                                   <p className="text-[10px] text-gray-500 font-bold uppercase">{text.reward}</p>
-                                   <p className="font-bold text-white">100 XP</p>
+                                   <p className="text-[10px] text-gray-500 font-bold uppercase">Прогресс</p>
+                                   <p className="font-bold text-white">{selectedLevel.progress}%</p>
                                </div>
                            </div>
                            <div className="bg-[#0F172A] p-3 rounded-xl border border-white/5 flex items-center gap-3">
@@ -228,6 +232,12 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                </div>
                            </div>
                        </div>
+
+                       {typeof selectedLevel.completedLessons === 'number' && (
+                           <div className="text-xs text-gray-400 bg-[#0F172A] border border-white/5 rounded-lg px-3 py-2">
+                               Уроки: <span className="text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}
+                           </div>
+                       )}
 
                        {/* Action */}
                        <button 

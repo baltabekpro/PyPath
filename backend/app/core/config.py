@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     database_url: str = "sqlite:///./pypath.db"
+    jwt_secret_key: str = ""
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
     )
     
     # Google Gemini AI
-    google_api_key: str = "AIzaSyAsF5L4QuI1uygD4Fc0U-A111K8NGZ1Isk"
+    google_api_key: str = ""
     gemini_model: str = "gemini-3-flash-preview"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { View } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -16,6 +16,8 @@ import { APP_UI, UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
 import { ActionToast } from './components/ActionToast';
 import { notificationsApi, type NotificationItem } from './api';
 
+const AdminPanel = lazy(() => import('./components/AdminPanel').then((mod) => ({ default: mod.AdminPanel })));
+
 const App: React.FC = () => {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,6 +29,8 @@ const App: React.FC = () => {
   const appText = UI_TEXTS?.app ?? {};
   const [toastMessage, setToastMessage] = useState('');
   const [toastTone, setToastTone] = useState<'success' | 'info' | 'warning'>('info');
+  const role = String(currentUser?.settings?.role ?? currentUser?.role ?? '').toLowerCase();
+  const isAdmin = role === 'admin' || Boolean(currentUser?.settings?.is_admin);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,6 +109,10 @@ const App: React.FC = () => {
   };
 
   const handleViewChange = (view: View) => {
+    if (view === View.ADMIN && !isAdmin) {
+      showToast('Недостаточно прав для админки', 'warning');
+      return;
+    }
     setCurrentView(view);
     setIsMobileMenuOpen(false); // Close menu on navigation
   };
@@ -135,6 +143,21 @@ const App: React.FC = () => {
         return <Leaderboard />;
       case View.SETTINGS:
         return <Settings />;
+      case View.ADMIN:
+        return (
+          <Suspense
+            fallback={
+              <div className="min-h-[40vh] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="size-8 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-xs text-gray-400">Загружаем админку...</p>
+                </div>
+              </div>
+            }
+          >
+            <AdminPanel isAdmin={isAdmin} />
+          </Suspense>
+        );
       default:
         return <Dashboard setView={handleViewChange} />;
     }
@@ -171,6 +194,7 @@ const App: React.FC = () => {
       <Sidebar 
         currentView={currentView} 
         setView={handleViewChange} 
+        isAdmin={isAdmin}
         isMobileOpen={isMobileMenuOpen} 
         closeMobileMenu={() => setIsMobileMenuOpen(false)}
       />
@@ -193,6 +217,7 @@ const App: React.FC = () => {
             <Header 
               onMenuClick={() => setIsMobileMenuOpen(true)} 
               onProfileClick={() => handleViewChange(View.PROFILE)}
+              onLogout={handleLogout}
               onNotificationsClick={() => {
                 const next = !showNotifications;
                 setShowNotifications(next);

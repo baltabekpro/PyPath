@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.models.models import User
 from app.api.dependencies import get_current_user_optional, get_db_service
@@ -14,9 +14,27 @@ from app.schemas.ai_schemas import (
 )
 from app.services.ai_service import get_ai_service, AIService
 from app.services.database_service import DatabaseService
+from app.core.rate_limit import rate_limiter
 
 
 router = APIRouter(prefix="/ai", tags=["AI Chat"])
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _enforce_rate_limit(request: Request, key: str, limit: int, window_seconds: int) -> None:
+    result = rate_limiter.check(key=key, limit=limit, window_seconds=window_seconds)
+    if not result.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Retry after {result.retry_after_seconds} seconds",
+            headers={"Retry-After": str(result.retry_after_seconds)},
+        )
 
 
 def _now_iso() -> str:
@@ -147,6 +165,7 @@ def _append_guest_history(ai_service: AIService, user_id: str, user_text: str, a
 @router.post("/chat", response_model=ChatResponse)
 def chat_with_ai(
     payload: ChatMessage,
+    request: Request,
     user: Optional[User] = Depends(get_current_user_optional),
     ai_service: AIService = Depends(get_ai_service),
     service: DatabaseService = Depends(get_db_service)
@@ -162,6 +181,9 @@ def chat_with_ai(
     
     Powered by Google Gemini
     """
+    identity = user.id if user else (payload.user_id or _client_ip(request))
+    _enforce_rate_limit(request, key=f"ai:chat:{identity}", limit=60, window_seconds=60)
+
     # Use authenticated user ID or provided user_id
     user_id = user.id if user else payload.user_id
     session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
@@ -197,13 +219,14 @@ def chat_with_ai(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"AI service error: {str(e)}"
+            detail="AI service temporarily unavailable"
         )
 
 
 @router.post("/quick-action", response_model=ChatResponse)
 def quick_action(
     payload: QuickActionRequest,
+    request: Request,
     user: Optional[User] = Depends(get_current_user_optional),
     ai_service: AIService = Depends(get_ai_service),
     service: DatabaseService = Depends(get_db_service)
@@ -217,6 +240,9 @@ def quick_action(
     - `theory` - Explain theory concepts
     - `motivation` - Get motivational boost
     """
+    identity = user.id if user else (payload.user_id or _client_ip(request))
+    _enforce_rate_limit(request, key=f"ai:quick:{identity}", limit=120, window_seconds=60)
+
     response_text = ai_service.get_quick_response(payload.action_type)
     user_id = user.id if user else payload.user_id
 
@@ -255,11 +281,15 @@ def quick_action(
 @router.post("/reset-session")
 def reset_chat_session(
     payload: SessionResetRequest,
+    request: Request,
     user: Optional[User] = Depends(get_current_user_optional),
     ai_service: AIService = Depends(get_ai_service),
     service: DatabaseService = Depends(get_db_service)
 ):
     """Reset AI chat session - Clear conversation history and start fresh"""
+    identity = user.id if user else (payload.user_id or _client_ip(request))
+    _enforce_rate_limit(request, key=f"ai:reset:{identity}", limit=30, window_seconds=60)
+
     user_id = user.id if user else payload.user_id
     session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
     ai_service.reset_session(session_key)

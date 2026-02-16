@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, LogOut } from 'lucide-react';
 import { CURRENT_USER, UI_TEXTS } from '../constants';
 import { apiGet } from '../api';
 
@@ -7,9 +7,10 @@ interface HeaderProps {
     onMenuClick?: () => void;
     onProfileClick?: () => void;
     onNotificationsClick?: () => void;
+  onLogout?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick, onLogout }) => {
   const [currentUser, setCurrentUser] = useState(CURRENT_USER);
   const maxXp = currentUser.maxXp || 1000;
   const xpPercent = Math.min(100, Math.max(0, Math.round((currentUser.xp / maxXp) * 100)));
@@ -66,6 +67,15 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
           >
             <Bell size={22} strokeWidth={2.5} className="group-hover:animate-shake" />
             <div className="absolute top-2 right-3 size-2 bg-red-500 rounded-full border border-[#1E293B] hidden group-hover:block"></div>
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={onLogout}
+            title="Выйти"
+            className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-arcade-card border border-white/5 text-gray-300 hover:text-white hover:bg-red-500/20 transition-all active:scale-95 shadow-lg"
+          >
+            <LogOut size={20} strokeWidth={2.5} />
           </button>
         </div>
 

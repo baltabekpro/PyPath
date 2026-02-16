@@ -1,7 +1,10 @@
 """Auth-related Pydantic schemas"""
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+RESERVED_USERNAMES = {"admin", "root", "system", "support", "moderator", "staff"}
 
 
 class UserRegister(BaseModel):
@@ -10,6 +13,16 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
     fullName: str = Field(..., min_length=1, max_length=100)
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Username is required")
+        if normalized.lower() in RESERVED_USERNAMES:
+            raise ValueError("Username is reserved")
+        return normalized
 
 
 class UserLogin(BaseModel):
