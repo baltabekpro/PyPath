@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles } from 'lucide-react';
-import { AI_CHAT_PAGE_DATA, CURRENT_USER, LOGS, UI_TEXTS, getIconComponent } from '../constants';
+import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Plus } from 'lucide-react';
+import { AI_CHAT_PAGE_DATA, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 import { aiChat } from '../api';
 
 interface Message {
@@ -11,8 +11,17 @@ interface Message {
   type?: 'log' | 'response' | 'error';
 }
 
+interface ChatSummary {
+    id: string;
+    title: string;
+    updatedAt: string;
+    lastMessage: string;
+}
+
 export const AIChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+    const [chats, setChats] = useState<ChatSummary[]>([]);
+    const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [coreState, setCoreState] = useState<'idle' | 'processing' | 'active'>('idle');
@@ -20,6 +29,15 @@ export const AIChatPage: React.FC = () => {
     const responses = AI_CHAT_PAGE_DATA?.responses ?? {};
         const text = UI_TEXTS?.aiChatPage ?? {};
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const chatHistoryLogs = chats.map((chat) => ({
+        id: chat.id,
+        code: chat.id === activeChatId ? 'ACTIVE' : 'CHAT',
+        status: 'success' as const,
+        msg: chat.title,
+        time: new Date(chat.updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        preview: chat.lastMessage,
+    }));
 
     const escapeHtml = (value: string) =>
         value
@@ -44,15 +62,17 @@ export const AIChatPage: React.FC = () => {
         const loadHistory = async () => {
             try {
                 const history = await aiChat.getHistory(CURRENT_USER.id);
-                const mapped = (history.items || []).map((item) => ({
-                    id: item.id,
-                    text: item.text,
-                    sender: item.sender,
-                    timestamp: new Date(item.timestamp),
-                })) as Message[];
-                if (mapped.length > 0) {
-                    setMessages(mapped);
-                }
+                const mapped = (history.items || [])
+                    .filter((item) => (item?.sender === 'user' || item?.sender === 'ai') && String(item?.text || '').trim().length > 0)
+                    .map((item) => ({
+                        id: item.id,
+                        text: item.text,
+                        sender: item.sender,
+                        timestamp: new Date(item.timestamp),
+                    })) as Message[];
+                setMessages(mapped);
+                setChats(history.chats || []);
+                setActiveChatId(history.active_chat_id || (history.chats?.[0]?.id ?? null));
             } catch {
             }
         };
@@ -62,6 +82,11 @@ export const AIChatPage: React.FC = () => {
 
   const handleSend = async (text: string = inputValue) => {
     if (!text.trim()) return;
+
+        const currentChatId = activeChatId || `chat_${Date.now()}`;
+        if (!activeChatId) {
+            setActiveChatId(currentChatId);
+        }
 
     const newUserMsg: Message = {
       id: Date.now().toString(),
@@ -77,7 +102,7 @@ export const AIChatPage: React.FC = () => {
 
     try {
       // Call real AI API
-      const response = await aiChat.sendMessage(text, CURRENT_USER.id);
+            const response = await aiChat.sendMessage(text, CURRENT_USER.id, currentChatId);
       
       const newAiMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -90,6 +115,13 @@ export const AIChatPage: React.FC = () => {
       setIsTyping(false);
       setCoreState('active');
       setTimeout(() => setCoreState('idle'), 2000);
+
+            try {
+                const history = await aiChat.getHistory(CURRENT_USER.id);
+                setChats(history.chats || []);
+                setActiveChatId(history.active_chat_id || currentChatId);
+            } catch {
+            }
     } catch (error) {
       console.error('AI chat error:', error);
       // Fallback to mock response
@@ -105,6 +137,40 @@ export const AIChatPage: React.FC = () => {
       setCoreState('idle');
     }
   };
+
+    const handleNewChat = () => {
+        const newChatId = `chat_${Date.now()}`;
+        const now = new Date().toISOString();
+        const newChat: ChatSummary = {
+            id: newChatId,
+            title: 'Новый чат',
+            updatedAt: now,
+            lastMessage: '',
+        };
+        setChats((prev) => [newChat, ...prev.filter((c) => c.id !== newChatId)]);
+        setActiveChatId(newChatId);
+        setMessages([]);
+        setInputValue('');
+    };
+
+    const handleSelectChat = async (chatId: string) => {
+        setActiveChatId(chatId);
+        try {
+            const history = await aiChat.getHistory(CURRENT_USER.id, chatId);
+            setChats(history.chats || []);
+            const mapped = (history.items || [])
+                .filter((item) => (item?.sender === 'user' || item?.sender === 'ai') && String(item?.text || '').trim().length > 0)
+                .map((item) => ({
+                    id: item.id,
+                    text: item.text,
+                    sender: item.sender,
+                    timestamp: new Date(item.timestamp),
+                })) as Message[];
+            setMessages(mapped);
+        } catch {
+            setMessages([]);
+        }
+    };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -122,14 +188,23 @@ export const AIChatPage: React.FC = () => {
 
       {/* --- LEFT SIDEBAR: NEURAL HISTORY --- */}
       <aside className="hidden md:flex w-72 bg-[#0F172A]/90 border-r border-cyan-900/30 flex-col backdrop-blur-md relative z-20">
-          <div className="h-16 flex items-center px-6 border-b border-cyan-900/30 bg-cyan-950/10">
-              <Activity size={18} className="text-cyan-400 mr-3 animate-pulse" />
-              <span className="text-xs font-bold text-cyan-100 tracking-[0.2em]">{text.neuralHistory}</span>
+          <div className="h-16 flex items-center justify-between px-4 border-b border-cyan-900/30 bg-cyan-950/10">
+              <div className="flex items-center min-w-0">
+                  <Activity size={18} className="text-cyan-400 mr-3 animate-pulse" />
+                  <span className="text-xs font-bold text-cyan-100 tracking-[0.2em] truncate">{text.neuralHistory}</span>
+              </div>
+              <button
+                onClick={handleNewChat}
+                className="shrink-0 ml-2 p-2 rounded bg-cyan-900/20 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300"
+                title="Новый чат"
+              >
+                <Plus size={14} />
+              </button>
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
-              {LOGS.map((log: any, index: number) => (
-                  <div key={`${log?.id ?? log?.code ?? 'log'}-${index}`} className="group p-3 rounded bg-[#0B1121] border border-cyan-900/20 hover:border-cyan-500/30 transition-all cursor-pointer">
+              {chatHistoryLogs.map((log: any, index: number) => (
+                  <button key={`${log?.id ?? log?.code ?? 'log'}-${index}`} onClick={() => handleSelectChat(log.id)} className={`w-full text-left group p-3 rounded bg-[#0B1121] border transition-all cursor-pointer ${log.id === activeChatId ? 'border-cyan-500/60' : 'border-cyan-900/20 hover:border-cyan-500/30'}`}>
                       <div className="flex justify-between items-center mb-1">
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                               log.status === 'success' ? 'bg-green-500/10 text-green-400' :
@@ -142,8 +217,12 @@ export const AIChatPage: React.FC = () => {
                           </span>
                       </div>
                       <p className="text-xs text-slate-300 font-medium group-hover:text-cyan-200 truncate">{log.msg}</p>
-                  </div>
+                      {log.preview ? <p className="text-[10px] text-slate-500 truncate mt-1">{log.preview}</p> : null}
+                  </button>
               ))}
+              {chatHistoryLogs.length === 0 ? (
+                <div className="text-xs text-slate-500">Чатов пока нет. Нажмите + чтобы начать.</div>
+              ) : null}
           </div>
 
           <div className="p-4 border-t border-cyan-900/30 bg-cyan-950/5">

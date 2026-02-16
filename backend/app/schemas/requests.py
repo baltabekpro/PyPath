@@ -32,6 +32,20 @@ class MissionSubmit(BaseModel):
     code: str
 
 
+class MissionFile(BaseModel):
+    id: str
+    name: str
+    type: str
+    content: str | None = None
+    language: str | None = None
+    parentId: str | None = None
+
+
+class MissionCodeUpdate(BaseModel):
+    files: list[MissionFile] = Field(default_factory=list)
+    activeFileId: str | None = None
+
+
 class NotificationPreference(BaseModel):
     label: str
     enabled: bool

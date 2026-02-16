@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Folder, Settings, ChevronDown, PanelLeftClose, PanelLeftOpen, FileCode, FileText, Sparkles, CheckCircle2, Terminal as TerminalIcon, Bot, HelpCircle, Code, Maximize2, Minimize2, AlertTriangle, Lightbulb, BookOpen, Flag, Scroll, Map } from 'lucide-react';
+import { Play, Folder, Settings, ChevronDown, PanelLeftClose, PanelLeftOpen, FileCode, FileText, Sparkles, CheckCircle2, Terminal as TerminalIcon, Bot, HelpCircle, Code, Maximize2, Minimize2, AlertTriangle, Lightbulb, BookOpen, Flag, Scroll, Map, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AIChat } from './AIChat';
 import MonacoEditor from '@monaco-editor/react';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
-import { EDITOR_UI, MISSIONS, UI_TEXTS } from '../constants';
-import { apiGet, apiPost } from '../api';
+import { EDITOR_UI, UI_TEXTS } from '../constants';
+import { missionApi, type MissionData, type MissionFile } from '../api';
 
 // --- Types ---
 interface FileNode {
@@ -25,29 +25,22 @@ const getFileIcon = (name: string) => {
 }
 
 export const EditorComponent: React.FC = () => {
-  // Load mission from API
-    const [mission, setMission] = useState<any>(null);
+    const [mission, setMission] = useState<MissionData | null>(null);
+    const [missionList, setMissionList] = useState<MissionData[]>([]);
+    const [activeMissionIndex, setActiveMissionIndex] = useState(0);
     const [isLoadingMission, setIsLoadingMission] = useState(true);
+    const [isSavingCode, setIsSavingCode] = useState(false);
     const learningData = EDITOR_UI?.learning ?? {};
     const botMessages = EDITOR_UI?.botMessages ?? {};
-        const text = UI_TEXTS?.editor ?? {};
-        const textLearning = text.learning ?? {};
-        const textBot = text.botMessages ?? {};
-  
-  // Transform DB files to FileNode format if necessary, or just use them
-  const initialFiles: FileNode[] = mission?.files ? [
-      { id: 'root', name: mission.id || 'project', type: 'folder', parentId: null, isOpen: true },
-      ...mission.files.map((f: any) => ({
-          ...f,
-          parentId: 'root'
-      }))
-  ] : [
-      { id: 'root', name: 'project', type: 'folder', parentId: null, isOpen: true },
-      { id: '1', name: 'main.py', type: 'file', language: 'python', content: '# Write your code here\nprint("Hello, Python!")', parentId: 'root' }
-  ];
+    const text = UI_TEXTS?.editor ?? {};
+    const textLearning = text.learning ?? {};
+    const textBot = text.botMessages ?? {};
 
-  const [files, setFiles] = useState<FileNode[]>(initialFiles);
-  const [activeFileId, setActiveFileId] = useState<string>(mission?.files?.[0]?.id || '1');
+    const [files, setFiles] = useState<FileNode[]>([
+        { id: 'root', name: 'project', type: 'folder', parentId: null, isOpen: true },
+        { id: 'main', name: 'main.py', type: 'file', language: 'python', content: '# Write your code here\n', parentId: 'root' },
+    ]);
+    const [activeFileId, setActiveFileId] = useState<string>('main');
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<'mission' | 'files'>('mission');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -62,57 +55,83 @@ export const EditorComponent: React.FC = () => {
   const editorRef = useRef<any>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<Terminal | null>(null);
-    const fitAddonRef = useRef<FitAddon | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const saveTimeoutRef = useRef<number | null>(null);
 
   const activeFile = files.find(f => f.id === activeFileId);
 
-  // Load first available mission from API
-  useEffect(() => {
-      const loadMission = async () => {
-          try {
-              const missions = await apiGet<any[]>('/missions');
-              if (missions && missions.length > 0) {
-                  const firstMission = missions[0];
-                  const mappedMission = {
-                      ...firstMission,
-                      files: firstMission.files && firstMission.files.length > 0
-                          ? firstMission.files
-                          : [
-                              {
-                                  id: '1',
-                                  name: 'main.py',
-                                  type: 'file',
-                                  language: 'python',
-                                  content: firstMission.starterCode || '# Write your code here\n',
-                              },
-                            ],
-                      objectives: firstMission.objectives || [],
-                      theory: firstMission.theory || {
-                          title: learningData.title || textLearning.title || 'Теория',
-                          content: learningData.content || textLearning.content || 'Материал загружается',
-                      },
-                  };
+  const mapFilesToEditorNodes = (workspaceFiles: MissionFile[], missionId: string): FileNode[] => {
+      const normalized = (workspaceFiles || []).map((item) => ({
+          id: item.id,
+          name: item.name,
+          type: (item.type as 'file' | 'folder') || 'file',
+          content: item.content,
+          language: item.language,
+          parentId: item.parentId ?? 'root',
+      }));
 
-                  setMission(mappedMission);
-                  if (mappedMission.files && mappedMission.files.length > 0) {
-                      const newFiles = [
-                          { id: 'root', name: mappedMission.id || 'project', type: 'folder' as const, parentId: null, isOpen: true },
-                          ...mappedMission.files.map((f: any) => ({
-                              ...f,
-                              parentId: 'root'
-                          }))
-                      ];
-                      setFiles(newFiles);
-                      setActiveFileId(mappedMission.files[0].id);
-                  }
+      const hasRoot = normalized.some((file) => file.id === 'root');
+      return hasRoot
+          ? normalized
+          : [{ id: 'root', name: missionId || 'project', type: 'folder', parentId: null, isOpen: true }, ...normalized];
+  };
+
+  const loadMissionData = async (missionId: string, index: number) => {
+      setIsLoadingMission(true);
+      try {
+          const [details, workspace, progress] = await Promise.all([
+              missionApi.getById(missionId),
+              missionApi.getWorkspace(missionId),
+              missionApi.getProgress(missionId),
+          ]);
+
+          const missionWithTheory = {
+              ...details,
+              objectives: progress?.objectives || details.objectives || [],
+              theory: {
+                  title: learningData.title || textLearning.title || 'Теория',
+                  content: learningData.content || textLearning.content || 'Материал загружается',
+              },
+          } as any;
+
+          const workspaceFiles = workspace?.files?.length
+              ? workspace.files
+              : [{
+                  id: 'main',
+                  name: 'main.py',
+                  type: 'file',
+                  language: 'python',
+                  content: details.starterCode || '# Write your code here\n',
+                  parentId: 'root',
+                }];
+
+          const editorFiles = mapFilesToEditorNodes(workspaceFiles, missionWithTheory.id);
+
+          setMission(missionWithTheory);
+          setFiles(editorFiles);
+          setActiveFileId(workspace?.activeFileId || editorFiles.find((f) => f.type === 'file')?.id || 'main');
+          setActiveMissionIndex(index);
+      } catch (error) {
+          console.error('Failed to load mission data:', error);
+      } finally {
+          setIsLoadingMission(false);
+      }
+  };
+
+  // Load missions list
+  useEffect(() => {
+      const loadMissions = async () => {
+          try {
+              const missions = await missionApi.getAll();
+              if (missions && missions.length > 0) {
+                  setMissionList(missions);
+                  await loadMissionData(missions[0].id, 0);
               }
           } catch (error) {
-              console.error('Failed to load missions:', error);
-          } finally {
-              setIsLoadingMission(false);
+              console.error('Failed to load mission list:', error);
           }
       };
-      loadMission();
+      loadMissions();
   }, []);
 
   // Auto-collapse sidebar on mobile
@@ -122,20 +141,40 @@ export const EditorComponent: React.FC = () => {
       }
   }, []);
 
-  useEffect(() => {
-      const loadMissionProgress = async () => {
-          if (!mission?.id) return;
-          try {
-              const progress = await apiGet<{ objectives?: any[] }>(`/missions/${mission.id}/progress`);
-              if (progress?.objectives) {
-                  setMission((prev: any) => ({ ...prev, objectives: progress.objectives }));
-              }
-          } catch {
-          }
-      };
+  const saveWorkspace = async (showSaving = false) => {
+      if (!mission?.id) return;
+      if (showSaving) setIsSavingCode(true);
+      try {
+          await missionApi.saveWorkspace(mission.id, {
+              files: files
+                  .filter((f) => f.id !== 'root')
+                  .map((f) => ({
+                      id: f.id,
+                      name: f.name,
+                      type: f.type,
+                      content: f.content,
+                      language: f.language,
+                      parentId: f.parentId,
+                  })),
+              activeFileId,
+          });
+      } catch (error) {
+          console.error('Failed to save workspace:', error);
+      } finally {
+          if (showSaving) setIsSavingCode(false);
+      }
+  };
 
-      loadMissionProgress();
-  }, [mission?.id]);
+  useEffect(() => {
+      if (!mission?.id || isLoadingMission) return;
+      if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = window.setTimeout(() => {
+          saveWorkspace();
+      }, 800);
+      return () => {
+          if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+      };
+  }, [files, activeFileId, mission?.id, isLoadingMission]);
 
   const handleEditorBeforeMount = (monaco: any) => {
     monaco.editor.defineTheme('cyberpunk', {
@@ -234,6 +273,12 @@ export const EditorComponent: React.FC = () => {
         return () => window.cancelAnimationFrame(raf);
     }, [isTerminalOpen]);
 
+    const switchMission = async (nextIndex: number) => {
+            if (nextIndex < 0 || nextIndex >= missionList.length) return;
+            await saveWorkspace();
+            await loadMissionData(missionList[nextIndex].id, nextIndex);
+    };
+
     const runCode = async () => {
     if (!xtermInstance.current || !mission?.id) return;
     setIsRunning(true);
@@ -246,58 +291,59 @@ export const EditorComponent: React.FC = () => {
     term.writeln('\x1b[33m> Running script...\x1b[0m');
 
     try {
+       await saveWorkspace();
        const code = activeFile?.content || '';
-       const result = await apiPost<{ success: boolean; message: string; xpEarned: number; objectives?: any[] }>(
-           `/missions/${mission.id}/submit`,
-           { code }
-       );
+       const result = await missionApi.submit(mission.id, { code });
 
-       if (result.objectives) {
-           setMission((prev: any) => ({ ...prev, objectives: result.objectives }));
+       setMission((prev: any) => ({
+          ...prev,
+          objectives: result.objectives || prev?.objectives || [],
+       }));
+
+         if (result.terminalOutput) {
+             result.terminalOutput.split('\n').forEach((line) => {
+              if (line.trim()) term.writeln(line);
+          });
+       }
+
+         if (result.terminalError) {
+          term.writeln('\x1b[31m[stderr]\x1b[0m');
+             result.terminalError.split('\n').forEach((line) => {
+              if (line.trim()) term.writeln(`\x1b[31m${line}\x1b[0m`);
+          });
+       }
+
+       if (result.analysis) {
+          setBotEmotion(result.success ? 'happy' : 'alert');
+          setBotMessage(result.analysis);
        }
 
        if (result.success) {
-           term.writeln('Checking port 80... Closed');
-           term.writeln('Checking port 443... Closed');
-           term.writeln('Checking port 8080... \x1b[1;32mOPEN\x1b[0m');
-           term.writeln('\x1b[35m[OUTPUT]\x1b[0m ACCESS GRANTED');
            term.writeln(`\x1b[1;32m> ${result.message} (+${result.xpEarned} XP)\x1b[0m`);
            setBotEmotion('happy');
-           setBotMessage(botMessages.success || textBot.success);
+           if (!result.analysis) setBotMessage(botMessages.success || textBot.success);
            setShowSuccess(true);
            setTimeout(() => setShowSuccess(false), 3000);
        } else {
            term.writeln('\x1b[31m[ERROR] Mission check failed.\x1b[0m');
            term.writeln(result.message || 'Hint: Проверь условие и ожидаемый вывод.');
            setBotEmotion('alert');
-           setBotMessage(result.message || botMessages.error || textBot.error);
+           if (!result.analysis) setBotMessage(result.message || botMessages.error || textBot.error);
        }
        term.write('$ ');
-    } catch {
-       if (activeFile?.content?.includes('return "ACCESS DENIED"')) {
-           term.writeln('\x1b[31m[ERROR] Firewall blocking connection.\x1b[0m');
-           term.writeln('Hint: Change return value to "GRANTED"');
-           term.write('$ ');
-           setBotEmotion('alert');
-           setBotMessage(botMessages.error || textBot.error);
-       } else {
-           term.writeln('Checking port 80... Closed');
-           term.writeln('Checking port 443... Closed');
-           term.writeln('Checking port 8080... \x1b[1;32mOPEN\x1b[0m');
-           term.writeln('\x1b[35m[OUTPUT]\x1b[0m ACCESS GRANTED');
-           term.writeln('\x1b[1;32m> Mission Complete!\x1b[0m');
-           setBotEmotion('happy');
-           setBotMessage(botMessages.success || textBot.success);
-           setShowSuccess(true);
-           setTimeout(() => setShowSuccess(false), 3000);
-       }
+    } catch (error) {
+       term.writeln('\x1b[31m[ERROR] Не удалось выполнить миссию\x1b[0m');
+       term.write('$ ');
+       setBotEmotion('alert');
+       setBotMessage(botMessages.error || textBot.error);
+       console.error('Mission submit failed:', error);
     } finally {
        setIsRunning(false);
     }
   };
 
   // Early return if mission is not loaded yet
-    if (isLoadingMission || !mission || !mission.files) {
+    if (isLoadingMission || !mission) {
     return (
       <div className="flex h-full items-center justify-center bg-[#0F172A]">
         <div className="text-center">
@@ -352,7 +398,7 @@ export const EditorComponent: React.FC = () => {
                         {text.goalsTitle}
                     </h3>
                     <div className="space-y-3">
-                        {mission.objectives.map((obj: any) => (
+                        {(mission.objectives || []).map((obj: any) => (
                             <div key={obj.id} className="flex items-start gap-3 text-sm">
                                 <div className={`mt-0.5 size-4 rounded border flex items-center justify-center shrink-0 ${obj.completed ? 'bg-arcade-success border-arcade-success' : 'border-gray-600 bg-transparent'}`}>
                                     {obj.completed && <CheckCircle2 size={12} className="text-[#0F172A]" strokeWidth={3} />}
@@ -422,7 +468,7 @@ export const EditorComponent: React.FC = () => {
         {/* --- FILES TAB --- */}
         {sidebarTab === 'files' && (
             <div className="flex-1 py-2 overflow-y-auto custom-scrollbar bg-[#0F172A]">
-                {files.map(f => (
+                     {files.filter(f => f.type === 'file').map(f => (
                      <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-white/5 text-white' : 'border-transparent text-gray-500'}`} onClick={() => setActiveFileId(f.id)}>
                         {getFileIcon(f.name)} <span>{f.name}</span>
                      </div>
@@ -445,17 +491,40 @@ export const EditorComponent: React.FC = () => {
              </div>
 
              <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none opacity-50 md:opacity-100">
-                     <span className="text-[10px] text-arcade-primary font-bold uppercase tracking-[0.2em] animate-pulse">{mission.chapter}</span>
+                     <span className="text-[10px] text-arcade-primary font-bold uppercase tracking-[0.2em] animate-pulse">{mission.chapter} • {activeMissionIndex + 1}/{missionList.length}</span>
              </div>
 
-             <button 
-                  onClick={runCode}
-                  disabled={isRunning}
-                  className="bg-arcade-action text-white px-4 py-1.5 rounded-lg font-black uppercase text-xs flex items-center gap-2 shadow-neon-orange hover:scale-105 transition-transform"
-               >
-                  {isRunning ? <Sparkles size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-                  <span>{text.run}</span>
-               </button>
+             <div className="flex items-center gap-2">
+                <button
+                    onClick={() => switchMission(activeMissionIndex - 1)}
+                    disabled={activeMissionIndex <= 0 || isRunning}
+                    className="p-2 rounded-lg border border-slate-700 text-gray-300 disabled:opacity-40"
+                >
+                    <ChevronLeft size={16} />
+                </button>
+                <button
+                    onClick={() => saveWorkspace(true)}
+                    disabled={isSavingCode || isRunning}
+                    className="px-3 py-1.5 rounded-lg border border-slate-700 text-gray-200 text-xs font-bold uppercase flex items-center gap-1.5 disabled:opacity-50"
+                >
+                    <Save size={14} /> {isSavingCode ? 'Saving...' : 'Save'}
+                </button>
+                <button 
+                    onClick={runCode}
+                    disabled={isRunning}
+                    className="bg-arcade-action text-white px-4 py-1.5 rounded-lg font-black uppercase text-xs flex items-center gap-2 shadow-neon-orange hover:scale-105 transition-transform disabled:opacity-60"
+                >
+                    {isRunning ? <Sparkles size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
+                    <span>{text.run}</span>
+                </button>
+                <button
+                    onClick={() => switchMission(activeMissionIndex + 1)}
+                    disabled={activeMissionIndex >= missionList.length - 1 || isRunning}
+                    className="p-2 rounded-lg border border-slate-700 text-gray-300 disabled:opacity-40"
+                >
+                    <ChevronRight size={16} />
+                </button>
+             </div>
         </div>
 
         {/* Editor Container */}
@@ -477,7 +546,7 @@ export const EditorComponent: React.FC = () => {
                             scrollBeyondLastLine: false,
                             automaticLayout: true
                         }}
-                        onChange={(val) => setFiles(files.map(f => f.id === activeFileId ? {...f, content: val} : f))}
+                                onChange={(val) => setFiles((prev) => prev.map(f => f.id === activeFileId ? {...f, content: val || ''} : f))}
                      />
                  )}
                  

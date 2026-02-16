@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.models import User
-from app.schemas.requests import MissionSubmit, PostCreate, UserUpdate, NotificationPreferencesUpdate
+from app.schemas.requests import MissionSubmit, MissionCodeUpdate, PostCreate, UserUpdate, NotificationPreferencesUpdate
 from app.services.database_service import DatabaseService
 from app.api.dependencies import get_db_service, get_current_user_optional, get_current_user
+from app.services.ai_service import get_ai_service, AIService
 
 
 router = APIRouter()
@@ -412,21 +413,26 @@ def get_achievements(
 def get_missions(service: DatabaseService = Depends(get_db_service)):
     """Get all available coding missions"""
     missions = service.get_missions()
-    return [
-        {
-            "id": m.id,
-            "title": m.title,
-            "chapter": m.chapter,
-            "description": m.description,
-            "difficulty": m.difficulty,
-            "xpReward": m.xp_reward,
-            "objectives": m.objectives,
-            "starterCode": m.starter_code,
-            "testCases": m.test_cases,
-            "hints": m.hints
-        }
-        for m in missions
-    ]
+    mission_ids = [m.id for m in missions]
+    response = []
+    for idx, m in enumerate(missions):
+        response.append(
+            {
+                "id": m.id,
+                "title": m.title,
+                "chapter": m.chapter,
+                "description": m.description,
+                "difficulty": m.difficulty,
+                "xpReward": m.xp_reward,
+                "objectives": m.objectives,
+                "starterCode": m.starter_code,
+                "testCases": m.test_cases,
+                "hints": m.hints,
+                "previousMissionId": mission_ids[idx - 1] if idx > 0 else None,
+                "nextMissionId": mission_ids[idx + 1] if idx < len(mission_ids) - 1 else None,
+            }
+        )
+    return response
 
 
 @router.get("/missions/{mission_id}", tags=["Missions"])
@@ -436,6 +442,7 @@ def get_mission_by_id(mission_id: str, service: DatabaseService = Depends(get_db
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
     
+    neighbors = service.get_mission_neighbors(mission_id)
     return {
         "id": mission.id,
         "title": mission.title,
@@ -446,14 +453,42 @@ def get_mission_by_id(mission_id: str, service: DatabaseService = Depends(get_db
         "objectives": mission.objectives,
         "starterCode": mission.starter_code,
         "testCases": mission.test_cases,
-        "hints": mission.hints
+        "hints": mission.hints,
+        "previousMissionId": neighbors.get("previousMissionId"),
+        "nextMissionId": neighbors.get("nextMissionId"),
     }
 
 
 @router.get("/missions/{mission_id}/progress", tags=["Missions"])
-def get_mission_progress(mission_id: str, service: DatabaseService = Depends(get_db_service)):
+def get_mission_progress(
+    mission_id: str,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service)
+):
     """Get current progress for specific mission"""
-    return service.get_mission_progress(mission_id)
+    return service.get_mission_progress(mission_id, user)
+
+
+@router.get("/missions/{mission_id}/code", tags=["Missions"])
+def get_mission_code(
+    mission_id: str,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Get mission workspace (files, active file)"""
+    return service.get_mission_workspace(mission_id, user)
+
+
+@router.put("/missions/{mission_id}/code", tags=["Missions"])
+def save_mission_code(
+    mission_id: str,
+    payload: MissionCodeUpdate,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Save mission workspace (files, active file)"""
+    files = [f.model_dump() for f in payload.files]
+    return service.save_mission_workspace(mission_id, files, payload.activeFileId, user)
 
 
 @router.post("/missions/{mission_id}/submit", tags=["Missions"])
@@ -461,10 +496,18 @@ def submit_mission(
     mission_id: str,
     payload: MissionSubmit,
     user: Optional[User] = Depends(get_current_user_optional),
-    service: DatabaseService = Depends(get_db_service)
+    service: DatabaseService = Depends(get_db_service),
+    ai_service: AIService = Depends(get_ai_service)
 ):
     """Submit code solution for mission and run test cases"""
-    return service.submit_mission(mission_id, payload)
+    result = service.submit_mission(mission_id, payload, user)
+    result["analysis"] = ai_service.analyze_code_execution(
+        code=payload.code,
+        stdout=result.get("terminalOutput", ""),
+        stderr=result.get("terminalError", ""),
+        objectives=result.get("objectives", []),
+    )
+    return result
 
 
 @router.get("/uiData", tags=["System"])

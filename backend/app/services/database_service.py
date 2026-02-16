@@ -1,6 +1,9 @@
 """Database service using SQLAlchemy"""
 from typing import List, Optional, Literal
 import re
+import subprocess
+import sys
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -101,7 +104,7 @@ class DatabaseService:
     # Mission operations
     def get_missions(self) -> List[Mission]:
         """Get all missions"""
-        return self.db.query(Mission).all()
+        return self.db.query(Mission).order_by(Mission.id.asc()).all()
 
     def get_mission_by_id(self, mission_id: str) -> Optional[Mission]:
         """Get mission by ID"""
@@ -117,6 +120,134 @@ class DatabaseService:
         self.db.commit()
         self.db.refresh(mission)
         return mission
+
+    def _get_user_settings(self, user: Optional[User]) -> dict:
+        if not user:
+            return {}
+        return dict(user.settings or {})
+
+    def _save_user_settings(self, user: Optional[User], settings: dict) -> None:
+        if not user:
+            return
+        user.settings = settings
+        self.db.commit()
+        self.db.refresh(user)
+
+    def _get_default_mission_files(self, mission: Mission) -> list:
+        return [
+            {
+                "id": "main",
+                "name": "main.py",
+                "type": "file",
+                "language": "python",
+                "content": mission.starter_code or "# Write your code here\n",
+                "parentId": "root",
+            }
+        ]
+
+    def get_mission_neighbors(self, mission_id: str) -> dict:
+        missions = self.get_missions()
+        mission_ids = [m.id for m in missions]
+        if mission_id not in mission_ids:
+            return {"previousMissionId": None, "nextMissionId": None}
+
+        idx = mission_ids.index(mission_id)
+        previous_id = mission_ids[idx - 1] if idx > 0 else None
+        next_id = mission_ids[idx + 1] if idx < len(mission_ids) - 1 else None
+        return {"previousMissionId": previous_id, "nextMissionId": next_id}
+
+    def get_mission_workspace(self, mission_id: str, user: Optional[User]) -> dict:
+        mission = self.get_mission_by_id(mission_id)
+        if not mission:
+            return {"files": [], "activeFileId": None, "updatedAt": None}
+
+        settings = self._get_user_settings(user)
+        workspaces = settings.get("mission_workspaces") or {}
+        workspace = workspaces.get(mission_id)
+
+        if workspace and isinstance(workspace, dict):
+            files = workspace.get("files") or []
+            active_file_id = workspace.get("activeFileId") or (files[0].get("id") if files else None)
+            return {
+                "files": files,
+                "activeFileId": active_file_id,
+                "updatedAt": workspace.get("updatedAt"),
+            }
+
+        files = self._get_default_mission_files(mission)
+        return {
+            "files": files,
+            "activeFileId": files[0]["id"] if files else None,
+            "updatedAt": None,
+        }
+
+    def save_mission_workspace(self, mission_id: str, files: list, active_file_id: Optional[str], user: Optional[User]) -> dict:
+        if not user:
+            return {
+                "files": files,
+                "activeFileId": active_file_id,
+                "updatedAt": datetime.utcnow().isoformat(),
+            }
+
+        settings = self._get_user_settings(user)
+        workspaces = settings.get("mission_workspaces") or {}
+        workspaces[mission_id] = {
+            "files": files,
+            "activeFileId": active_file_id,
+            "updatedAt": datetime.utcnow().isoformat(),
+        }
+        settings["mission_workspaces"] = workspaces
+        self._save_user_settings(user, settings)
+        return workspaces[mission_id]
+
+    def _get_user_mission_objectives(self, mission: Mission, user: Optional[User]) -> list:
+        if not user:
+            return mission.objectives or []
+
+        settings = self._get_user_settings(user)
+        progress = settings.get("mission_progress") or {}
+        saved = progress.get(mission.id)
+        if isinstance(saved, dict) and isinstance(saved.get("objectives"), list):
+            return saved.get("objectives")
+        return mission.objectives or []
+
+    def _save_user_mission_progress(self, mission: Mission, objectives: list, success: bool, user: Optional[User]) -> None:
+        if not user:
+            mission.objectives = objectives
+            self.db.commit()
+            return
+
+        settings = self._get_user_settings(user)
+        progress = settings.get("mission_progress") or {}
+        progress[mission.id] = {
+            "objectives": objectives,
+            "completed": bool(success),
+            "updatedAt": datetime.utcnow().isoformat(),
+        }
+        settings["mission_progress"] = progress
+        self._save_user_settings(user, settings)
+
+    def _execute_python_code(self, code: str) -> dict:
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", code],
+                capture_output=True,
+                text=True,
+                timeout=4,
+            )
+            return {
+                "stdout": result.stdout or "",
+                "stderr": result.stderr or "",
+                "returncode": result.returncode,
+                "timedOut": False,
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "stdout": "",
+                "stderr": "Execution timed out (possible infinite loop).",
+                "returncode": 124,
+                "timedOut": True,
+            }
 
     # Achievement operations
     def get_achievements(self, category: str = "all") -> List[Achievement]:
@@ -195,7 +326,7 @@ class DatabaseService:
             for user in users
         ]
 
-    def get_mission_progress(self, mission_id: str) -> dict:
+    def get_mission_progress(self, mission_id: str, user: Optional[User] = None) -> dict:
         """Get mission progress"""
         mission = self.get_mission_by_id(mission_id)
         if not mission:
@@ -203,11 +334,11 @@ class DatabaseService:
 
         return {
             "missionId": mission_id,
-            "objectives": mission.objectives,
+            "objectives": self._get_user_mission_objectives(mission, user),
             "testResults": []
         }
 
-    def submit_mission(self, mission_id: str, payload: MissionSubmit) -> dict:
+    def submit_mission(self, mission_id: str, payload: MissionSubmit, user: Optional[User] = None) -> dict:
         """Submit mission solution"""
         mission = self.get_mission_by_id(mission_id)
         if not mission:
@@ -219,17 +350,21 @@ class DatabaseService:
                 "success": False,
                 "message": "Код слишком короткий",
                 "xpEarned": 0,
-                "objectives": mission.objectives,
+                "objectives": self._get_user_mission_objectives(mission, user),
+                "terminalOutput": "",
+                "terminalError": "Код слишком короткий",
                 "testResults": []
             }
 
         code = payload.code
+        exec_result = self._execute_python_code(code)
 
         checks = {
             "ports_list": bool(re.search(r"\bports\s*=\s*\[[^\]]+\]", code, re.MULTILINE)),
             "for_loop": bool(re.search(r"\bfor\s+\w+\s+in\s+ports\b", code, re.MULTILINE)),
             "print_check": bool(re.search(r"\bprint\s*\([^\)]*port[^\)]*\)", code, re.IGNORECASE | re.MULTILINE)),
             "access_granted": bool(re.search(r"\breturn\s+[\"']ACCESS GRANTED[\"']", code, re.MULTILINE)),
+            "runtime_ok": exec_result["returncode"] == 0,
         }
 
         goal_patterns = [
@@ -239,8 +374,9 @@ class DatabaseService:
             (["access granted", "вернуть"], checks["access_granted"]),
         ]
 
+        objectives_source = self._get_user_mission_objectives(mission, user)
         updated_objectives = []
-        for index, obj in enumerate(mission.objectives or []):
+        for index, obj in enumerate(objectives_source or []):
             obj_copy = obj.copy() if isinstance(obj, dict) else {"title": str(obj), "completed": False}
             text = str(obj_copy.get("text", "")).lower()
 
@@ -270,20 +406,41 @@ class DatabaseService:
 
         all_completed = bool(updated_objectives) and all(obj.get("completed") for obj in updated_objectives)
 
-        # Update mission
-        mission.objectives = updated_objectives
-        self.db.commit()
+        # Update mission/user progress
+        self._save_user_mission_progress(mission, updated_objectives, all_completed, user)
+
+        # Save workspace snapshot for authenticated user
+        if user:
+            current_workspace = self.get_mission_workspace(mission_id, user)
+            files = current_workspace.get("files") or self._get_default_mission_files(mission)
+            if files:
+                updated_files = []
+                for file_item in files:
+                    if file_item.get("name", "").endswith(".py"):
+                        copy_file = dict(file_item)
+                        copy_file["content"] = code
+                        updated_files.append(copy_file)
+                    else:
+                        updated_files.append(file_item)
+                self.save_mission_workspace(mission_id, updated_files, current_workspace.get("activeFileId"), user)
 
         return {
             "success": all_completed,
             "message": "Миссия выполнена!" if all_completed else "Не все цели выполнены. Проверь условия задания.",
             "xpEarned": mission.xp_reward if all_completed else 0,
             "objectives": updated_objectives,
+            "terminalOutput": exec_result["stdout"],
+            "terminalError": exec_result["stderr"],
+            "runtime": {
+                "returncode": exec_result["returncode"],
+                "timedOut": exec_result["timedOut"],
+            },
             "testResults": [
                 {"passed": checks["ports_list"], "message": "Создан список ports"},
                 {"passed": checks["for_loop"], "message": "Добавлен цикл for по ports"},
                 {"passed": checks["print_check"], "message": "Выводится сообщение проверки порта"},
                 {"passed": checks["access_granted"], "message": "Возвращается ACCESS GRANTED"},
+                {"passed": checks["runtime_ok"], "message": "Код выполняется без runtime ошибок"},
             ]
         }
 

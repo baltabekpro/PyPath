@@ -19,10 +19,104 @@ from app.services.database_service import DatabaseService
 router = APIRouter(prefix="/ai", tags=["AI Chat"])
 
 
+def _now_iso() -> str:
+    return datetime.now().isoformat()
+
+
+def _new_chat_id() -> str:
+    return f"chat_{int(datetime.now().timestamp() * 1000)}"
+
+
 def _get_persisted_history(user: User) -> list[dict]:
     settings = user.settings or {}
     history = settings.get("ai_chat_history") or []
-    return history if isinstance(history, list) else []
+    if not isinstance(history, list):
+        return []
+
+    cleaned: list[dict] = []
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        sender = item.get("sender")
+        text = str(item.get("text") or item.get("message") or "").strip()
+        if sender not in {"user", "ai"} or not text:
+            continue
+        cleaned.append({
+            "id": item.get("id") or f"{int(datetime.now().timestamp() * 1000)}_{sender}",
+            "sender": sender,
+            "text": text,
+            "timestamp": item.get("timestamp") or datetime.now().isoformat(),
+        })
+    return cleaned
+
+
+def _get_persisted_chats(user: User) -> tuple[list[dict], str | None]:
+    settings = user.settings or {}
+    raw_chats = settings.get("ai_chats") or []
+    active_chat_id = settings.get("active_ai_chat_id")
+
+    chats: list[dict] = []
+    for chat in raw_chats if isinstance(raw_chats, list) else []:
+        if not isinstance(chat, dict):
+            continue
+        chat_id = chat.get("id") or _new_chat_id()
+        title = str(chat.get("title") or "Новый чат").strip() or "Новый чат"
+        updated_at = chat.get("updatedAt") or _now_iso()
+        messages = chat.get("messages") or []
+        cleaned_messages = []
+        for item in messages if isinstance(messages, list) else []:
+            if not isinstance(item, dict):
+                continue
+            sender = item.get("sender")
+            text = str(item.get("text") or item.get("message") or "").strip()
+            if sender not in {"user", "ai"} or not text:
+                continue
+            cleaned_messages.append({
+                "id": item.get("id") or f"{int(datetime.now().timestamp() * 1000)}_{sender}",
+                "sender": sender,
+                "text": text,
+                "timestamp": item.get("timestamp") or _now_iso(),
+            })
+
+        chats.append({
+            "id": chat_id,
+            "title": title,
+            "updatedAt": updated_at,
+            "messages": cleaned_messages,
+        })
+
+    if not active_chat_id and chats:
+        active_chat_id = chats[0]["id"]
+
+    return chats, active_chat_id
+
+
+def _save_persisted_chats(user: User, chats: list[dict], active_chat_id: str | None, service: DatabaseService) -> None:
+    settings = dict(user.settings or {})
+    settings["ai_chats"] = chats[-50:]
+    settings["active_ai_chat_id"] = active_chat_id
+    settings["ai_chat_history"] = []
+    user.settings = settings
+    service.db.commit()
+
+
+def _find_or_create_chat(chats: list[dict], chat_id: str | None, first_user_text: str | None = None) -> tuple[dict, str]:
+    resolved_id = chat_id or _new_chat_id()
+    for chat in chats:
+        if chat.get("id") == resolved_id:
+            return chat, resolved_id
+
+    title_source = (first_user_text or "Новый чат").strip()
+    title = (title_source[:40] + "...") if len(title_source) > 40 else title_source
+    title = title or "Новый чат"
+    new_chat = {
+        "id": resolved_id,
+        "title": title,
+        "updatedAt": _now_iso(),
+        "messages": [],
+    }
+    chats.insert(0, new_chat)
+    return new_chat, resolved_id
 
 
 def _save_persisted_history(user: User, items: list[dict], service: DatabaseService) -> None:
@@ -70,27 +164,32 @@ def chat_with_ai(
     """
     # Use authenticated user ID or provided user_id
     user_id = user.id if user else payload.user_id
+    session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
     
     try:
-        response_text = ai_service.chat(user_id, payload.message)
+        response_text = ai_service.chat(session_key, payload.message)
         if user:
             now_ms = int(datetime.now().timestamp() * 1000)
-            history = _get_persisted_history(user)
-            history.extend([
+            chats, _ = _get_persisted_chats(user)
+            chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
+            chat["updatedAt"] = _now_iso()
+            chat_messages = chat.get("messages") or []
+            chat_messages.extend([
                 {
                     "id": f"{now_ms}_u",
                     "sender": "user",
                     "text": payload.message,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": _now_iso(),
                 },
                 {
                     "id": f"{now_ms}_a",
                     "sender": "ai",
                     "text": response_text,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": _now_iso(),
                 },
             ])
-            _save_persisted_history(user, history, service)
+            chat["messages"] = chat_messages[-200:]
+            _save_persisted_chats(user, chats, resolved_chat_id, service)
         return ChatResponse(
             response=response_text,
             timestamp=datetime.now().isoformat()
@@ -124,22 +223,26 @@ def quick_action(
     user_text = f"Quick action: {payload.action_type}"
     if user:
         now_ms = int(datetime.now().timestamp() * 1000)
-        history = _get_persisted_history(user)
-        history.extend([
+        chats, _ = _get_persisted_chats(user)
+        chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, user_text)
+        chat["updatedAt"] = _now_iso()
+        chat_messages = chat.get("messages") or []
+        chat_messages.extend([
             {
                 "id": f"{now_ms}_u",
                 "sender": "user",
                 "text": user_text,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": _now_iso(),
             },
             {
                 "id": f"{now_ms}_a",
                 "sender": "ai",
                 "text": response_text,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": _now_iso(),
             },
         ])
-        _save_persisted_history(user, history, service)
+        chat["messages"] = chat_messages[-200:]
+        _save_persisted_chats(user, chats, resolved_chat_id, service)
     else:
         _append_guest_history(ai_service, user_id, user_text, response_text)
 
@@ -158,10 +261,21 @@ def reset_chat_session(
 ):
     """Reset AI chat session - Clear conversation history and start fresh"""
     user_id = user.id if user else payload.user_id
-    ai_service.reset_session(user_id)
+    session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
+    ai_service.reset_session(session_key)
 
     if user:
-        _save_persisted_history(user, [], service)
+        chats, active_chat_id = _get_persisted_chats(user)
+        if payload.chat_id:
+            for chat in chats:
+                if chat.get("id") == payload.chat_id:
+                    chat["messages"] = []
+                    chat["updatedAt"] = _now_iso()
+                    break
+        else:
+            chats = []
+            active_chat_id = None
+        _save_persisted_chats(user, chats, active_chat_id, service)
 
     return {"message": "Chat session reset successfully", "user_id": user_id}
 
@@ -181,15 +295,53 @@ def ai_status(ai_service: AIService = Depends(get_ai_service)):
 @router.get("/history")
 def ai_history(
     user_id: Optional[str] = Query(default=None),
+    chat_id: Optional[str] = Query(default=None),
     user: Optional[User] = Depends(get_current_user_optional),
     service: DatabaseService = Depends(get_db_service),
     ai_service: AIService = Depends(get_ai_service)
 ):
     """Get chat history for Oracle section"""
     if user:
-        persisted = _get_persisted_history(user)
-        if persisted:
-            return {"items": persisted}
+        chats, active_chat_id = _get_persisted_chats(user)
+
+        # Migrate legacy flat history into one default chat if needed
+        if not chats:
+            persisted = _get_persisted_history(user)
+            if persisted:
+                default_chat_id = _new_chat_id()
+                chats = [{
+                    "id": default_chat_id,
+                    "title": "История",
+                    "updatedAt": _now_iso(),
+                    "messages": persisted,
+                }]
+                active_chat_id = default_chat_id
+
+        if chats:
+            if chat_id and any(c.get("id") == chat_id for c in chats):
+                active_chat_id = chat_id
+            _save_persisted_chats(user, chats, active_chat_id, service)
+            active_chat = next((c for c in chats if c.get("id") == active_chat_id), chats[0])
+            summaries = [
+                {
+                    "id": c.get("id"),
+                    "title": c.get("title") or "Новый чат",
+                    "updatedAt": c.get("updatedAt") or _now_iso(),
+                    "lastMessage": (c.get("messages") or [])[-1].get("text") if (c.get("messages") or []) else "",
+                }
+                for c in chats
+            ]
+            return {
+                "items": active_chat.get("messages") or [],
+                "active_chat_id": active_chat.get("id"),
+                "chats": summaries,
+            }
 
     resolved_user_id = user.id if user else (user_id or "guest")
-    return {"items": ai_service.get_history(resolved_user_id)}
+    in_memory = [
+        item for item in ai_service.get_history(resolved_user_id)
+        if isinstance(item, dict)
+        and item.get("sender") in {"user", "ai"}
+        and str(item.get("text") or "").strip()
+    ]
+    return {"items": in_memory, "active_chat_id": None, "chats": []}

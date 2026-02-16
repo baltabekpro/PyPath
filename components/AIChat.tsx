@@ -57,12 +57,14 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
         const loadHistory = async () => {
             try {
                 const history = await aiChat.getHistory(CURRENT_USER.id);
-                const mapped = (history.items || []).map((item) => ({
-                    id: item.id,
-                    text: item.text,
-                    sender: item.sender,
-                    type: 'text' as const,
-                }));
+                const mapped = (history.items || [])
+                    .filter((item) => (item?.sender === 'user' || item?.sender === 'ai') && String(item?.text || '').trim().length > 0)
+                    .map((item) => ({
+                        id: item.id,
+                        text: item.text,
+                        sender: item.sender,
+                        type: 'text' as const,
+                    }));
                 if (mapped.length > 0) {
                     setMessages(mapped);
                 }

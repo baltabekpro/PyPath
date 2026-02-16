@@ -102,6 +102,46 @@ class AIService:
         }
         return responses.get(query_type, "Чем могу помочь? Спрашивай! 😊")
 
+    def analyze_code_execution(self, code: str, stdout: str, stderr: str, objectives: list) -> str:
+        """Analyze code + terminal output and provide actionable feedback"""
+        prompt = f"""
+Ты выступаешь как ментор Python.
+
+Код пользователя:
+```python
+{code}
+```
+
+Вывод терминала:
+{stdout or '<пусто>'}
+
+Ошибки терминала:
+{stderr or '<нет>'}
+
+Цели задания:
+{objectives}
+
+Сформируй короткий разбор на русском:
+1) Что сделано правильно
+2) Какие ошибки/пробелы
+3) Что исправить следующим шагом
+
+Не пиши полное готовое решение. Будь кратким и практичным.
+"""
+        try:
+            response = self.model.generate_content(prompt)
+            text = (response.text or "").strip()
+            if text:
+                return text
+        except Exception:
+            pass
+
+        if stderr:
+            return "В коде есть ошибка выполнения. Проверь текст ошибки в терминале, затем исправь синтаксис или отступы и запусти снова."
+        if stdout:
+            return "Код выполняется и что-то выводит в терминал. Сравни вывод с ожидаемым и добейся полного совпадения по целям задания."
+        return "Код запускается, но пока не видно полезного вывода. Добавь проверочный print и пройдись по всем целям миссии."
+
 
 # Singleton instance
 _ai_service: Optional[AIService] = None
