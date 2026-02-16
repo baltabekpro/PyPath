@@ -1,5 +1,6 @@
 """Database service using SQLAlchemy"""
 from typing import List, Optional, Literal
+import re
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -218,25 +219,72 @@ class DatabaseService:
                 "success": False,
                 "message": "Код слишком короткий",
                 "xpEarned": 0,
+                "objectives": mission.objectives,
                 "testResults": []
             }
 
-        # For now, mark all objectives as complete
+        code = payload.code
+
+        checks = {
+            "ports_list": bool(re.search(r"\bports\s*=\s*\[[^\]]+\]", code, re.MULTILINE)),
+            "for_loop": bool(re.search(r"\bfor\s+\w+\s+in\s+ports\b", code, re.MULTILINE)),
+            "print_check": bool(re.search(r"\bprint\s*\([^\)]*port[^\)]*\)", code, re.IGNORECASE | re.MULTILINE)),
+            "access_granted": bool(re.search(r"\breturn\s+[\"']ACCESS GRANTED[\"']", code, re.MULTILINE)),
+        }
+
+        goal_patterns = [
+            (["список", "ports"], checks["ports_list"]),
+            (["цикл", "for"], checks["for_loop"]),
+            (["сообщение", "провер"], checks["print_check"]),
+            (["access granted", "вернуть"], checks["access_granted"]),
+        ]
+
         updated_objectives = []
-        for obj in mission.objectives:
+        for index, obj in enumerate(mission.objectives or []):
             obj_copy = obj.copy() if isinstance(obj, dict) else {"title": str(obj), "completed": False}
-            obj_copy["completed"] = True
+            text = str(obj_copy.get("text", "")).lower()
+
+            completed = False
+            for keywords, result in goal_patterns:
+                if all(keyword in text for keyword in keywords):
+                    completed = result
+                    break
+
+            if not text and index < len(goal_patterns):
+                completed = goal_patterns[index][1]
+
+            obj_copy["completed"] = completed
             updated_objectives.append(obj_copy)
+
+        # Fallback by order if texts did not match known phrases
+        if updated_objectives and not any(obj.get("completed") for obj in updated_objectives):
+            for index, obj in enumerate(updated_objectives):
+                if index == 0:
+                    obj["completed"] = checks["ports_list"]
+                elif index == 1:
+                    obj["completed"] = checks["for_loop"]
+                elif index == 2:
+                    obj["completed"] = checks["print_check"]
+                elif index == 3:
+                    obj["completed"] = checks["access_granted"]
+
+        all_completed = bool(updated_objectives) and all(obj.get("completed") for obj in updated_objectives)
 
         # Update mission
         mission.objectives = updated_objectives
         self.db.commit()
 
         return {
-            "success": True,
-            "message": "Миссия выполнена!",
-            "xpEarned": mission.xp_reward,
-            "testResults": [{"passed": True, "message": "Тест пройден"}]
+            "success": all_completed,
+            "message": "Миссия выполнена!" if all_completed else "Не все цели выполнены. Проверь условия задания.",
+            "xpEarned": mission.xp_reward if all_completed else 0,
+            "objectives": updated_objectives,
+            "testResults": [
+                {"passed": checks["ports_list"], "message": "Создан список ports"},
+                {"passed": checks["for_loop"], "message": "Добавлен цикл for по ports"},
+                {"passed": checks["print_check"], "message": "Выводится сообщение проверки порта"},
+                {"passed": checks["access_granted"], "message": "Возвращается ACCESS GRANTED"},
+            ]
         }
 
     def get_ui_data(self) -> dict:

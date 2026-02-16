@@ -128,8 +128,8 @@ export const AIChatPage: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
-              {LOGS.map((log: any) => (
-                  <div key={log.id} className="group p-3 rounded bg-[#0B1121] border border-cyan-900/20 hover:border-cyan-500/30 transition-all cursor-pointer">
+              {LOGS.map((log: any, index: number) => (
+                  <div key={`${log?.id ?? log?.code ?? 'log'}-${index}`} className="group p-3 rounded bg-[#0B1121] border border-cyan-900/20 hover:border-cyan-500/30 transition-all cursor-pointer">
                       <div className="flex justify-between items-center mb-1">
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                               log.status === 'success' ? 'bg-green-500/10 text-green-400' :
@@ -220,12 +220,12 @@ export const AIChatPage: React.FC = () => {
                               <span className="text-xs font-bold uppercase tracking-wider">{text.mentorActivated}</span>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              {abilities.map((ability: any) => {
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                            {abilities.map((ability: any, index: number) => {
                                   const AbilityIcon = getIconComponent(ability.icon);
                                   return (
                                       <button 
-                                        key={ability.id}
+                                                                                key={`${ability?.id ?? ability?.label ?? 'ability'}-${index}`}
                                         onClick={() => handleSend(ability.prompt)}
                                         className="bg-[#0F172A]/80 border border-cyan-900/50 p-4 rounded-xl hover:bg-cyan-900/20 hover:border-cyan-500/50 transition-all group backdrop-blur-sm"
                                       >
@@ -240,8 +240,8 @@ export const AIChatPage: React.FC = () => {
 
                   {/* Messages Stream */}
                   <div className="space-y-6 w-full max-w-3xl mx-auto pb-4">
-                      {messages.map((msg) => (
-                          <div key={msg.id} className={`flex gap-4 ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-500`}>
+                      {messages.map((msg, index: number) => (
+                          <div key={`${msg?.id ?? msg?.timestamp?.toISOString?.() ?? 'msg'}-${msg?.sender ?? 'unknown'}-${index}`} className={`flex gap-4 ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-500`}>
                               {/* Avatar */}
                               <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 border shadow-lg ${
                                   msg.sender === 'user' 

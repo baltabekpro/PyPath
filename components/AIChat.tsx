@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Zap, Bot, ChevronRight } from 'lucide-react';
+import { Send, X, Zap, Bot, ChevronRight, AlertCircle } from 'lucide-react';
 import { AI_CHAT_DATA, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 import { aiChat } from '../api';
 

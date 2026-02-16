@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.models.models import User
-from app.api.dependencies import get_current_user_optional
+from app.api.dependencies import get_current_user_optional, get_db_service
 from app.schemas.ai_schemas import (
     ChatMessage,
     ChatResponse,
@@ -13,16 +13,49 @@ from app.schemas.ai_schemas import (
     SessionResetRequest
 )
 from app.services.ai_service import get_ai_service, AIService
+from app.services.database_service import DatabaseService
 
 
 router = APIRouter(prefix="/ai", tags=["AI Chat"])
+
+
+def _get_persisted_history(user: User) -> list[dict]:
+    settings = user.settings or {}
+    history = settings.get("ai_chat_history") or []
+    return history if isinstance(history, list) else []
+
+
+def _save_persisted_history(user: User, items: list[dict], service: DatabaseService) -> None:
+    settings = dict(user.settings or {})
+    settings["ai_chat_history"] = items[-200:]
+    user.settings = settings
+    service.db.commit()
+
+
+def _append_guest_history(ai_service: AIService, user_id: str, user_text: str, ai_text: str) -> None:
+    now_ms = int(datetime.now().timestamp() * 1000)
+    ai_service.message_history.setdefault(user_id, []).extend([
+        {
+            "id": f"{now_ms}_u",
+            "sender": "user",
+            "text": user_text,
+            "timestamp": datetime.now().isoformat(),
+        },
+        {
+            "id": f"{now_ms}_a",
+            "sender": "ai",
+            "text": ai_text,
+            "timestamp": datetime.now().isoformat(),
+        },
+    ])
 
 
 @router.post("/chat", response_model=ChatResponse)
 def chat_with_ai(
     payload: ChatMessage,
     user: Optional[User] = Depends(get_current_user_optional),
-    ai_service: AIService = Depends(get_ai_service)
+    ai_service: AIService = Depends(get_ai_service),
+    service: DatabaseService = Depends(get_db_service)
 ):
     """
     Send message to AI assistant and get intelligent response
@@ -40,6 +73,24 @@ def chat_with_ai(
     
     try:
         response_text = ai_service.chat(user_id, payload.message)
+        if user:
+            now_ms = int(datetime.now().timestamp() * 1000)
+            history = _get_persisted_history(user)
+            history.extend([
+                {
+                    "id": f"{now_ms}_u",
+                    "sender": "user",
+                    "text": payload.message,
+                    "timestamp": datetime.now().isoformat(),
+                },
+                {
+                    "id": f"{now_ms}_a",
+                    "sender": "ai",
+                    "text": response_text,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            ])
+            _save_persisted_history(user, history, service)
         return ChatResponse(
             response=response_text,
             timestamp=datetime.now().isoformat()
@@ -55,7 +106,8 @@ def chat_with_ai(
 def quick_action(
     payload: QuickActionRequest,
     user: Optional[User] = Depends(get_current_user_optional),
-    ai_service: AIService = Depends(get_ai_service)
+    ai_service: AIService = Depends(get_ai_service),
+    service: DatabaseService = Depends(get_db_service)
 ):
     """
     Get quick predefined AI response
@@ -67,6 +119,30 @@ def quick_action(
     - `motivation` - Get motivational boost
     """
     response_text = ai_service.get_quick_response(payload.action_type)
+    user_id = user.id if user else payload.user_id
+
+    user_text = f"Quick action: {payload.action_type}"
+    if user:
+        now_ms = int(datetime.now().timestamp() * 1000)
+        history = _get_persisted_history(user)
+        history.extend([
+            {
+                "id": f"{now_ms}_u",
+                "sender": "user",
+                "text": user_text,
+                "timestamp": datetime.now().isoformat(),
+            },
+            {
+                "id": f"{now_ms}_a",
+                "sender": "ai",
+                "text": response_text,
+                "timestamp": datetime.now().isoformat(),
+            },
+        ])
+        _save_persisted_history(user, history, service)
+    else:
+        _append_guest_history(ai_service, user_id, user_text, response_text)
+
     return ChatResponse(
         response=response_text,
         timestamp=datetime.now().isoformat()
@@ -77,11 +153,16 @@ def quick_action(
 def reset_chat_session(
     payload: SessionResetRequest,
     user: Optional[User] = Depends(get_current_user_optional),
-    ai_service: AIService = Depends(get_ai_service)
+    ai_service: AIService = Depends(get_ai_service),
+    service: DatabaseService = Depends(get_db_service)
 ):
     """Reset AI chat session - Clear conversation history and start fresh"""
     user_id = user.id if user else payload.user_id
     ai_service.reset_session(user_id)
+
+    if user:
+        _save_persisted_history(user, [], service)
+
     return {"message": "Chat session reset successfully", "user_id": user_id}
 
 
@@ -101,8 +182,14 @@ def ai_status(ai_service: AIService = Depends(get_ai_service)):
 def ai_history(
     user_id: Optional[str] = Query(default=None),
     user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service),
     ai_service: AIService = Depends(get_ai_service)
 ):
     """Get chat history for Oracle section"""
+    if user:
+        persisted = _get_persisted_history(user)
+        if persisted:
+            return {"items": persisted}
+
     resolved_user_id = user.id if user else (user_id or "guest")
     return {"items": ai_service.get_history(resolved_user_id)}

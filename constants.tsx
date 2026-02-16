@@ -1,7 +1,7 @@
 import { Course, User } from './types';
 import { Terminal, Database, Cpu, Globe, Code2, LineChart, Gamepad2, Rocket, Ghost, Zap, Skull, Lock, Box, Layers, ShieldAlert, Key, Flame, Bug, Gift, LockKeyhole, Target, Sword, Crown, AlertCircle, Search, Sparkles, LayoutGrid, Map, Code, Bot, User as UserIcon, Trophy, Bell, CreditCard, Shield } from 'lucide-react';
 import React from 'react';
-import DB from './db.json';
+import DB from './backend/data/db.json';
 import { apiGet } from './api';
 
 let isInitialized = false;
