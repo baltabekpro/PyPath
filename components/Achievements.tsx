@@ -120,12 +120,12 @@ export const Achievements: React.FC = () => {
 
                     <div className="flex gap-4 md:gap-8 text-center bg-black/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
                         <div>
-                            <p className="text-2xl font-black text-white">{stats.points ?? 1250}</p>
+                            <p className="text-2xl font-black text-white">{stats.points ?? 0}</p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase">{text.pointsLabel}</p>
                         </div>
                         <div className="w-px h-10 bg-white/10"></div>
                         <div>
-                            <p className="text-2xl font-black text-arcade-action">{stats.rare ?? 4}</p>
+                            <p className="text-2xl font-black text-arcade-action">{stats.rare ?? 0}</p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase">{text.rareLabel}</p>
                         </div>
                         <div className="w-px h-10 bg-white/10"></div>
@@ -156,6 +156,12 @@ export const Achievements: React.FC = () => {
             </div>
 
             {/* Trophy Grid */}
+            {filteredList.length === 0 ? (
+                <div className="bg-black/20 border border-white/10 rounded-2xl p-8 text-center">
+                    <p className="text-white font-bold mb-2">Достижения пока недоступны</p>
+                    <p className="text-gray-400 text-sm">Когда данные появятся, все награды отобразятся здесь.</p>
+                </div>
+            ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                 {filteredList.map((ach: any) => {
                     const style = RARITY_STYLES[ach.rarity as Rarity];
@@ -241,6 +247,7 @@ export const Achievements: React.FC = () => {
                     );
                 })}
             </div>
+            )}
 
             {/* DETAIL MODAL */}
             {selectedAchievement && (() => {

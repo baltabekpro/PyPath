@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { CURRENT_USER, SKILLS, FRIENDS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
-import { Shield, Target, Flame, Medal, Edit3, Share2, MapPin, Github, Zap, Trophy, UserPlus, Swords, Search, Plus } from 'lucide-react';
+import { CURRENT_USER, SKILLS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
+import { Shield, Target, Flame, Medal, Edit3, Share2, Zap, Trophy, Plus } from 'lucide-react';
 import { View } from '../types';
 import { ActionToast } from './ActionToast';
 import { apiGet } from '../api';
@@ -22,6 +22,10 @@ const RARITY = {
 const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' }) => {
     const [count, setCount] = useState(0);
     useEffect(() => {
+        if (!Number.isFinite(end) || end <= 0) {
+            setCount(0);
+            return;
+        }
         let start = 0;
         const duration = 1500;
         const stepTime = Math.abs(Math.floor(duration / end));
@@ -38,38 +42,30 @@ const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' 
 export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   const [loadRadar, setLoadRadar] = useState(false);
         const [actionMessage, setActionMessage] = useState('');
-        const [requestedFriends, setRequestedFriends] = useState<number[]>([]);
         const [currentUser, setCurrentUser] = useState(CURRENT_USER);
         const [stats, setStats] = useState(STATS);
         const [skills, setSkills] = useState(SKILLS);
-        const [friends, setFriends] = useState(FRIENDS);
+    const [lastUpdatedLabel, setLastUpdatedLabel] = useState('Обновлено только что');
 
   useEffect(() => {
-    const savedFriends = localStorage.getItem('requestedFriends');
-    if (savedFriends) setRequestedFriends(JSON.parse(savedFriends));
-    
     const loadProfileData = async () => {
         try {
-            const [userData, statsData, skillsData, friendsData] = await Promise.all([
+                        const [userData, statsData, skillsData] = await Promise.all([
                 apiGet<any>('/currentUser'),
                 apiGet<any>('/stats'),
-                apiGet<any[]>('/skills'),
-                apiGet<any[]>('/friends')
+                                apiGet<any[]>('/skills')
             ]);
             setCurrentUser(userData);
             setStats(statsData);
             setSkills(skillsData);
-            setFriends(friendsData);
+            setLastUpdatedLabel(new Date().toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
         } catch (error) {
             console.error('Failed to load profile data:', error);
+            setLastUpdatedLabel('Обновлено локально');
         }
     };
     loadProfileData();
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('requestedFriends', JSON.stringify(requestedFriends));
-  }, [requestedFriends]);
     const showcaseTrophies = PROFILE_UI?.showcaseTrophies ?? [];
     const text = UI_TEXTS?.profile ?? {};
         const battleStatText = text.battleStats ?? {};
@@ -77,14 +73,6 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
     const showAction = (message: string) => {
             setActionMessage(message);
             setTimeout(() => setActionMessage(''), 2200);
-    };
-
-    const toggleFriendRequest = (id: number) => {
-          setRequestedFriends((prev) => {
-              const exists = prev.includes(id);
-              showAction(exists ? text.toastFriendRemoved : text.toastFriendAdded);
-              return exists ? prev.filter((friendId) => friendId !== id) : [...prev, id];
-          });
     };
 
   useEffect(() => {
@@ -115,12 +103,12 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             {/* Top Actions */}
             <div className="absolute top-6 right-6 flex gap-3 z-20">
                 <button onClick={async () => {
-                    const shareText = `Check out ${currentUser.name}'s profile on PyPath!`;
+                    const shareText = `Профиль ${currentUser.name} на PyPath`;
                     const shareUrl = window.location.href;
                     try {
                         if (navigator.share) {
                             await navigator.share({
-                                title: 'PyPath Profile',
+                                title: 'Профиль PyPath',
                                 text: shareText,
                                 url: shareUrl,
                             });
@@ -178,26 +166,8 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                         {currentUser.bio || text.defaultBio}
                     </p>
                     
-                    {/* Tags / Badges */}
-                    <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
-                        <div className="px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20 flex items-center gap-2">
-                            <MapPin size={12} /> {PROFILE_UI?.location}
-                        </div>
-                        <div className="px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-bold border border-purple-500/20 flex items-center gap-2">
-                            <Github size={12} /> {PROFILE_UI?.github}
-                        </div>
-                    </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 w-full md:w-auto">
-                    <button onClick={() => showAction(text.toastAdded)} className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-white text-black font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                        {text.add}
-                    </button>
-                    <button onClick={() => setView(View.AI_CHAT)} className="flex-1 md:flex-none py-3 px-6 rounded-xl bg-arcade-card border border-white/10 text-white font-bold uppercase tracking-wide hover:bg-white/10 transition-colors">
-                        {text.message}
-                    </button>
-                </div>
             </div>
         </div>
 
@@ -226,13 +196,13 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-display font-black text-xl text-white flex items-center gap-2">
                             <Zap size={20} className="text-yellow-400" />
-                            {text.skillsMatrix}
+                                {text.skillsMatrix || 'Матрица навыков'}
                         </h3>
-                        <div className="text-xs font-bold text-gray-500 bg-black/30 px-2 py-1 rounded">{text.lastUpdated}</div>
+                        <div className="text-xs font-bold text-gray-500 bg-black/30 px-2 py-1 rounded">{text.lastUpdated || 'Обновлено'}: {lastUpdatedLabel}</div>
                     </div>
                     
                     <div className="h-[300px] w-full relative z-10">
-                        {loadRadar && (
+                            {loadRadar && skills.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skills}>
                                 <PolarGrid stroke="#334155" />
@@ -255,6 +225,13 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                 />
                             </RadarChart>
                         </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center text-center px-6">
+                                <div className="bg-black/20 border border-white/10 rounded-2xl p-5">
+                                    <p className="text-white font-bold mb-1">Навыки пока не заполнены</p>
+                                    <p className="text-gray-400 text-sm">Решите несколько задач на арене — график появится автоматически.</p>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -263,10 +240,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 <div>
                      <h3 className="font-display font-black text-xl text-white mb-4 flex items-center gap-2">
                         <Trophy size={20} className="text-arcade-action" />
-                                {text.showcase}
+                                {text.showcase || 'Витрина достижений'}
                      </h3>
                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                         {showcaseTrophies.map((item: any, i: number) => {
+                         {(showcaseTrophies.length > 0 ? showcaseTrophies : Array.from({ length: 5 }, () => ({ locked: true }))).map((item: any, i: number) => {
                              const isLocked = !item || item.locked;
                              const TrophyIcon = item?.icon ? getIconComponent(item.icon) : null;
                              return (
@@ -290,65 +267,24 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
 
             {/* --- RIGHT COLUMN --- */}
             <div className="space-y-8">
-                
-                {/* Clan / School Card */}
-                <div className="bg-gradient-to-b from-indigo-900 to-[#1E293B] rounded-3xl p-1 shadow-lg border border-indigo-500/30">
-                    <div className="bg-[#0F172A] rounded-[1.4rem] p-6 h-full relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-[50px] rounded-full"></div>
-                        <div className="relative z-10 flex flex-col items-center text-center">
-                            <div className="size-20 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg mb-4 rotate-3 border border-white/20">
-                                <Swords size={32} className="text-white" />
-                            </div>
-                            <h3 className="text-white font-black text-lg uppercase tracking-wider">{text.schoolName}</h3>
-                            <p className="text-indigo-300 text-xs font-bold mb-6">{text.schoolClass}</p>
-                            
-                            <div className="w-full space-y-3">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">{text.members}</span>
-                                    <span className="text-white font-bold">24</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">{text.totalXp}</span>
-                                    <span className="text-arcade-primary font-bold">1.2M</span>
-                                </div>
-                            </div>
-
-                            <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-6 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition-colors">
-                                {text.schoolProfile}
-                            </button>
+                <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
+                    <h3 className="font-bold text-white mb-4">Личный режим</h3>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-xl px-3 py-2">
+                            <span className="text-gray-400">Рейтинг мира</span>
+                            <span className="text-white font-bold">#{currentUser.rank}</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-xl px-3 py-2">
+                            <span className="text-gray-400">Текущая лига</span>
+                            <span className="text-white font-bold">{currentUser.league || '—'}</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-xl px-3 py-2">
+                            <span className="text-gray-400">Серия дней</span>
+                            <span className="text-white font-bold">{currentUser.streak}</span>
                         </div>
                     </div>
-                </div>
-
-                {/* Friends List */}
-                <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-white">{text.friends}</h3>
-                        <div className="bg-black/30 px-2 py-1 rounded-lg text-xs font-bold text-gray-400 border border-white/5">{friends.length}</div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        {friends.map((friend: any) => (
-                            <div key={friend.id} className="flex items-center justify-between group cursor-pointer">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative">
-                                        <img src={friend.avatar} className="size-10 rounded-xl bg-black object-cover border border-white/10" />
-                                        <div className={`absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-[#1E293B] ${friend.status === 'online' ? 'bg-green-500' : friend.status === 'coding' ? 'bg-arcade-primary animate-pulse' : 'bg-gray-500'}`}></div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-white group-hover:text-arcade-primary transition-colors">{friend.name}</p>
-                                        <p className="text-[10px] text-gray-500 font-bold uppercase">{friend.status === 'coding' ? text.codingStatus : `Lvl ${friend.level}`}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => toggleFriendRequest(friend.id)} className={`p-2 rounded-lg transition-colors ${requestedFriends.includes(friend.id) ? 'text-green-400 bg-green-500/10' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-                                    <UserPlus size={16} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                    
-                    <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-6 py-3 border-t border-white/5 text-xs font-bold text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
-                        <Search size={14} /> {text.findFriends}
+                    <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition-colors">
+                        Открыть рейтинг мира
                     </button>
                 </div>
 

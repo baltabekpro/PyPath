@@ -29,6 +29,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
   useEffect(() => {
     const activeLevel = courses.find(c => !c.locked && c.progress < 100) || courses[0];
+        if (!activeLevel) return;
     const element = document.getElementById(`level-${activeLevel?.id}`);
     if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -52,6 +53,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   };
 
   const generatePath = () => {
+        if (courses.length === 0) return '';
     const points = courses.map((_, i) => {
         const xPercent = i % 4 === 1 ? 80 : (i % 4 === 3 ? 20 : 50);
         return { x: xPercent, y: i * 180 + 100 };
@@ -78,13 +80,13 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
        <header className="z-20 bg-[#0F172A]/90 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between sticky top-0 shadow-2xl">
            <button onClick={() => setView(View.DASHBOARD)} className="flex items-center gap-2 text-arcade-muted hover:text-white transition-colors">
                <ChevronLeft size={20} />
-               <span className="font-bold text-sm uppercase tracking-wider hidden sm:inline">{text.backToLobby}</span>
+               <span className="font-bold text-sm uppercase tracking-wider hidden sm:inline">{text.backToLobby || 'Назад'}</span>
            </button>
            <div className="flex flex-col items-center">
-               <h1 className="text-white font-display font-black text-lg tracking-tight">{text.mapTitle}</h1>
+               <h1 className="text-white font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
                <div className="flex items-center gap-1.5 text-[10px] font-bold text-arcade-action uppercase tracking-widest">
                    <MapIcon size={12} />
-                   <span>{text.season}</span>
+                   <span>{text.season || 'Сезон обучения'}</span>
                </div>
            </div>
            <div className="w-16"></div>
@@ -92,7 +94,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
        {/* Map Container */}
        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar relative py-20 pb-40">
-           <div className="max-w-md mx-auto relative min-h-screen" style={{ height: `${courses.length * 180 + 200}px` }}>
+           <div className="max-w-md mx-auto relative min-h-screen" style={{ height: `${Math.max(courses.length * 180 + 200, 420)}px` }}>
                
                {/* Connection Line */}
             <svg
@@ -100,8 +102,23 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                 viewBox={`0 0 100 ${courses.length * 180 + 200}`}
                 preserveAspectRatio="none"
             >
-                    <path d={generatePath()} fill="none" stroke="#334155" strokeWidth="4" strokeDasharray="8 8" strokeLinecap="round" />
+                                        <path d={generatePath()} fill="none" stroke="#334155" strokeWidth="4" strokeDasharray="8 8" strokeLinecap="round" />
                </svg>
+
+                             {courses.length === 0 && (
+                                     <div className="absolute inset-0 flex items-center justify-center z-20 px-6">
+                                             <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-center">
+                                                     <h3 className="text-white font-bold text-lg mb-2">Курсы пока не загружены</h3>
+                                                     <p className="text-gray-400 text-sm mb-4">Структура экрана сохранена. Проверьте интеграцию данных API `/courses`.</p>
+                                                     <button
+                                                         onClick={() => setView(View.DASHBOARD)}
+                                                         className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-bold"
+                                                     >
+                                                         Вернуться на главную
+                                                     </button>
+                                             </div>
+                                     </div>
+                             )}
 
                {/* Nodes */}
                {courses.map((course, index) => {

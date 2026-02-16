@@ -30,17 +30,13 @@ chmod +x start-api.sh
 
 ### Вариант 2: Ручной запуск
 
-**Шаг 1 - Установите json-server:**
+**Шаг 1 - Запустите FastAPI backend:**
 ```bash
-npm install -g json-server
+cd backend
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-**Шаг 2 - Запустите Mock API:**
-```bash
-json-server --watch db.json --port 3000
-```
-
-**Шаг 3 - Запустите HTTP сервер для Swagger UI:**
+**Шаг 2 - Запустите HTTP сервер для Swagger UI:**
 ```bash
 # Python
 python -m http.server 8080
@@ -49,7 +45,7 @@ python -m http.server 8080
 npx http-server -p 8080
 ```
 
-**Шаг 4 - Откройте в браузере:**
+**Шаг 3 - Откройте в браузере:**
 ```
 http://localhost:8080/swagger-ui.html
 ```
@@ -163,22 +159,14 @@ taskkill /PID <номер_процесса> /F
 lsof -ti:3000 | xargs kill
 ```
 
-**json-server не найден:**
-```bash
-npm install -g json-server
-```
-
-**CORS ошибки:**
-JSON Server автоматически поддерживает CORS, но если возникают проблемы:
-```bash
-json-server --watch db.json --port 3000 --middlewares ./cors-middleware.js
-```
+**Проблемы с backend API:**
+Проверьте, что сервер поднят на `http://localhost:8000` и не занят порт.
 
 ## 📞 Поддержка
 
 - 📖 Полная документация: `API-README.md`
 - 🌐 Swagger UI: http://localhost:8080/swagger-ui.html
-- 🔌 Mock API: http://localhost:3000
+- 🔌 FastAPI: http://localhost:8000
 
 ## 🎉 Готово!
 

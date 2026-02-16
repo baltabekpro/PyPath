@@ -12,7 +12,7 @@ backend/
     schemas/       # pydantic схемы запросов
     services/      # бизнес-логика + доступ к данным
     main.py        # create_app()
-  data/db.json     # JSON хранилище
+  pypath.db        # SQLite база данных
   tests/           # smoke tests
   main.py          # entrypoint (uvicorn main:app)
 ```

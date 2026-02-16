@@ -5,7 +5,6 @@ import subprocess
 import sys
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
 from app.models.models import User, Post, Course, Mission, Achievement, LeaderboardEntry
 from app.schemas.requests import UserUpdate, PostCreate, MissionSubmit
@@ -275,56 +274,54 @@ class DatabaseService:
         return query.all()
 
     # Stats operations
-    def get_stats(self) -> dict:
-        """Get user stats - calculated from user data"""
-        # For now, return mock data
-        # TODO: Calculate from actual user activity
+    def get_stats(self, user: Optional[User] = None) -> dict:
+        """Get user stats from database/user state without mock fallbacks"""
+        if not user:
+            return {
+                "totalXp": 0,
+                "problemsSolved": 0,
+                "codingHours": 0,
+                "accuracy": 0,
+            }
+
+        settings = self._get_user_settings(user)
+        mission_progress = settings.get("mission_progress") or {}
+        solved = sum(1 for value in mission_progress.values() if isinstance(value, dict) and value.get("completed"))
+
+        coding_hours = settings.get("coding_hours")
+        if not isinstance(coding_hours, (int, float)):
+            coding_hours = 0
+
+        accuracy = settings.get("accuracy")
+        if not isinstance(accuracy, (int, float)):
+            accuracy = 0
+
         return {
-            "totalXp": 12450,
-            "problemsSolved": 42,
-            "codingHours": 14.5,
-            "accuracy": 92
+            "totalXp": int(user.xp or 0),
+            "problemsSolved": int(solved),
+            "codingHours": float(coding_hours),
+            "accuracy": int(accuracy),
         }
 
-    def get_activity(self) -> list:
-        """Get user activity"""
-        # Mock data for now
-        return [
-            {"day": "Пн", "xp": 400},
-            {"day": "Вт", "xp": 300},
-            {"day": "Ср", "xp": 500},
-            {"day": "Чт", "xp": 200},
-            {"day": "Пт", "xp": 450},
-            {"day": "Сб", "xp": 600},
-            {"day": "Вс", "xp": 350}
-        ]
+    def get_activity(self, user: Optional[User] = None) -> list:
+        """Get user activity from persisted user settings"""
+        if not user:
+            return []
+        settings = self._get_user_settings(user)
+        activity = settings.get("activity")
+        return activity if isinstance(activity, list) else []
 
-    def get_skills(self) -> list:
-        """Get user skills"""
-        # Mock data for now
-        return [
-            {"subject": "Алгоритмы", "score": 120, "fullMark": 150},
-            {"subject": "Логика", "score": 98, "fullMark": 150},
-            {"subject": "Python", "score": 86, "fullMark": 150},
-            {"subject": "Скорость", "score": 99, "fullMark": 150},
-            {"subject": "Команда", "score": 85, "fullMark": 150},
-            {"subject": "Архитектура", "score": 65, "fullMark": 150}
-        ]
+    def get_skills(self, user: Optional[User] = None) -> list:
+        """Get user skills from persisted user settings"""
+        if not user:
+            return []
+        settings = self._get_user_settings(user)
+        skills = settings.get("skills")
+        return skills if isinstance(skills, list) else []
 
     def get_friends(self) -> list:
-        """Get user friends"""
-        # For now, return users except current
-        users = self.db.query(User).limit(10).all()
-        return [
-            {
-                "id": user.id,
-                "name": user.name,
-                "status": "online",
-                "avatar": user.avatar,
-                "level": user.level_num
-            }
-            for user in users
-        ]
+        """Community friends are disabled in solo mode"""
+        return []
 
     def get_mission_progress(self, mission_id: str, user: Optional[User] = None) -> dict:
         """Get mission progress"""
@@ -445,42 +442,9 @@ class DatabaseService:
         }
 
     def get_ui_data(self) -> dict:
-        """Get UI metadata"""
-        import json
-        from pathlib import Path
-        
-        # Load UI data from JSON file
-        try:
-            json_path = Path(__file__).parent.parent.parent / "data" / "db.json"
-            if json_path.exists():
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    return data.get('uiData', {
-                        "version": "1.0.0",
-                        "features": {
-                            "achievements": True,
-                            "leaderboard": True,
-                            "community": True,
-                            "ai_chat": True
-                        }
-                    })
-        except Exception as e:
-            print(f"Error loading UI data: {e}")
-        
-        # Fallback to minimal data
-        return {
-            "version": "1.0.0",
-            "features": {
-                "achievements": True,
-                "leaderboard": True,
-                "community": True,
-                "ai_chat": True
-            }
-        }
+        """UI metadata endpoint without JSON-backed mock data"""
+        return {}
 
     def get_logs(self) -> list:
-        """Get system logs (for debugging)"""
-        return [
-            {"timestamp": "2024-01-15 10:00:00", "level": "info", "message": "System started"},
-            {"timestamp": "2024-01-15 10:05:00", "level": "info", "message": "Database connected"}
-        ]
+        """System logs are not mocked and not persisted yet"""
+        return []

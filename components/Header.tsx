@@ -1,6 +1,7 @@
-import React from 'react';
-import { Search, Bell, Menu } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, Menu } from 'lucide-react';
 import { CURRENT_USER, UI_TEXTS } from '../constants';
+import { apiGet } from '../api';
 
 interface HeaderProps {
     onMenuClick?: () => void;
@@ -9,9 +10,22 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick }) => {
-  const maxXp = CURRENT_USER.maxXp || 1000;
-  const xpPercent = Math.min(100, Math.max(0, Math.round((CURRENT_USER.xp / maxXp) * 100)));
+  const [currentUser, setCurrentUser] = useState(CURRENT_USER);
+  const maxXp = currentUser.maxXp || 1000;
+  const xpPercent = Math.min(100, Math.max(0, Math.round((currentUser.xp / maxXp) * 100)));
   const text = UI_TEXTS?.header ?? {};
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const userData = await apiGet<any>('/currentUser');
+        setCurrentUser(userData);
+      } catch {
+      }
+    };
+
+    loadCurrentUser();
+  }, []);
 
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-4 sticky top-0 bg-arcade-bg/80 backdrop-blur-md z-30 border-b border-white/5">
@@ -28,26 +42,17 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
       <div className="flex-1 flex items-center gap-4 md:gap-8 max-w-2xl">
           <div className="hidden md:flex items-center gap-3 bg-arcade-card px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
              <div className="size-8 bg-arcade-action rounded-lg flex items-center justify-center text-white font-black text-xs shadow-lg rotate-3 border-2 border-white/20">
-                 {CURRENT_USER.levelNum}
+                 {currentUser.levelNum}
              </div>
              <div className="flex flex-col min-w-[140px]">
                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-1">
                    <span className="text-white">{text.xpLabel}</span>
-                 <span className="text-arcade-action">{CURRENT_USER.xp} / {maxXp}</span>
+                 <span className="text-arcade-action">{currentUser.xp} / {maxXp}</span>
                  </div>
                  <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden border border-white/5">
                  <div className="h-full bg-gradient-to-r from-yellow-400 to-arcade-action rounded-full shadow-[0_0_10px_rgba(249,115,22,0.5)]" style={{ width: `${xpPercent}%` }}></div>
                  </div>
              </div>
-          </div>
-          
-          <div className="relative w-full hidden lg:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input 
-                type="text" 
-              placeholder={text.searchPlaceholder} 
-                className="w-full bg-arcade-card border border-transparent rounded-2xl py-3 pl-12 pr-4 text-sm focus:border-arcade-primary focus:bg-arcade-card/80 text-white placeholder-gray-500 outline-none transition-all shadow-inner"
-            />
           </div>
       </div>
 
@@ -70,13 +75,13 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
             onClick={onProfileClick}
         >
           <div className="text-right hidden sm:block group-hover:opacity-80 transition-opacity">
-            <p className="text-sm font-display font-bold leading-none text-white mb-1">{CURRENT_USER.name}</p>
-            <p className="text-xs font-bold text-arcade-mentor uppercase tracking-wide">{CURRENT_USER.level}</p>
+            <p className="text-sm font-display font-bold leading-none text-white mb-1">{currentUser.name}</p>
+            <p className="text-xs font-bold text-arcade-mentor uppercase tracking-wide">{currentUser.level}</p>
           </div>
           <div className="relative">
               <div className="absolute inset-0 bg-arcade-primary rounded-2xl blur-md opacity-50 group-hover:opacity-100 transition-opacity"></div>
               <img 
-                src={CURRENT_USER.avatar} 
+                src={currentUser.avatar} 
                 alt="Profile" 
                 className="relative size-10 md:size-12 rounded-2xl border-2 border-white/20 bg-black object-cover group-hover:scale-105 transition-transform"
               />

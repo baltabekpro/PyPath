@@ -10,6 +10,7 @@ from app.api.routes import router
 from app.api.auth_routes import router as auth_router
 from app.api.ai_routes import router as ai_router
 from app.core.config import get_settings
+from app.core.bootstrap import ensure_default_courses
 from app.core.errors import (
     http_exception_handler,
     unhandled_exception_handler,
@@ -122,6 +123,10 @@ def create_app() -> FastAPI:
     application.include_router(auth_router, prefix=settings.api_v1_prefix)
     application.include_router(ai_router, prefix=settings.api_prefix)
     application.include_router(ai_router, prefix=settings.api_v1_prefix)
+
+    @application.on_event("startup")
+    def startup_seed_data() -> None:
+        ensure_default_courses()
 
     return application
 

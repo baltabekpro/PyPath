@@ -30,6 +30,7 @@ class PostCreate(BaseModel):
 
 class MissionSubmit(BaseModel):
     code: str
+    courseId: int | None = None
 
 
 class MissionFile(BaseModel):

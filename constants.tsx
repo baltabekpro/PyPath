@@ -1,26 +1,66 @@
 import { Course, User } from './types';
 import { Terminal, Database, Cpu, Globe, Code2, LineChart, Gamepad2, Rocket, Ghost, Zap, Skull, Lock, Box, Layers, ShieldAlert, Key, Flame, Bug, Gift, LockKeyhole, Target, Sword, Crown, AlertCircle, Search, Sparkles, LayoutGrid, Map, Code, Bot, User as UserIcon, Trophy, Bell, CreditCard, Shield } from 'lucide-react';
 import React from 'react';
-import DB from './backend/data/db.json';
 import { apiGet } from './api';
 
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 
-// Export Data from JSON
-export let CURRENT_USER: User = DB.currentUser as unknown as User;
-export let STATS = DB.stats;
-export let ACTIVITY_DATA = DB.activity;
-export let SKILLS = DB.skills;
-export let COURSES: Course[] = DB.courses as unknown as Course[];
-export let LEADERBOARD = DB.leaderboard;
-export let FRIENDS = DB.friends;
-export let POSTS = DB.posts;
-export let ACHIEVEMENTS = DB.achievements;
-export let MISSIONS = DB.missions;
-export let LOGS = DB.logs;
-export let UI_DATA = DB.uiData as any;
-export let SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
+const DEFAULT_UI_DATA = {
+    sidebarNavItems: [
+        { view: 'DASHBOARD', label: 'Главная', icon: 'LayoutGrid', mobile: true },
+        { view: 'COURSES', label: 'Курсы', icon: 'Map', mobile: true },
+        { view: 'PRACTICE', label: 'Арена', icon: 'Code', mobile: true },
+        { view: 'AI_CHAT', label: 'Оракул', icon: 'Bot', mobile: true },
+        { view: 'PROFILE', label: 'Профиль', icon: 'User', mobile: true },
+        { view: 'LEADERBOARD', label: 'Рейтинг', icon: 'Trophy', mobile: false },
+        { view: 'ACHIEVEMENTS', label: 'Достижения', icon: 'Sparkles', mobile: false },
+        { view: 'SETTINGS', label: 'Настройки', icon: 'Shield', mobile: false },
+    ],
+    texts: {
+        sidebar: {
+            logoLine1: 'Py',
+            logoLine2: 'Path',
+        },
+        header: {
+            xpLabel: 'XP',
+            searchPlaceholder: 'Поиск',
+        },
+    },
+};
+
+// API-first app state (no frontend mock dataset)
+export let CURRENT_USER: User = {
+    name: 'Пользователь',
+    email: '',
+    fullName: '',
+    level: 'Новичок',
+    levelNum: 1,
+    xp: 0,
+    maxXp: 100,
+    streak: 0,
+    rank: 0,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=PyPath',
+    bio: '',
+    league: 'Bronze',
+    settings: {
+        theme: 'dark',
+        notifications: true,
+        sound: true,
+    },
+};
+export let STATS = { totalXp: 0, problemsSolved: 0, codingHours: 0, accuracy: 0 };
+export let ACTIVITY_DATA: any[] = [];
+export let SKILLS: any[] = [];
+export let COURSES: Course[] = [];
+export let LEADERBOARD: any[] = [];
+export let FRIENDS: any[] = [];
+export let POSTS: any[] = [];
+export let ACHIEVEMENTS: any[] = [];
+export let MISSIONS: any[] = [];
+export let LOGS: any[] = [];
+export let UI_DATA: any = DEFAULT_UI_DATA;
+export let SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? DEFAULT_UI_DATA.sidebarNavItems;
 export let SETTINGS_UI = UI_DATA?.settings ?? {};
 export let PROFILE_UI = UI_DATA?.profile ?? {};
 export let COMMUNITY_UI = UI_DATA?.community ?? {};
@@ -29,7 +69,7 @@ export let APP_UI = UI_DATA?.app ?? {};
 export let AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
 export let AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
 export let EDITOR_UI = UI_DATA?.editor ?? {};
-export let UI_TEXTS = UI_DATA?.texts ?? {};
+export let UI_TEXTS = UI_DATA?.texts ?? DEFAULT_UI_DATA.texts;
 
 const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
     try {
@@ -40,8 +80,8 @@ const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
 };
 
 const applyUiData = (uiData: any) => {
-    UI_DATA = uiData;
-    SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
+    UI_DATA = { ...DEFAULT_UI_DATA, ...(uiData || {}) };
+    SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? DEFAULT_UI_DATA.sidebarNavItems;
     SETTINGS_UI = UI_DATA?.settings ?? {};
     PROFILE_UI = UI_DATA?.profile ?? {};
     COMMUNITY_UI = UI_DATA?.community ?? {};
@@ -50,7 +90,7 @@ const applyUiData = (uiData: any) => {
     AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
     AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
     EDITOR_UI = UI_DATA?.editor ?? {};
-    UI_TEXTS = UI_DATA?.texts ?? {};
+    UI_TEXTS = UI_DATA?.texts ?? DEFAULT_UI_DATA.texts;
 };
 
 export const initializeAppData = async (): Promise<void> => {
@@ -101,7 +141,9 @@ export const initializeAppData = async (): Promise<void> => {
         if (achievements) ACHIEVEMENTS = achievements;
         if (missions) MISSIONS = missions;
         if (logs) LOGS = logs;
-        if (uiData) applyUiData(uiData);
+        if (uiData && typeof uiData === 'object' && Object.keys(uiData).length > 0) {
+            applyUiData(uiData);
+        }
 
         isInitialized = true;
     })().finally(() => {

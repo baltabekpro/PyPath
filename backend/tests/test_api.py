@@ -11,13 +11,8 @@ from app.main import create_app
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
-    source_db = Path(__file__).resolve().parents[1] / "data" / "db.json"
-    test_data_dir = tmp_path / "data"
-    test_data_dir.mkdir(parents=True, exist_ok=True)
-    target_db = test_data_dir / "db.json"
-    target_db.write_text(source_db.read_text(encoding="utf-8"), encoding="utf-8")
-
-    monkeypatch.setenv("DATA_FILE", str(target_db))
+    test_db = tmp_path / "test.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{test_db}")
     monkeypatch.setenv("API_V1_PREFIX", "/api/v1")
     get_settings.cache_clear()
     app = create_app()

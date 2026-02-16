@@ -196,14 +196,13 @@ curl -X POST http://localhost:3000/posts \
 
 ### Добавить эндпоинт
 1. Отредактируйте `swagger.json`
-2. Добавьте данные в `db.json`
+2. Добавьте обработку в FastAPI (`backend/app/api/routes.py` и сервисы)
 3. Перезагрузите страницу
 
 ## 📝 Дополнительные ресурсы
 
 - **Swagger Editor**: https://editor.swagger.io/
 - **Swagger Validator**: https://validator.swagger.io/
-- **JSON Server docs**: https://github.com/typicode/json-server
 - **OpenAPI Spec**: https://swagger.io/specification/
 
 ## 🐛 Решение проблем

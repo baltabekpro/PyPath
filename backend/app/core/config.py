@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     database_url: str = "sqlite:///./pypath.db"
-    data_file: str = "data/db.json"  # Keep for migration
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",

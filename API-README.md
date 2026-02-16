@@ -83,32 +83,28 @@ X-API-Key: <your_api_key>
 
 ## 🧪 Тестирование API
 
-### С помощью JSON Server (Mock API)
+### С помощью FastAPI (реальный API)
 
-Установите JSON Server:
+Запустите backend:
 ```bash
-npm install -g json-server
+cd backend
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Запустите mock API:
-```bash
-json-server --watch db.json --port 3000
-```
-
-API будет доступен по адресу: http://localhost:3000
+API будет доступен по адресу: http://localhost:8000
 
 ### Примеры запросов
 
 #### cURL
 ```bash
 # Получить текущего пользователя
-curl http://localhost:3000/currentUser
+curl http://localhost:8000/currentUser
 
 # Получить курсы
-curl http://localhost:3000/courses
+curl http://localhost:8000/courses
 
 # Создать пост
-curl -X POST http://localhost:3000/posts \
+curl -X POST http://localhost:8000/posts \
   -H "Content-Type: application/json" \
   -d '{"content": "Мой первый пост", "tags": ["Python", "Beginners"]}'
 ```
@@ -116,12 +112,12 @@ curl -X POST http://localhost:3000/posts \
 #### JavaScript (Fetch)
 ```javascript
 // Получить достижения
-fetch('http://localhost:3000/achievements')
+fetch('http://localhost:8000/achievements')
   .then(res => res.json())
   .then(data => console.log(data));
 
 // Обновить профиль
-fetch('http://localhost:3000/currentUser', {
+fetch('http://localhost:8000/currentUser', {
   method: 'PUT',
   headers: {
     'Content-Type': 'application/json',

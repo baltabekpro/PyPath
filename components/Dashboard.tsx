@@ -41,6 +41,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const activeCourse = courses.find((c: any) => !c.locked && c.progress < 100) || courses[0];
     const progressPercent = activeCourse?.progress ?? 0;
     const text = UI_TEXTS?.dashboard ?? {};
+    const visibleDailyQuests = dailyQuests.length > 0 ? dailyQuests : [
+        { title: 'Новые задания скоро появятся', reward: '0 XP', done: false, icon: 'Target', color: 'text-gray-400', link: View.PRACTICE },
+        { title: 'Решите задачу на арене', reward: 'Старт', done: false, icon: 'Zap', color: 'text-gray-400', link: View.PRACTICE },
+        { title: 'Откройте профиль и продолжайте путь', reward: 'Профиль', done: false, icon: 'Play', color: 'text-gray-400', link: View.PROFILE },
+    ];
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
@@ -58,9 +63,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-white/5">
-                    <p className="text-sm md:text-base text-white font-medium">{text.greeting?.replace('{name}', currentUser.name)}</p>
+                          <p className="text-sm md:text-base text-white font-medium">{text.greeting?.replace('{name}', currentUser.name) || `Привет, ${currentUser.name}`}</p>
                  </div>
-                 <h1 className="text-3xl md:text-4xl font-display font-black text-white leading-none">{text.baseTitle}</h1>
+                      <h1 className="text-3xl md:text-4xl font-display font-black text-white leading-none">{text.baseTitle || 'Твоя учебная зона'}</h1>
              </div>
         </div>
 
@@ -74,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <p className="text-2xl font-black text-white leading-none">{currentUser.streak}</p>
-                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{text.streakLabel}</p>
+                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{text.streakLabel || 'Серия'}</p>
              </div>
         </div>
       </div>
@@ -103,10 +108,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                      <div className="flex-1 text-center md:text-left">
                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-arcade-action/20 text-arcade-action rounded-full border border-arcade-action/20 mb-3">
                              <Swords size={14} />
-                             <span className="text-xs font-black uppercase tracking-wider">{text.currentMission}</span>
+                             <span className="text-xs font-black uppercase tracking-wider">{text.currentMission || 'Текущая миссия'}</span>
                          </div>
-                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">{mission?.title ?? text.fallbackMissionTitle}</h2>
-                         <p className="text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter}</p>
+                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">{mission?.title ?? text.fallbackMissionTitle ?? 'Новая миссия скоро появится'}</h2>
+                         <p className="text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter ?? 'Пока потренируйтесь на арене'}</p>
                          
                          {/* Progress Bar styled as HP */}
                          <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10 relative">
@@ -115,7 +120,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                              <div className="absolute top-0 left-0 w-full h-[50%] bg-white/10 rounded-full"></div>
                          </div>
                          <div className="flex justify-between mt-2 text-xs font-bold text-gray-500 uppercase">
-                             <span>{text.progress}</span>
+                             <span>{text.progress || 'Прогресс'}</span>
                              <span className="text-white">{progressPercent}%</span>
                          </div>
                      </div>
@@ -124,7 +129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         <button onClick={() => setView(View.PRACTICE)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
                             <ChevronRight size={32} strokeWidth={3} />
                         </button>
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start}</span>
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start || 'Старт'}</span>
                      </div>
                 </div>
             </div>
@@ -133,14 +138,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div>
                 <h3 className="text-xl font-display font-black text-white mb-4 flex items-center gap-2">
                     <Target className="text-arcade-danger" />
-                    {text.dailyQuests}
+                    {text.dailyQuests || 'Ежедневные задания'}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {dailyQuests.map((quest: any, i: number) => {
+                    {visibleDailyQuests.map((quest: any, i: number) => {
                         const QuestIcon = getIconComponent(quest.icon);
                         return (
                         <div 
-                            key={quest.link || i} 
+                            key={`${quest.link ?? 'quest'}-${i}`} 
                             onClick={() => setView(quest.link as View)}
                             className={`bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform cursor-pointer hover:border-white/20`}
                         >
@@ -167,30 +172,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div className="bg-arcade-card border border-white/5 rounded-3xl p-6 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-display font-black text-white">{text.stats}</h3>
-                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">{text.details}</button>
+                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">{text.details || 'Детали'}</button>
                 </div>
                 
                 <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
-                            <span className="font-bold text-gray-300 text-sm">{text.statsTotalXp}</span>
+                            <span className="font-bold text-gray-300 text-sm">{text.statsTotalXp || 'Общий XP'}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{stats.totalXp?.toLocaleString()}</span>
+                        <span className="font-mono font-bold text-white">{(stats.totalXp ?? 0).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
-                            <span className="font-bold text-gray-300 text-sm">{text.statsSolved}</span>
+                            <span className="font-bold text-gray-300 text-sm">{text.statsSolved || 'Решено задач'}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{stats.problemsSolved}</span>
+                        <span className="font-mono font-bold text-white">{stats.problemsSolved ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
-                            <span className="font-bold text-gray-300 text-sm">{text.statsTime}</span>
+                            <span className="font-bold text-gray-300 text-sm">{text.statsTime || 'Время кодинга'}</span>
                         </div>
-                        <span className="font-mono font-bold text-white">{stats.codingHours}{text.hoursSuffix}</span>
+                        <span className="font-mono font-bold text-white">{stats.codingHours ?? 0}{text.hoursSuffix || 'ч'}</span>
                     </div>
                 </div>
             </div>
@@ -204,11 +209,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 <Sparkles className="absolute top-4 left-4 text-white/40 animate-pulse" />
                 <Sparkles className="absolute bottom-4 right-4 text-white/40 animate-pulse delay-700" />
                 
-                <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle}</h3>
-                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle}</p>
+                <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle || 'Быстрый запуск'}</h3>
+                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle || 'Начните практику даже при частично пустых данных.'}</p>
                 
                 <button onClick={() => setView(View.PRACTICE)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
-                    {text.blitzStart}
+                    {text.blitzStart || 'Открыть арену'}
                 </button>
             </div>
         </div>

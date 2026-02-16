@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View } from '../types';
-import { Gamepad2, Volume2 } from 'lucide-react';
+import { Gamepad2 } from 'lucide-react';
 import { SIDEBAR_NAV_ITEMS, UI_TEXTS, getIconComponent } from '../constants';
 
 interface SidebarProps {
@@ -12,12 +12,6 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
   const text = UI_TEXTS?.sidebar ?? {};
-  const [soundOn, setSoundOn] = useState(true);
-  
-  useEffect(() => {
-    const savedSound = localStorage.getItem('soundOn');
-    if (savedSound !== null) setSoundOn(savedSound === 'true');
-  }, []);
 
   const navItems = (SIDEBAR_NAV_ITEMS || []).map((item: any) => ({
     ...item,
@@ -68,25 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           </nav>
         </div>
 
-        {/* Footer Area */}
-        <div className="flex flex-col gap-4">
-          {/* Sound Toggle */}
-            <button onClick={() => {
-              const newSound = !soundOn;
-              setSoundOn(newSound);
-              localStorage.setItem('soundOn', newSound.toString());
-            }} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group">
-              <div className="flex items-center gap-3">
-                  <div className="bg-arcade-mentor/20 p-2 rounded-lg text-arcade-mentor">
-                      <Volume2 size={20} />
-                  </div>
-                    <span className="text-sm font-bold text-gray-300">{text.soundLabel}</span>
-              </div>
-              <div className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${soundOn ? 'bg-arcade-success shadow-neon-green' : 'bg-gray-700'}`}>
-                <div className={`absolute top-1 size-3 bg-white rounded-full transition-all ${soundOn ? 'right-1' : 'left-1'}`}></div>
-              </div>
-          </button>
-        </div>
+        <div />
       </aside>
 
       {/* --- MOBILE BOTTOM BAR (COMPANION APP STYLE) --- */}

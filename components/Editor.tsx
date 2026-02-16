@@ -121,14 +121,25 @@ export const EditorComponent: React.FC = () => {
   // Load missions list
   useEffect(() => {
       const loadMissions = async () => {
+          let hasMission = false;
           try {
               const missions = await missionApi.getAll();
               if (missions && missions.length > 0) {
+                  hasMission = true;
                   setMissionList(missions);
                   await loadMissionData(missions[0].id, 0);
+                  return;
               }
+              setMissionList([]);
+              setMission(null);
           } catch (error) {
               console.error('Failed to load mission list:', error);
+              setMissionList([]);
+              setMission(null);
+          } finally {
+              if (!hasMission) {
+                  setIsLoadingMission(false);
+              }
           }
       };
       loadMissions();
@@ -342,8 +353,8 @@ export const EditorComponent: React.FC = () => {
     }
   };
 
-  // Early return if mission is not loaded yet
-    if (isLoadingMission || !mission) {
+    // Early return while mission is loading
+        if (isLoadingMission) {
     return (
       <div className="flex h-full items-center justify-center bg-[#0F172A]">
         <div className="text-center">
@@ -353,6 +364,17 @@ export const EditorComponent: React.FC = () => {
       </div>
     );
   }
+
+    if (!mission || missionList.length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center bg-[#0F172A] p-6">
+                <div className="max-w-lg w-full bg-[#1E293B] border border-white/10 rounded-2xl p-8 text-center">
+                    <p className="text-white font-bold mb-2">Арена пока недоступна</p>
+                    <p className="text-gray-400 text-sm">Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.</p>
+                </div>
+            </div>
+        );
+    }
 
   return (
     <div className="flex h-full overflow-hidden bg-[#0F172A] font-sans p-2 md:p-4 gap-4 relative pb-20 md:pb-4">

@@ -1,16 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Moon, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
+import { Lock, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
 import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
 import { apiPut, authApi, notificationsApi } from '../api';
 
 type SettingsTab = 'profile' | 'notifications';
 
+const DEFAULT_SETTINGS_TABS = [
+    { id: 'profile', label: 'Профиль', icon: 'User' },
+    { id: 'notifications', label: 'Уведомления', icon: 'Bell' },
+];
+
+const DEFAULT_NOTIFICATION_OPTIONS = [
+    { label: 'Push уведомления', enabled: true },
+    { label: 'Email уведомления', enabled: false },
+    { label: 'Напоминания о практике', enabled: true },
+];
+
+const REMOVED_NOTIFICATION_LABELS = new Set(['Достижения друзей', 'Ответы ментора']);
+
+const normalizeNotificationOptions = (options: any[] | undefined | null) => {
+    const list = Array.isArray(options) ? options : [];
+    const normalized = list
+        .filter((item: any) => item && typeof item.label === 'string' && !REMOVED_NOTIFICATION_LABELS.has(item.label))
+        .map((item: any) => ({
+            label: item.label,
+            enabled: Boolean(item.enabled),
+        }));
+
+    return normalized.length > 0 ? normalized : DEFAULT_NOTIFICATION_OPTIONS;
+};
+
+const DEFAULT_PRESET_AVATARS = ['PyPath', 'CodeNinja', 'ByteMage', 'DebugHero', 'NeonFox'];
+
 export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-  const presetAvatars = SETTINGS_UI?.presetAvatars ?? [];
-  const tabs = SETTINGS_UI?.tabs ?? [];
-  const notificationOptions = SETTINGS_UI?.notificationOptions ?? [];
+    const presetAvatars = SETTINGS_UI?.presetAvatars?.length ? SETTINGS_UI.presetAvatars : DEFAULT_PRESET_AVATARS;
+    const tabs = SETTINGS_UI?.tabs?.length ? SETTINGS_UI.tabs : DEFAULT_SETTINGS_TABS;
+    const notificationOptions = normalizeNotificationOptions(SETTINGS_UI?.notificationOptions);
     const text = UI_TEXTS?.settings ?? {};
   
   // --- Profile State ---
@@ -25,17 +52,18 @@ export const Settings: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
     const [actionMessage, setActionMessage] = useState('');
     const [notificationState, setNotificationState] = useState(notificationOptions);
-    const [isDarkTheme, setIsDarkTheme] = useState(true);
         const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
         const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
-    // Load from localStorage
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme !== null) setIsDarkTheme(savedTheme === 'dark');
-
     const savedNotifications = localStorage.getItem('notifications');
-    if (savedNotifications) setNotificationState(JSON.parse(savedNotifications));
+        if (savedNotifications) {
+            try {
+                const parsed = JSON.parse(savedNotifications);
+                setNotificationState(normalizeNotificationOptions(parsed));
+            } catch {
+            }
+        }
 
     const savedAvatar = localStorage.getItem('avatar');
     if (savedAvatar) setFormData(prev => ({ ...prev, avatar: savedAvatar }));
@@ -50,7 +78,9 @@ export const Settings: React.FC = () => {
             try {
                 const result = await notificationsApi.getPreferences();
                 if (result?.preferences?.length) {
-                    setNotificationState(result.preferences);
+                    const sanitized = normalizeNotificationOptions(result.preferences);
+                    setNotificationState(sanitized);
+                    localStorage.setItem('notifications', JSON.stringify(sanitized));
                 }
             } catch {
             }
@@ -102,18 +132,21 @@ export const Settings: React.FC = () => {
       setTimeout(() => setActionMessage(''), 2500);
   };
 
-  const toggleNotification = async (index: number) => {
-      setNotificationState((prev: any[]) => {
-        const newState = prev.map((item, i) => i === index ? { ...item, enabled: !item.enabled } : item);
-        localStorage.setItem('notifications', JSON.stringify(newState));
-        return newState;
-      });
+    const persistNotificationPreferences = async (next: any[]) => {
+            localStorage.setItem('notifications', JSON.stringify(next));
+            try {
+                await notificationsApi.updatePreferences(next);
+            } catch {
+                showAction('Не удалось синхронизировать уведомления');
+            }
+    };
 
-      try {
-        const next = notificationState.map((item: any, i: number) => i === index ? { ...item, enabled: !item.enabled } : item);
-        await notificationsApi.updatePreferences(next);
-      } catch {
-      }
+  const toggleNotification = async (index: number) => {
+            setNotificationState((prev: any[]) => {
+                const next = prev.map((item, i) => i === index ? { ...item, enabled: !item.enabled } : item);
+                void persistNotificationPreferences(next);
+                return next;
+            });
   };
 
   const handleChangePassword = async () => {
@@ -274,27 +307,6 @@ export const Settings: React.FC = () => {
                                 className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner resize-none"
                             />
                             <p className="text-[10px] text-gray-500 text-right">{text.charsLeft}: {200 - formData.bio.length}</p>
-                        </div>
-
-                        {/* Additional Settings Toggles */}
-                        <div className="flex items-center justify-between py-4 border-t border-b border-white/5">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2.5 bg-[#0c120e] rounded-xl border border-white/5 text-gray-300"><Moon size={20}/></div>
-                                <div>
-                                    <p className="text-white font-medium text-sm md:text-base">{text.themeTitle}</p>
-                                    <p className="text-xs text-py-muted">{text.themeValue}</p>
-                                </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newTheme = !isDarkTheme;
-                                setIsDarkTheme(newTheme);
-                                localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-                              }}
-                              className={`w-10 h-6 rounded-full relative border transition-colors ${isDarkTheme ? 'bg-arcade-primary/20 border-arcade-primary/50' : 'bg-gray-700 border-gray-600'}`}
-                            >
-                                <div className={`absolute top-1 size-3.5 rounded-full transition-all ${isDarkTheme ? 'right-1 bg-arcade-primary shadow-[0_0_8px_#A855F7]' : 'left-1 bg-white'}`}></div>
-                            </button>
                         </div>
 
                         {/* Save Button */}

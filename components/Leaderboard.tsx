@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Crown, ChevronUp, ChevronDown, Minus, Globe, Users, School, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
+import { Crown, ChevronUp, ChevronDown, Minus, Globe, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
 import { CURRENT_USER, LEADERBOARD, UI_TEXTS } from '../constants';
 import { apiGet } from '../api';
 
@@ -30,8 +30,8 @@ const getTierColor = (tier: string) => {
 }
 
 export const Leaderboard: React.FC = () => {
-  const [scope, setScope] = useState<'global' | 'friends' | 'school'>('global');
-  const [period, setPeriod] = useState<'all' | 'month'>('all');
+    const scope: 'global' = 'global';
+    const period: 'all' = 'all';
   const [leaders, setLeaders] = useState<any[]>(LEADERBOARD);
     const text = UI_TEXTS?.leaderboard ?? {};
 
@@ -41,18 +41,12 @@ export const Leaderboard: React.FC = () => {
               const data = await apiGet<any[]>(`/leaderboard?scope=${scope}&period=${period}`);
               setLeaders(data);
           } catch {
-              let fallback = [...LEADERBOARD];
-              if (scope === 'friends') {
-                  fallback = LEADERBOARD.filter((l: any) => l.isFriend || l.name === CURRENT_USER.name);
-              } else if (scope === 'school') {
-                  fallback = LEADERBOARD.filter((l: any) => l.isSchool || l.name === CURRENT_USER.name);
-              }
-              setLeaders(fallback);
+              setLeaders([...LEADERBOARD]);
           }
       };
 
       loadLeaderboard();
-  }, [scope, period]);
+  }, []);
 
   const displayedLeaders = useMemo(() => {
       // Re-rank after filtering for display purposes
@@ -80,47 +74,29 @@ export const Leaderboard: React.FC = () => {
 
               {/* Filters */}
               <div className="flex bg-[#1E293B] p-1 rounded-xl border border-white/5">
-                  <button 
-                    onClick={() => setScope('global')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${scope === 'global' ? 'bg-arcade-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                  >
-                                            <Globe size={16} /> {text?.scopes?.global}
-                  </button>
-                  <button 
-                    onClick={() => setScope('friends')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${scope === 'friends' ? 'bg-arcade-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                  >
-                                            <Users size={16} /> {text?.scopes?.friends}
-                  </button>
-                  <button 
-                    onClick={() => setScope('school')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${scope === 'school' ? 'bg-arcade-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                  >
-                                            <School size={16} /> {text?.scopes?.school}
-                  </button>
+                                    <div className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 bg-arcade-primary text-white shadow-lg">
+                                        <Globe size={16} /> {text?.scopes?.global || 'Мир'}
+                                    </div>
               </div>
           </div>
 
           <div className="flex justify-center mb-6">
                <div className="flex gap-1 bg-black/40 p-1 rounded-full border border-white/10 backdrop-blur-md">
-                   <button 
-                     onClick={() => setPeriod('all')}
-                     className={`px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${period === 'all' ? 'bg-white text-black shadow-neon-white' : 'text-gray-500 hover:text-white'}`}
-                   >
-                                             {text?.periods?.all}
-                   </button>
-                   <button 
-                     onClick={() => setPeriod('month')}
-                     className={`px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${period === 'month' ? 'bg-white text-black shadow-neon-white' : 'text-gray-500 hover:text-white'}`}
-                   >
-                                                                                         {text?.periods?.month || 'Этот месяц'}
-                   </button>
+                                     <div className="px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-black shadow-neon-white">
+                                         {text?.periods?.all || 'Все'}
+                                     </div>
                </div>
           </div>
       </div>
 
       {/* Main Scrollable Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-32">
+          {displayedLeaders.length === 0 && (
+              <div className="max-w-3xl mx-auto mb-8 bg-[#1E293B] border border-white/10 rounded-2xl p-8 text-center">
+                  <p className="text-white font-bold mb-2">Рейтинг пока пуст</p>
+                  <p className="text-gray-400 text-sm">Как только появятся результаты игроков, таблица лидеров отобразится здесь.</p>
+              </div>
+          )}
           
           {/* PODIUM (Only if we have enough users) */}
           {displayedLeaders.length >= 3 && (
@@ -235,7 +211,7 @@ export const Leaderboard: React.FC = () => {
       <div className="absolute bottom-0 left-0 w-full bg-[#1E293B]/95 backdrop-blur-xl border-t border-arcade-primary/30 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-30">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
                <div className="flex items-center gap-4">
-                   <div className="font-mono font-black text-white text-xl w-8 text-center">42</div>
+                <div className="font-mono font-black text-white text-xl w-8 text-center">{CURRENT_USER.rank ?? 0}</div>
                    <div className="size-12 rounded-full border-2 border-arcade-primary p-0.5 shadow-neon-purple relative">
                         <img src={CURRENT_USER.avatar} className="size-full rounded-full bg-black object-cover" />
                         <div className="absolute -top-1 -right-1 bg-arcade-primary text-white text-[10px] font-bold px-1.5 rounded-full border border-[#1E293B]">{text.youBadge}</div>

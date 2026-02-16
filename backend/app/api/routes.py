@@ -18,34 +18,10 @@ from app.services.ai_service import get_ai_service, AIService
 router = APIRouter()
 
 
-DEFAULT_NOTIFICATIONS = [
-    {
-        "id": "n_1",
-        "time": "2 мин назад",
-        "text": "Новый квест доступен: Циклы и условия",
-        "read": False,
-    },
-    {
-        "id": "n_2",
-        "time": "1 час назад",
-        "text": "Оракул ответил на ваш последний вопрос",
-        "read": False,
-    },
-    {
-        "id": "n_3",
-        "time": "вчера",
-        "text": "Друг получил достижение: Баг-охотник",
-        "read": True,
-    },
-]
+DEFAULT_NOTIFICATIONS: list[dict] = []
 
 
-DEFAULT_NOTIFICATION_PREFERENCES = [
-    {"label": "Новые квесты и задачи", "enabled": True},
-    {"label": "Ответы ментора", "enabled": True},
-    {"label": "Достижения друзей", "enabled": False},
-    {"label": "Новости обновлений", "enabled": False},
-]
+DEFAULT_NOTIFICATION_PREFERENCES: list[dict] = []
 
 
 @router.get("/", tags=["Health"])
@@ -219,7 +195,7 @@ def get_stats(
     service: DatabaseService = Depends(get_db_service)
 ):
     """Get user statistics (XP, problems solved, coding hours, accuracy)"""
-    return service.get_stats()
+    return service.get_stats(user)
 
 
 @router.get("/activity", tags=["User"])
@@ -228,7 +204,7 @@ def get_activity(
     service: DatabaseService = Depends(get_db_service)
 ):
     """Get user activity chart (XP earned by day)"""
-    return service.get_activity()
+    return service.get_activity(user)
 
 
 @router.get("/skills", tags=["User"])
@@ -237,7 +213,7 @@ def get_skills(
     service: DatabaseService = Depends(get_db_service)
 ):
     """Get user skill radar chart (algorithms, logic, Python, speed, teamwork, architecture)"""
-    return service.get_skills()
+    return service.get_skills(user)
 
 
 @router.get("/courses", tags=["Courses"])
