@@ -1,4 +1,6 @@
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000';
+const envApiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
+const isVercelHost = typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app');
+const API_BASE_URL = isVercelHost ? '/api-proxy' : (envApiBaseUrl || 'http://localhost:8000');
 
 const buildUrl = (path: string) => `${API_BASE_URL}${path}`;
 
