@@ -7,26 +7,9 @@ let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 
 const DEFAULT_UI_DATA = {
-    sidebarNavItems: [
-        { view: 'DASHBOARD', label: 'Главная', icon: 'LayoutGrid', mobile: true },
-        { view: 'COURSES', label: 'Курсы', icon: 'Map', mobile: true },
-        { view: 'PRACTICE', label: 'Арена', icon: 'Code', mobile: true },
-        { view: 'AI_CHAT', label: 'Оракул', icon: 'Bot', mobile: true },
-        { view: 'PROFILE', label: 'Профиль', icon: 'User', mobile: true },
-        { view: 'LEADERBOARD', label: 'Рейтинг', icon: 'Trophy', mobile: false },
-        { view: 'ACHIEVEMENTS', label: 'Достижения', icon: 'Sparkles', mobile: false },
-        { view: 'SETTINGS', label: 'Настройки', icon: 'Shield', mobile: false },
-    ],
-    texts: {
-        sidebar: {
-            logoLine1: 'Py',
-            logoLine2: 'Path',
-        },
-        header: {
-            xpLabel: 'XP',
-            searchPlaceholder: 'Поиск',
-        },
-    },
+    sidebarNavItems: [],
+    texts: {},
+    editor: {},
 };
 
 // API-first app state (no frontend mock dataset)
@@ -60,7 +43,7 @@ export let ACHIEVEMENTS: any[] = [];
 export let MISSIONS: any[] = [];
 export let LOGS: any[] = [];
 export let UI_DATA: any = DEFAULT_UI_DATA;
-export let SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? DEFAULT_UI_DATA.sidebarNavItems;
+export let SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
 export let SETTINGS_UI = UI_DATA?.settings ?? {};
 export let PROFILE_UI = UI_DATA?.profile ?? {};
 export let COMMUNITY_UI = UI_DATA?.community ?? {};
@@ -69,7 +52,7 @@ export let APP_UI = UI_DATA?.app ?? {};
 export let AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
 export let AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
 export let EDITOR_UI = UI_DATA?.editor ?? {};
-export let UI_TEXTS = UI_DATA?.texts ?? DEFAULT_UI_DATA.texts;
+export let UI_TEXTS = UI_DATA?.texts ?? {};
 
 const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
     try {
@@ -81,7 +64,7 @@ const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
 
 const applyUiData = (uiData: any) => {
     UI_DATA = { ...DEFAULT_UI_DATA, ...(uiData || {}) };
-    SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? DEFAULT_UI_DATA.sidebarNavItems;
+    SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
     SETTINGS_UI = UI_DATA?.settings ?? {};
     PROFILE_UI = UI_DATA?.profile ?? {};
     COMMUNITY_UI = UI_DATA?.community ?? {};
@@ -90,7 +73,7 @@ const applyUiData = (uiData: any) => {
     AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
     AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
     EDITOR_UI = UI_DATA?.editor ?? {};
-    UI_TEXTS = UI_DATA?.texts ?? DEFAULT_UI_DATA.texts;
+    UI_TEXTS = UI_DATA?.texts ?? {};
 };
 
 export const initializeAppData = async (): Promise<void> => {

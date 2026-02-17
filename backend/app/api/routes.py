@@ -439,23 +439,10 @@ def like_post(
 def get_achievements(
     category: Literal["all", "coding", "community", "streak", "secret"] = Query(default="all"),
     service: DatabaseService = Depends(get_db_service),
+    user: Optional[User] = Depends(get_current_user_optional),
 ):
     """Get user achievements (filterable by category: coding, community, streak, secret)"""
-    achievements = service.get_achievements(category)
-    return [
-        {
-            "id": a.id,
-            "title": a.title,
-            "description": a.description,
-            "icon": a.icon,
-            "rarity": a.rarity,
-            "progress": a.progress,
-            "total": a.total,
-            "unlocked": a.unlocked,
-            "category": a.category
-        }
-        for a in achievements
-    ]
+    return service.get_achievements(category=category, user=user)
 
 
 @router.get("/missions", tags=["Missions"])

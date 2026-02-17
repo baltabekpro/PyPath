@@ -1,11 +1,11 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { MessageSquare, Heart, Share2, MoreHorizontal, Image, Code, Hash, TrendingUp, Search, Filter } from 'lucide-react';
-import { COMMUNITY_UI, CURRENT_USER, POSTS, UI_TEXTS } from '../constants';
+import { COMMUNITY_UI, CURRENT_USER, UI_TEXTS } from '../constants';
 import { apiGet, apiPost } from '../api';
 
 export const Community: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'popular' | 'fresh'>('popular');
-    const [posts, setPosts] = useState<any[]>(POSTS);
+    const [posts, setPosts] = useState<any[]>([]);
     const [draftPost, setDraftPost] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [showPreview, setShowPreview] = useState(false);
@@ -58,18 +58,7 @@ export const Community: React.FC = () => {
           });
           setPosts((prev) => [created, ...prev]);
       } catch {
-          const newPost = {
-              id: Date.now(),
-              author: { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, level: CURRENT_USER.levelNum },
-              time: 'только что',
-              content: textValue,
-              tags: ['НовыйПост'],
-              likes: 0,
-              comments: 0,
-              liked: false,
-              code: null
-          };
-          setPosts((prev) => [newPost, ...prev]);
+          return;
       }
 
       setDraftPost('');
@@ -85,10 +74,7 @@ export const Community: React.FC = () => {
           const result = await apiPost<{ success: boolean; likes: number }>(`/posts/${postId}/like`);
           setPosts((prev) => prev.map((item: any) => item.id === postId ? { ...item, liked: true, likes: result.likes } : item));
       } catch {
-          setPosts((prev) => prev.map((item: any) => {
-              if (item.id !== postId || item.liked) return item;
-              return { ...item, liked: true, likes: item.likes + 1 };
-          }));
+          return;
       }
   };
 

@@ -41,11 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const activeCourse = courses.find((c: any) => !c.locked && c.progress < 100) || courses[0];
     const progressPercent = activeCourse?.progress ?? 0;
     const text = UI_TEXTS?.dashboard ?? {};
-    const visibleDailyQuests = dailyQuests.length > 0 ? dailyQuests : [
-        { title: 'Новые задания скоро появятся', reward: '0 XP', done: false, icon: 'Target', color: 'text-gray-400', link: View.PRACTICE },
-        { title: 'Решите задачу на арене', reward: 'Старт', done: false, icon: 'Zap', color: 'text-gray-400', link: View.PRACTICE },
-        { title: 'Откройте профиль и продолжайте путь', reward: 'Профиль', done: false, icon: 'Play', color: 'text-gray-400', link: View.PROFILE },
-    ];
+    const visibleDailyQuests = dailyQuests;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">

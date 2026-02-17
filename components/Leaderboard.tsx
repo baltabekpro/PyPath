@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Crown, ChevronUp, ChevronDown, Minus, Globe, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
-import { CURRENT_USER, LEADERBOARD, UI_TEXTS } from '../constants';
+import { CURRENT_USER, UI_TEXTS } from '../constants';
 import { apiGet } from '../api';
 
 const formatXP = (num: number) => {
@@ -32,7 +32,7 @@ const getTierColor = (tier: string) => {
 export const Leaderboard: React.FC = () => {
     const scope: 'global' = 'global';
     const period: 'all' = 'all';
-  const [leaders, setLeaders] = useState<any[]>(LEADERBOARD);
+    const [leaders, setLeaders] = useState<any[]>([]);
     const text = UI_TEXTS?.leaderboard ?? {};
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export const Leaderboard: React.FC = () => {
               const data = await apiGet<any[]>(`/leaderboard?scope=${scope}&period=${period}`);
               setLeaders(data);
           } catch {
-              setLeaders([...LEADERBOARD]);
+              setLeaders([]);
           }
       };
 

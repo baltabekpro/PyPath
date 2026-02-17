@@ -20,7 +20,28 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+    let message = `API request failed: ${response.status}`;
+    try {
+      const raw = await response.text();
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          const detail = parsed?.detail || parsed?.message;
+          if (typeof detail === 'string' && detail.trim()) {
+            message = detail;
+          } else {
+            message = raw;
+          }
+        } catch {
+          message = raw;
+        }
+      }
+    } catch {
+    }
+
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
   }
 
   return response.json() as Promise<T>;

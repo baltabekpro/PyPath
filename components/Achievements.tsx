@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Sparkles, Share2, X } from 'lucide-react';
-import { ACHIEVEMENTS, UI_TEXTS, getIconComponent } from '../constants';
+import { UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
 import { apiGet } from '../api';
 
@@ -42,7 +42,7 @@ export const Achievements: React.FC = () => {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [filter, setFilter] = useState<Category>('all');
     const [shareStatus, setShareStatus] = useState('');
-    const [achievements, setAchievements] = useState<any[]>(ACHIEVEMENTS);
+    const [achievements, setAchievements] = useState<any[]>([]);
     const text = UI_TEXTS?.achievements ?? {};
     const rarity = text.rarity ?? {};
     const ranks = text.ranks ?? [];
@@ -55,7 +55,7 @@ export const Achievements: React.FC = () => {
                 const data = await apiGet<any[]>(`/achievements?category=${filter}`);
                 setAchievements(data);
             } catch {
-                setAchievements(ACHIEVEMENTS.filter((a: any) => filter === 'all' || a.category === filter));
+                setAchievements([]);
             }
         };
 

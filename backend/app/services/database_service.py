@@ -1,6 +1,7 @@
 """Database service using SQLAlchemy"""
 from typing import List, Optional, Literal
 import ast
+from copy import deepcopy
 import re
 import subprocess
 import sys
@@ -60,6 +61,49 @@ BLOCKED_ATTRIBUTES = {
     "__class__",
     "__dict__",
     "__mro__",
+}
+
+DEFAULT_UI_DATA = {
+    "sidebarNavItems": [
+        {"view": "DASHBOARD", "label": "Главная", "icon": "LayoutGrid", "mobile": True},
+        {"view": "COURSES", "label": "Курсы", "icon": "Map", "mobile": True},
+        {"view": "PRACTICE", "label": "Арена", "icon": "Code", "mobile": True},
+        {"view": "AI_CHAT", "label": "Оракул", "icon": "Bot", "mobile": True},
+        {"view": "PROFILE", "label": "Профиль", "icon": "User", "mobile": True},
+        {"view": "LEADERBOARD", "label": "Рейтинг", "icon": "Trophy", "mobile": False},
+        {"view": "ACHIEVEMENTS", "label": "Достижения", "icon": "Sparkles", "mobile": False},
+        {"view": "SETTINGS", "label": "Настройки", "icon": "Shield", "mobile": False},
+    ],
+    "texts": {
+        "sidebar": {
+            "logoLine1": "Py",
+            "logoLine2": "Path",
+        },
+        "header": {
+            "xpLabel": "XP",
+            "searchPlaceholder": "Поиск",
+        },
+        "editor": {
+            "missionTab": "Задание",
+            "filesTab": "Файлы",
+            "goalsTitle": "Цели",
+            "knowledgeBaseTitle": "Теория",
+            "expectedOutputLabel": "Ожидаемый вывод",
+            "commonErrorsTitle": "Частые ошибки",
+            "miniCheckTitle": "Мини-проверка",
+            "askMentor": "Спросить у наставника",
+            "run": "Запуск",
+            "terminalTitle": "Терминал",
+            "successTitle": "Задание выполнено!",
+            "successXp": "+XP начислен",
+            "botMessages": {
+                "initial": "Я рядом. Могу подсказать следующий шаг 👋",
+                "running": "Проверяю код и результаты выполнения…",
+                "success": "Отлично! Всё выполнено верно ✅",
+                "error": "Есть неточность. Попробуем исправить вместе.",
+            },
+        },
+    },
 }
 
 
@@ -151,6 +195,27 @@ class DatabaseService:
     def _get_course_season(self, course_id: int) -> int:
         return ((course_id - 1) // COURSE_SEASON_SIZE) + 1
 
+    def _parse_course_id_from_chapter(self, chapter: Optional[str]) -> Optional[int]:
+        if not chapter:
+            return None
+        match = re.search(r"(\d+)", str(chapter))
+        if not match:
+            return None
+        try:
+            parsed = int(match.group(1))
+            return parsed if parsed > 0 else None
+        except (TypeError, ValueError):
+            return None
+
+    def _get_mission_counts_by_course(self) -> dict[int, int]:
+        counts: dict[int, int] = {}
+        for mission in self.get_missions():
+            course_id = self._parse_course_id_from_chapter(mission.chapter)
+            if not course_id:
+                continue
+            counts[course_id] = counts.get(course_id, 0) + 1
+        return counts
+
     def _normalize_user_course_progress(self, raw_progress: dict, courses: List[Course]) -> dict:
         normalized: dict = {}
         raw_progress = raw_progress if isinstance(raw_progress, dict) else {}
@@ -240,7 +305,13 @@ class DatabaseService:
         season_items = [entry for entry in progress.values() if entry.get("season") == season]
         return bool(season_items) and all(item.get("completed") for item in season_items)
 
-    def _advance_course_progress(self, user: Optional[User], requested_course_id: Optional[int] = None) -> dict:
+    def _advance_course_progress(
+        self,
+        user: Optional[User],
+        requested_course_id: Optional[int] = None,
+        completed_mission_id: Optional[str] = None,
+        count_completion: bool = False,
+    ) -> dict:
         courses = self._get_courses_ordered()
         if not courses or not user:
             return {
@@ -276,18 +347,42 @@ class DatabaseService:
                 "nextSeasonUnlocked": False,
             }
 
-        lesson_advanced = False
+        settings = self._get_user_settings(user)
+        raw_completed = settings.get("course_completed_missions")
+        completed_by_course = raw_completed if isinstance(raw_completed, dict) else {}
+        active_completed = completed_by_course.get(active_key)
+        if not isinstance(active_completed, list):
+            active_completed = []
+        active_completed = [str(item) for item in active_completed if item]
+
+        mission_added = False
+        if count_completion and completed_mission_id:
+            mission_id_str = str(completed_mission_id)
+            if mission_id_str not in active_completed:
+                active_completed.append(mission_id_str)
+                mission_added = True
+
+        completed_by_course[active_key] = active_completed
+
+        mission_counts = self._get_mission_counts_by_course()
+        configured_total_lessons = int(active_entry.get("totalLessons", 1) or 1)
+        configured_total_lessons = max(1, configured_total_lessons)
+        mission_total_lessons = int(mission_counts.get(active_course_id, 0) or 0)
+        total_lessons = (
+            max(1, min(configured_total_lessons, mission_total_lessons))
+            if mission_total_lessons > 0
+            else configured_total_lessons
+        )
+
+        previous_completed_lessons = int(active_entry.get("completedLessons", 0) or 0)
+        completed_lessons = min(len(active_completed), total_lessons)
+
+        lesson_advanced = mission_added and completed_lessons > previous_completed_lessons
         course_completed_now = False
         next_course_unlocked = False
 
-        completed_lessons = int(active_entry.get("completedLessons", 0) or 0)
-        total_lessons = int(active_entry.get("totalLessons", 1) or 1)
-
-        if completed_lessons < total_lessons:
-            completed_lessons += 1
-            lesson_advanced = True
-
         active_entry["completedLessons"] = completed_lessons
+        active_entry["totalLessons"] = total_lessons
         active_entry["progress"] = int(round((completed_lessons / total_lessons) * 100))
         active_entry["stars"] = max(int(active_entry.get("stars", 0) or 0), self._score_course_stars(completed_lessons, total_lessons))
         active_entry["updatedAt"] = datetime.utcnow().isoformat()
@@ -297,6 +392,21 @@ class DatabaseService:
             course_completed_now = True
 
         ordered_ids = sorted(int(key) for key in progress.keys())
+
+        # Enforce deterministic unlock chain based on previous course completion
+        for index, course_id in enumerate(ordered_ids):
+            key = str(course_id)
+            entry = progress.get(key)
+            if not isinstance(entry, dict):
+                continue
+            if index == 0:
+                entry["unlocked"] = True
+                continue
+            prev_entry = progress.get(str(ordered_ids[index - 1]))
+            should_unlock = bool(prev_entry.get("completed")) if isinstance(prev_entry, dict) else False
+            if should_unlock:
+                entry["unlocked"] = True
+
         if course_completed_now and active_course_id in ordered_ids:
             current_index = ordered_ids.index(active_course_id)
             if current_index < len(ordered_ids) - 1:
@@ -307,14 +417,14 @@ class DatabaseService:
                     next_entry["updatedAt"] = datetime.utcnow().isoformat()
                     next_course_unlocked = True
 
-        self._save_user_course_progress(user, progress)
+        settings["course_progress"] = progress
+        settings["course_completed_missions"] = completed_by_course
 
         active_season = active_entry.get("season")
         next_season_unlocked = False
         if isinstance(active_season, int):
             next_season_unlocked = self._is_season_completed(progress, active_season)
 
-            settings = self._get_user_settings(user)
             season_progress = settings.get("season_progress") if isinstance(settings.get("season_progress"), dict) else {}
             season_progress[str(active_season)] = {
                 "completed": bool(next_season_unlocked),
@@ -326,7 +436,7 @@ class DatabaseService:
             if next_season_unlocked and current_season <= active_season:
                 settings["current_season"] = active_season + 1
 
-            user.settings = settings
+        user.settings = settings
 
         return {
             "lessonAdvanced": lesson_advanced,
@@ -784,14 +894,225 @@ class DatabaseService:
         return results
 
     # Achievement operations
-    def get_achievements(self, category: str = "all") -> List[Achievement]:
-        """Get achievements with optional category filter"""
-        query = self.db.query(Achievement)
-        
-        if category != "all":
-            query = query.filter(Achievement.category == category)
+    def get_achievements(self, category: str = "all", user: Optional[User] = None) -> list[dict]:
+        """Get achievements with optional category filter and user-based progress"""
+        definitions = [
+            {
+                "id": 1,
+                "title": "Первый байт",
+                "description": "Решите первую миссию",
+                "flavorText": "Каждый большой путь начинается с маленького шага.",
+                "icon": "Code2",
+                "rarity": "common",
+                "category": "coding",
+                "maxProgress": 1,
+                "globalRate": 92.0,
+                "xpReward": 20,
+                "metric": "solved_missions",
+            },
+            {
+                "id": 2,
+                "title": "Практикант",
+                "description": "Решите 3 миссии",
+                "flavorText": "Тренировка превращает знания в навык.",
+                "icon": "Target",
+                "rarity": "rare",
+                "category": "coding",
+                "maxProgress": 3,
+                "globalRate": 68.0,
+                "xpReward": 40,
+                "metric": "solved_missions",
+            },
+            {
+                "id": 3,
+                "title": "Код-мастер",
+                "description": "Решите 10 миссий",
+                "flavorText": "Упорство и практика открывают уровень мастера.",
+                "icon": "Crown",
+                "rarity": "epic",
+                "category": "coding",
+                "maxProgress": 10,
+                "globalRate": 24.0,
+                "xpReward": 90,
+                "metric": "solved_missions",
+            },
+            {
+                "id": 4,
+                "title": "Серия 3",
+                "description": "Удерживайте серию 3 дня",
+                "flavorText": "Главный секрет — возвращаться к практике каждый день.",
+                "icon": "Flame",
+                "rarity": "rare",
+                "category": "streak",
+                "maxProgress": 3,
+                "globalRate": 44.0,
+                "xpReward": 50,
+                "metric": "streak_days",
+            },
+            {
+                "id": 5,
+                "title": "Огненная серия",
+                "description": "Удерживайте серию 7 дней",
+                "flavorText": "Семь дней подряд — это уже суперсила ученика.",
+                "icon": "Sparkles",
+                "rarity": "legendary",
+                "category": "streak",
+                "maxProgress": 7,
+                "globalRate": 9.0,
+                "xpReward": 140,
+                "metric": "streak_days",
+            },
+            {
+                "id": 6,
+                "title": "Первый пост",
+                "description": "Опубликуйте первую запись в сообществе",
+                "flavorText": "Делиться знаниями — важная часть обучения.",
+                "icon": "Gift",
+                "rarity": "common",
+                "category": "community",
+                "maxProgress": 1,
+                "globalRate": 56.0,
+                "xpReward": 25,
+                "metric": "community_posts",
+            },
+            {
+                "id": 7,
+                "title": "Голос сообщества",
+                "description": "Опубликуйте 5 записей",
+                "flavorText": "Ты вдохновляешь других своим прогрессом.",
+                "icon": "Trophy",
+                "rarity": "rare",
+                "category": "community",
+                "maxProgress": 5,
+                "globalRate": 16.0,
+                "xpReward": 60,
+                "metric": "community_posts",
+            },
+            {
+                "id": 8,
+                "title": "Секрет: Упорный",
+                "description": "Сделайте 15 попыток запуска",
+                "flavorText": "Ошибки — не помеха, а лестница к результату.",
+                "icon": "LockKeyhole",
+                "rarity": "epic",
+                "category": "secret",
+                "maxProgress": 15,
+                "globalRate": 13.0,
+                "xpReward": 80,
+                "metric": "total_attempts",
+            },
+            {
+                "id": 9,
+                "title": "Секрет: Финалист",
+                "description": "Завершите 3 курса",
+                "flavorText": "Ты умеешь доводить обучение до конца.",
+                "icon": "Sword",
+                "rarity": "legendary",
+                "category": "secret",
+                "maxProgress": 3,
+                "globalRate": 7.0,
+                "xpReward": 150,
+                "metric": "completed_courses",
+            },
+        ]
 
-        return query.all()
+        metrics = {
+            "solved_missions": 0,
+            "streak_days": 0,
+            "community_posts": 0,
+            "total_attempts": 0,
+            "completed_courses": 0,
+        }
+
+        unlock_dates: dict[str, str] = {}
+        should_save_unlock_dates = False
+
+        if user:
+            settings = self._get_user_settings(user)
+            mission_progress = settings.get("mission_progress") if isinstance(settings.get("mission_progress"), dict) else {}
+            mission_attempts = settings.get("mission_attempts") if isinstance(settings.get("mission_attempts"), dict) else {}
+            course_progress = settings.get("course_progress") if isinstance(settings.get("course_progress"), dict) else {}
+
+            metrics["solved_missions"] = sum(
+                1
+                for value in mission_progress.values()
+                if isinstance(value, dict) and value.get("completed")
+            )
+            metrics["streak_days"] = int(user.streak or 0)
+            metrics["total_attempts"] = sum(
+                int((value or {}).get("totalAttempts", 0) or 0)
+                for value in mission_attempts.values()
+                if isinstance(value, dict)
+            )
+            metrics["completed_courses"] = sum(
+                1
+                for value in course_progress.values()
+                if isinstance(value, dict) and value.get("completed")
+            )
+
+            post_author_candidates = [str(user.name or "").strip(), str(user.username or "").strip()]
+            post_author_candidates = [candidate for candidate in post_author_candidates if candidate]
+            if post_author_candidates:
+                metrics["community_posts"] = (
+                    self.db.query(Post)
+                    .filter(Post.author_name.in_(post_author_candidates))
+                    .count()
+                )
+
+            raw_unlock_dates = settings.get("achievement_unlock_dates")
+            if isinstance(raw_unlock_dates, dict):
+                unlock_dates = {str(key): str(value) for key, value in raw_unlock_dates.items()}
+
+        db_achievements = self.db.query(Achievement).all()
+        db_overrides = {int(item.id): item for item in db_achievements}
+
+        items: list[dict] = []
+        for definition in definitions:
+            achievement_id = int(definition["id"])
+            db_item = db_overrides.get(achievement_id)
+            max_progress = int(definition["maxProgress"])
+
+            if db_item:
+                max_progress = max(1, int(db_item.total or max_progress))
+
+            metric_name = str(definition["metric"])
+            current_raw = int(metrics.get(metric_name, 0) or 0)
+            progress = max(0, min(current_raw, max_progress))
+            unlocked = progress >= max_progress
+
+            key = str(achievement_id)
+            if unlocked and key not in unlock_dates and user:
+                unlock_dates[key] = datetime.utcnow().strftime("%d.%m.%Y")
+                should_save_unlock_dates = True
+
+            if category != "all" and definition["category"] != category:
+                continue
+
+            items.append(
+                {
+                    "id": achievement_id,
+                    "title": db_item.title if db_item and db_item.title else definition["title"],
+                    "description": db_item.description if db_item and db_item.description else definition["description"],
+                    "flavorText": definition["flavorText"],
+                    "icon": db_item.icon if db_item and db_item.icon else definition["icon"],
+                    "rarity": db_item.rarity if db_item and db_item.rarity else definition["rarity"],
+                    "category": db_item.category if db_item and db_item.category else definition["category"],
+                    "progress": int(progress),
+                    "maxProgress": int(max_progress),
+                    "total": int(max_progress),
+                    "unlocked": bool(unlocked),
+                    "date": unlock_dates.get(key),
+                    "globalRate": float(definition["globalRate"]),
+                    "xpReward": int(definition["xpReward"]),
+                }
+            )
+
+        if should_save_unlock_dates and user:
+            settings = self._get_user_settings(user)
+            settings["achievement_unlock_dates"] = unlock_dates
+            self._save_user_settings(user, settings)
+
+        return sorted(items, key=lambda item: int(item["id"]))
 
     # Leaderboard operations
     def get_leaderboard(
@@ -823,13 +1144,28 @@ class DatabaseService:
         mission_progress = settings.get("mission_progress") or {}
         solved = sum(1 for value in mission_progress.values() if isinstance(value, dict) and value.get("completed"))
 
-        coding_hours = settings.get("coding_hours")
-        if not isinstance(coding_hours, (int, float)):
-            coding_hours = 0
+        mission_attempts = settings.get("mission_attempts") if isinstance(settings.get("mission_attempts"), dict) else {}
+        total_attempts = 0
+        for attempt in mission_attempts.values():
+            if isinstance(attempt, dict):
+                total_attempts += int(attempt.get("totalAttempts", 0) or 0)
 
-        accuracy = settings.get("accuracy")
-        if not isinstance(accuracy, (int, float)):
-            accuracy = 0
+        if total_attempts > 0:
+            accuracy = int(round((solved / total_attempts) * 100))
+            accuracy = max(0, min(100, accuracy))
+        else:
+            accuracy = 100 if solved > 0 else 0
+
+        coding_hours = settings.get("coding_hours")
+        derived_hours = round(max(0.3, solved * 0.25, total_attempts * 0.12), 1) if (solved or total_attempts) else 0
+        if isinstance(coding_hours, (int, float)):
+            coding_hours = max(float(coding_hours), derived_hours)
+        else:
+            coding_hours = derived_hours
+
+        stored_accuracy = settings.get("accuracy")
+        if isinstance(stored_accuracy, (int, float)):
+            accuracy = int(max(0, min(100, stored_accuracy)))
 
         return {
             "totalXp": int(user.xp or 0),
@@ -844,7 +1180,28 @@ class DatabaseService:
             return []
         settings = self._get_user_settings(user)
         activity = settings.get("activity")
-        return activity if isinstance(activity, list) else []
+        if isinstance(activity, list) and activity:
+            return activity
+
+        mission_progress = settings.get("mission_progress") or {}
+        solved = sum(1 for value in mission_progress.values() if isinstance(value, dict) and value.get("completed"))
+        mission_attempts = settings.get("mission_attempts") if isinstance(settings.get("mission_attempts"), dict) else {}
+        total_attempts = sum(int((value or {}).get("totalAttempts", 0) or 0) for value in mission_attempts.values() if isinstance(value, dict))
+
+        from datetime import timedelta
+        today = datetime.utcnow().date()
+        baseline = max(0, int(user.xp or 0) // 8)
+        momentum = max(0, solved * 3 + total_attempts)
+
+        generated = []
+        for offset in range(6, -1, -1):
+            day = today - timedelta(days=offset)
+            day_gain = baseline + max(0, momentum - offset * 2)
+            generated.append({
+                "day": day.strftime("%a"),
+                "xp": int(max(0, day_gain)),
+            })
+        return generated
 
     def get_skills(self, user: Optional[User] = None) -> list:
         """Get user skills from persisted user settings"""
@@ -852,7 +1209,28 @@ class DatabaseService:
             return []
         settings = self._get_user_settings(user)
         skills = settings.get("skills")
-        return skills if isinstance(skills, list) else []
+        if isinstance(skills, list) and skills:
+            return skills
+
+        stats = self.get_stats(user)
+        solved = int(stats.get("problemsSolved", 0) or 0)
+        accuracy = int(stats.get("accuracy", 0) or 0)
+
+        logic = min(100, 20 + solved * 6)
+        syntax = min(100, 15 + solved * 7)
+        speed = min(100, 10 + solved * 5)
+        attention = min(100, max(15, accuracy))
+        creativity = min(100, 25 + solved * 4)
+        persistence = min(100, 20 + solved * 5)
+
+        return [
+            {"skill": "Логика", "value": logic},
+            {"skill": "Синтаксис", "value": syntax},
+            {"skill": "Скорость", "value": speed},
+            {"skill": "Внимательность", "value": attention},
+            {"skill": "Креативность", "value": creativity},
+            {"skill": "Упорство", "value": persistence},
+        ]
 
     def get_friends(self) -> list:
         """Community friends are disabled in solo mode"""
@@ -1089,11 +1467,16 @@ class DatabaseService:
         xp_earned = 0
 
         if user and all_completed:
-            course_progress = self._advance_course_progress(user, payload.courseId)
-            if not was_completed_before:
+            resolved_course_id = payload.courseId or self._parse_course_id_from_chapter(mission.chapter)
+            is_first_completion = not was_completed_before
+            course_progress = self._advance_course_progress(
+                user,
+                resolved_course_id,
+                completed_mission_id=mission_id,
+                count_completion=is_first_completion,
+            )
+            if is_first_completion:
                 xp_earned = int(mission.xp_reward or 0)
-            elif course_progress.get("lessonAdvanced"):
-                xp_earned = max(5, int((mission.xp_reward or 0) * 0.2))
 
             if xp_earned > 0:
                 user.xp = int(user.xp or 0) + xp_earned
@@ -1121,7 +1504,11 @@ class DatabaseService:
 
         return {
             "success": all_completed,
-            "message": "Миссия выполнена!" if all_completed else "Не все цели выполнены. Проверь условия задания.",
+            "message": (
+                "Задание уже выполнено ранее. XP начисляется только за первое прохождение."
+                if all_completed and was_completed_before
+                else ("Миссия выполнена!" if all_completed else "Не все цели выполнены. Проверь условия задания.")
+            ),
             "xpEarned": xp_earned,
             "objectives": updated_objectives,
             "terminalOutput": exec_result["stdout"],
@@ -1142,8 +1529,8 @@ class DatabaseService:
         }
 
     def get_ui_data(self) -> dict:
-        """UI metadata endpoint without JSON-backed mock data"""
-        return {}
+        """UI metadata endpoint backed by server-side defaults"""
+        return deepcopy(DEFAULT_UI_DATA)
 
     def get_logs(self) -> list:
         """System logs are not mocked and not persisted yet"""

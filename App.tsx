@@ -12,7 +12,7 @@ import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
 import { AuthPage } from './components/AuthPage';
 import { Menu, Bell } from 'lucide-react';
-import { APP_UI, UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
+import { UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
 import { ActionToast } from './components/ActionToast';
 import { notificationsApi, type NotificationItem } from './api';
 
@@ -65,18 +65,7 @@ const App: React.FC = () => {
         const notifications = await notificationsApi.getAll();
         setAppNotifications(notifications.items || []);
       } catch {
-        const savedNotifications = localStorage.getItem('appNotifications');
-        if (savedNotifications) {
-          setAppNotifications(JSON.parse(savedNotifications));
-        } else {
-          const fallback = (APP_UI?.notifications ?? []).map((n: any, idx: number) => ({
-            id: `fallback_${idx}`,
-            time: n.time,
-            text: n.text,
-            read: false,
-          }));
-          setAppNotifications(fallback);
-        }
+        setAppNotifications([]);
       }
 
       setIsBootstrapping(false);

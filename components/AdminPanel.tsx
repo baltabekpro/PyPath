@@ -8,6 +8,8 @@ interface AdminPanelProps {
   isAdmin: boolean;
 }
 
+const THEORY_HINT_PREFIX = '__THEORY__:';
+
 const emptyCourseForm = {
   title: '',
   description: '',
@@ -28,6 +30,7 @@ const emptyMissionForm = {
   xpReward: 50,
   starterCode: 'print("Привет, PyPath")\n',
   expectedOutput: 'Привет, PyPath',
+  theoryText: 'Объясните ученику, что нужно сделать и почему это важно.',
   hintsText: 'Проверьте отступы\nЗапустите код ещё раз',
   objectivesText: 'Выведите приветствие в консоль',
 };
@@ -79,10 +82,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       .map((line) => line.trim())
       .filter(Boolean);
 
+  const splitHintsAndTheory = (hints: any[]) => {
+    const normalizedHints = (hints || []).filter(Boolean).map((item) => String(item));
+    const theoryMeta = normalizedHints.find((item) => item.startsWith(THEORY_HINT_PREFIX));
+    const theoryText = theoryMeta ? theoryMeta.replace(THEORY_HINT_PREFIX, '').trim() : '';
+    const plainHints = normalizedHints.filter((item) => !item.startsWith(THEORY_HINT_PREFIX));
+    return { theoryText, plainHints };
+  };
+
   const buildMissionPayload = () => {
     const expectedOutput = missionForm.expectedOutput.trim();
     const objectiveLines = normalizeLines(missionForm.objectivesText);
     const hints = normalizeLines(missionForm.hintsText);
+    const theoryText = missionForm.theoryText.trim();
+
+    const serializedHints = theoryText
+      ? [`${THEORY_HINT_PREFIX}${theoryText}`, ...hints]
+      : hints;
 
     const objectives = objectiveLines.length
       ? objectiveLines.map((text) => ({ text, testCaseId: expectedOutput ? 'tc_output' : undefined }))
@@ -116,7 +132,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       difficulty: missionForm.difficulty.trim(),
       xpReward: Number(missionForm.xpReward),
       starterCode: missionForm.starterCode,
-      hints,
+      hints: serializedHints,
       objectives,
       testCases,
     };
@@ -131,6 +147,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       description: prev.description || 'Напишите код и получите нужный вывод в консоли.',
       starterCode: 'def main():\n    print("Привет, PyPath")\n\nmain()\n',
       expectedOutput: 'Привет, PyPath',
+      theoryText: 'Функция помогает организовать код. В этом задании создайте функцию и вызовите её.',
       hintsText: 'Создайте функцию main\nВызовите функцию в конце файла',
       objectivesText: 'Выведите приветствие в консоль\nЗапустите программу без ошибок',
     }));
@@ -250,6 +267,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
 
   const editMission = (mission: any) => {
     const outputCase = (mission.testCases || []).find((testCase: any) => testCase?.type === 'output_contains');
+    const { theoryText, plainHints } = splitHintsAndTheory(mission.hints || []);
     setEditingMissionId(String(mission.id));
     setMissionForm({
       id: String(mission.id || ''),
@@ -260,7 +278,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       xpReward: Number(mission.xpReward || 0),
       starterCode: mission.starterCode || 'print("Привет, PyPath")\n',
       expectedOutput: String(outputCase?.value || ''),
-      hintsText: (mission.hints || []).join('\n'),
+      theoryText: theoryText || mission.description || '',
+      hintsText: plainHints.join('\n'),
       objectivesText: (mission.objectives || []).map((o: any) => o?.text).filter(Boolean).join('\n'),
     });
   };
@@ -269,6 +288,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
     const sourceId = String(mission.id || 'mission');
     const duplicatedId = `${sourceId}_copy_${Date.now().toString().slice(-5)}`;
     const outputCase = (mission.testCases || []).find((testCase: any) => testCase?.type === 'output_contains');
+    const { theoryText, plainHints } = splitHintsAndTheory(mission.hints || []);
 
     setEditingMissionId(null);
     setMissionForm({
@@ -280,7 +300,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       xpReward: Number(mission.xpReward || 0),
       starterCode: mission.starterCode || 'print("Привет, PyPath")\n',
       expectedOutput: String(outputCase?.value || ''),
-      hintsText: (mission.hints || []).join('\n'),
+      theoryText: theoryText || mission.description || '',
+      hintsText: plainHints.join('\n'),
       objectivesText: (mission.objectives || []).map((o: any) => o?.text).filter(Boolean).join('\n'),
     });
 
@@ -412,6 +433,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
             </div>
             <input className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Название" value={missionForm.title} onChange={(e) => setMissionForm((p) => ({ ...p, title: e.target.value }))} />
             <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-20" placeholder="Описание" value={missionForm.description} onChange={(e) => setMissionForm((p) => ({ ...p, description: e.target.value }))} />
+            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-20" placeholder="Теория для ученика (что и почему нужно сделать)" value={missionForm.theoryText} onChange={(e) => setMissionForm((p) => ({ ...p, theoryText: e.target.value }))} />
             <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-24 font-mono text-xs" placeholder="Код-заготовка" value={missionForm.starterCode} onChange={(e) => setMissionForm((p) => ({ ...p, starterCode: e.target.value }))} />
             <input className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Ожидаемый текст в выводе (например: Привет)" value={missionForm.expectedOutput} onChange={(e) => setMissionForm((p) => ({ ...p, expectedOutput: e.target.value }))} />
             <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-16" placeholder="Цели задания (каждая с новой строки)" value={missionForm.objectivesText} onChange={(e) => setMissionForm((p) => ({ ...p, objectivesText: e.target.value }))} />

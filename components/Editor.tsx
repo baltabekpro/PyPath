@@ -5,7 +5,9 @@ import MonacoEditor from '@monaco-editor/react';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { EDITOR_UI, UI_TEXTS } from '../constants';
-import { missionApi, type MissionData, type MissionFile } from '../api';
+import { apiGet, missionApi, type MissionData, type MissionFile } from '../api';
+
+const THEORY_HINT_PREFIX = '__THEORY__:';
 
 // --- Types ---
 interface FileNode {
@@ -23,6 +25,140 @@ const getFileIcon = (name: string) => {
     if (name.endsWith('.json')) return <FileText size={16} className="text-yellow-400" />;
     return <FileText size={16} className="text-gray-500" />;
 }
+
+const extractCourseIdFromChapter = (chapter?: string | null): number | null => {
+    if (!chapter) return null;
+    const match = String(chapter).match(/(\d+)/);
+    if (!match) return null;
+    const value = Number(match[1]);
+    return Number.isFinite(value) && value > 0 ? value : null;
+};
+
+const buildTheoryFromMission = (details: MissionData, baseTheory?: string) => {
+    const title = details.chapter || 'Задание';
+    const description = (details.description || '').trim();
+    const objectives = (details.objectives || []).map((item: any) => String(item?.text || '')).filter(Boolean);
+    const textBase = `${description} ${objectives.join(' ')}`.toLowerCase();
+
+    if (baseTheory && baseTheory.trim()) {
+        return baseTheory.trim();
+    }
+
+    if (textBase.includes('цикл') || textBase.includes('for') || textBase.includes('ports')) {
+        return [
+            `${title}: как написать цикл for`,
+            '',
+            '1) Сначала создайте список:',
+            "ports = [22, 80, 443]",
+            '',
+            '2) Затем пройдитесь по списку циклом:',
+            'for port in ports:',
+            "    print('Проверяем порт', port)",
+            '',
+            'Важно: после строки с for нужен отступ в 4 пробела.',
+        ].join('\n');
+    }
+
+    if (textBase.includes('if') || textBase.includes('услов')) {
+        return [
+            `${title}: как написать условие if`,
+            '',
+            'age = 11',
+            'if age >= 10:',
+            "    print('Можно')",
+            'else:',
+            "    print('Пока рано')",
+            '',
+            'Сначала пишем условие, потом делаем отступ и действие.',
+        ].join('\n');
+    }
+
+    if (textBase.includes('функц') || textBase.includes('def')) {
+        return [
+            `${title}: как создать функцию`,
+            '',
+            'def hello(name):',
+            "    print('Привет,', name)",
+            '',
+            "hello('Миша')",
+            '',
+            'Функция создаётся через def, а потом её нужно вызвать.',
+        ].join('\n');
+    }
+
+    return [
+        `${title}: мини-шпаргалка`,
+        '',
+        '1) Выведите текст:',
+        "print('Привет, мир!')",
+        '',
+        '2) Сохраните значение в переменную:',
+        'name = "Аня"',
+        'print(name)',
+        '',
+        'Пишите код по шагам и запускайте после каждого небольшого изменения.',
+    ].join('\n');
+};
+
+const toKidFriendlyHint = (hint: string) => {
+    const normalized = (hint || '').trim();
+    const lower = normalized.toLowerCase();
+
+    if (!normalized) return '';
+
+    if (lower.includes('for port in ports') || (lower.includes('цикл') && lower.includes('ports'))) {
+        return 'Как сделать цикл: сначала список, потом for.\nports = [22, 80, 443]\nfor port in ports:\n    print(port)';
+    }
+
+    if (lower.includes('print') && lower.includes('порт')) {
+        return 'Внутри цикла добавьте вывод через print.\nfor port in ports:\n    print("Проверяем порт", port)';
+    }
+
+    if (lower.includes('access granted') || (lower.includes('верните') && lower.includes('функц'))) {
+        return 'Если нужно вернуть текст из функции:\ndef check():\n    return "ACCESS GRANTED"\n\nprint(check())';
+    }
+
+    if (lower.includes('if') || lower.includes('услов')) {
+        return 'Шаблон условия:\nif условие:\n    действие\nelse:\n    другое_действие';
+    }
+
+    if (lower.includes('отступ')) {
+        return 'После if/for/def всегда делайте отступ 4 пробела в следующей строке.';
+    }
+
+    return normalized;
+};
+
+const buildKidFriendlyCommonErrors = (details: MissionData, hintTexts: string[]) => {
+    const mapped = hintTexts.map(toKidFriendlyHint).filter(Boolean);
+    if (mapped.length > 0) {
+        return mapped;
+    }
+
+    const textBase = `${details.description || ''} ${(details.objectives || []).map((item: any) => item?.text || '').join(' ')}`.toLowerCase();
+
+    if (textBase.includes('цикл') || textBase.includes('for')) {
+        return [
+            'Проверьте, что цикл написан с двоеточием: for i in range(3):',
+            'Проверьте отступ внутри цикла (4 пробела).',
+            'Проверьте, что print находится внутри цикла, а не снаружи.',
+        ];
+    }
+
+    if (textBase.includes('if') || textBase.includes('услов')) {
+        return [
+            'После if обязательно ставьте двоеточие: if x > 0:',
+            'Сравнение пишется через ==, а не через =.',
+            'Проверьте отступы в блоках if/else.',
+        ];
+    }
+
+    return [
+        'Пишите код маленькими шагами и запускайте после каждого шага.',
+        'Проверьте имена переменных: одна буква ошибки ломает программу.',
+        'Сверьте вывод в консоли с формулировкой задания.',
+    ];
+};
 
 export const EditorComponent: React.FC = () => {
     const [mission, setMission] = useState<MissionData | null>(null);
@@ -48,6 +184,7 @@ export const EditorComponent: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
+    const [learningStep, setLearningStep] = useState<'theory' | 'practice'>('theory');
   
   // AI Bot State
   const [botEmotion, setBotEmotion] = useState<'idle' | 'thinking' | 'happy' | 'alert'>('idle');
@@ -60,6 +197,36 @@ export const EditorComponent: React.FC = () => {
   const saveTimeoutRef = useRef<number | null>(null);
 
   const activeFile = files.find(f => f.id === activeFileId);
+
+  const buildMissionLearning = (details: MissionData) => {
+      const outputTest = (details.testCases || []).find((testCase: any) => testCase?.type === 'output_contains');
+      const objectiveTexts = (details.objectives || [])
+          .map((objective: any) => objective?.text)
+          .filter(Boolean);
+      const allHints = (details.hints || []).filter(Boolean).map((item: any) => String(item));
+      const theoryMeta = allHints.find((item) => item.startsWith(THEORY_HINT_PREFIX));
+      const theoryText = theoryMeta ? theoryMeta.replace(THEORY_HINT_PREFIX, '').trim() : '';
+      const hintTexts = allHints.filter((item) => !item.startsWith(THEORY_HINT_PREFIX));
+
+    const generatedTheory = buildTheoryFromMission(details, theoryText);
+
+      const kidFriendlyErrors = buildKidFriendlyCommonErrors(details, hintTexts);
+
+      return {
+          theoryTitle: `Теория: ${details.chapter || 'Задание'}`,
+          theoryContent: generatedTheory || learningData.content || textLearning.content || 'Материал загружается',
+          expectedOutput: String(outputTest?.value || learningData.expectedOutput || textLearning.expectedOutput || 'Смотрите условие задания'),
+          commonErrors: kidFriendlyErrors.length
+              ? kidFriendlyErrors
+              : (learningData.commonErrors || textLearning.commonErrors || [
+                    'Проверьте отступы',
+                    'Проверьте имена переменных',
+                ]),
+          miniCheck: objectiveTexts.length
+              ? `Проверьте перед запуском: ${objectiveTexts.slice(0, 3).join('; ')}`
+              : (learningData.miniCheck || textLearning.miniCheck || 'Запустите код и сверяйте вывод с условием'),
+      };
+  };
 
   const mapFilesToEditorNodes = (workspaceFiles: MissionFile[], missionId: string): FileNode[] => {
       const normalized = (workspaceFiles || []).map((item) => ({
@@ -86,12 +253,19 @@ export const EditorComponent: React.FC = () => {
               missionApi.getProgress(missionId),
           ]);
 
+          const missionLearning = buildMissionLearning(details);
+
           const missionWithTheory = {
               ...details,
               objectives: progress?.objectives || details.objectives || [],
               theory: {
-                  title: learningData.title || textLearning.title || 'Теория',
-                  content: learningData.content || textLearning.content || 'Материал загружается',
+                  title: missionLearning.theoryTitle,
+                  content: missionLearning.theoryContent,
+              },
+              learning: {
+                  expectedOutput: missionLearning.expectedOutput,
+                  commonErrors: missionLearning.commonErrors,
+                  miniCheck: missionLearning.miniCheck,
               },
           } as any;
 
@@ -109,6 +283,7 @@ export const EditorComponent: React.FC = () => {
           const editorFiles = mapFilesToEditorNodes(workspaceFiles, missionWithTheory.id);
 
           setMission(missionWithTheory);
+          setLearningStep('theory');
           setFiles(editorFiles);
           setActiveFileId(workspace?.activeFileId || editorFiles.find((f) => f.type === 'file')?.id || 'main');
           setActiveMissionIndex(index);
@@ -128,7 +303,39 @@ export const EditorComponent: React.FC = () => {
               if (missions && missions.length > 0) {
                   hasMission = true;
                   setMissionList(missions);
-                  await loadMissionData(missions[0].id, 0);
+                  let resolvedCourseId: number | null = null;
+                  try {
+                      const courses = await apiGet<any[]>('/courses');
+                      const activeCourse = (courses || []).find((course: any) => !course?.locked && course?.status === 'in_progress')
+                          || (courses || []).find((course: any) => !course?.locked);
+                      const candidateId = Number(activeCourse?.id);
+                      if (Number.isFinite(candidateId) && candidateId > 0) {
+                          resolvedCourseId = candidateId;
+                      }
+                  } catch {
+                  }
+
+                  if (!resolvedCourseId) {
+                      const storedCourse = localStorage.getItem('activeCourseId');
+                      if (storedCourse) {
+                          const parsed = Number(storedCourse);
+                          if (Number.isFinite(parsed) && parsed > 0) {
+                              resolvedCourseId = parsed;
+                          }
+                      }
+                  }
+
+                  if (resolvedCourseId) {
+                      setActiveCourseId(resolvedCourseId);
+                      localStorage.setItem('activeCourseId', String(resolvedCourseId));
+                  }
+
+                  const preferredIndex = resolvedCourseId
+                      ? missions.findIndex((item) => extractCourseIdFromChapter(item.chapter) === resolvedCourseId)
+                      : -1;
+                  const initialIndex = preferredIndex >= 0 ? preferredIndex : 0;
+
+                  await loadMissionData(missions[initialIndex].id, initialIndex);
                   return;
               }
               setMissionList([]);
@@ -218,11 +425,13 @@ export const EditorComponent: React.FC = () => {
   };
 
   useEffect(() => {
-        if (!terminalRef.current) return;
+      if (isLoadingMission) return;
+      if (!terminalRef.current) return;
 
         let disposed = false;
         let term: Terminal | null = null;
         let fitTimeout: number | null = null;
+        let initRaf: number | null = null;
 
         const handleResize = () => {
             const container = terminalRef.current;
@@ -233,8 +442,13 @@ export const EditorComponent: React.FC = () => {
             }
         };
 
-        const initTimeout = window.setTimeout(() => {
+        const initTerminal = () => {
             if (disposed || !terminalRef.current || xtermInstance.current) return;
+            const container = terminalRef.current;
+            if (!container.isConnected || container.clientWidth === 0 || container.clientHeight === 0) {
+                initRaf = window.requestAnimationFrame(initTerminal);
+                return;
+            }
 
             term = new Terminal({
                 cursorBlink: true,
@@ -250,7 +464,12 @@ export const EditorComponent: React.FC = () => {
             const fit = new FitAddon();
             fitAddonRef.current = fit;
             term.loadAddon(fit);
-            term.open(terminalRef.current);
+            try {
+                term.open(container);
+            } catch {
+                term.dispose();
+                return;
+            }
 
             fitTimeout = window.setTimeout(() => {
                 const container = terminalRef.current;
@@ -264,20 +483,22 @@ export const EditorComponent: React.FC = () => {
             xtermInstance.current = term;
             term.writeln('\x1b[1;36mNeural Link Established...\x1b[0m');
             term.write('$ ');
-        }, 0);
+        };
+
+        initRaf = window.requestAnimationFrame(initTerminal);
 
         window.addEventListener('resize', handleResize);
 
         return () => {
             disposed = true;
             window.removeEventListener('resize', handleResize);
-            window.clearTimeout(initTimeout);
+            if (initRaf !== null) window.cancelAnimationFrame(initRaf);
             if (fitTimeout !== null) window.clearTimeout(fitTimeout);
             fitAddonRef.current = null;
             if (term) term.dispose();
             xtermInstance.current = null;
         };
-  }, []);
+    }, [isLoadingMission]);
 
     useEffect(() => {
         if (!isTerminalOpen || !fitAddonRef.current) return;
@@ -320,6 +541,12 @@ export const EditorComponent: React.FC = () => {
           objectives: result.objectives || prev?.objectives || [],
        }));
 
+       const activeCourseFromProgress = Number(result?.courseProgress?.activeCourseId);
+       if (Number.isFinite(activeCourseFromProgress) && activeCourseFromProgress > 0) {
+           setActiveCourseId(activeCourseFromProgress);
+           localStorage.setItem('activeCourseId', String(activeCourseFromProgress));
+       }
+
          if (result.terminalOutput) {
              result.terminalOutput.split('\n').forEach((line) => {
               if (line.trim()) term.writeln(line);
@@ -359,11 +586,16 @@ export const EditorComponent: React.FC = () => {
            if (!result.analysis) setBotMessage(result.message || botMessages.error || textBot.error);
        }
        term.write('$ ');
-    } catch (error) {
-       term.writeln('\x1b[31m[ERROR] Не удалось выполнить миссию\x1b[0m');
+     } catch (error: any) {
+         const errorMessage = String(error?.message || 'Не удалось выполнить миссию');
+         term.writeln('\x1b[31m[ERROR] Не удалось выполнить миссию\x1b[0m');
+         term.writeln(`\x1b[31m${errorMessage}\x1b[0m`);
+         if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('authentication required')) {
+             term.writeln('\x1b[33mПодсказка: войдите в аккаунт заново и повторите запуск.\x1b[0m');
+         }
        term.write('$ ');
        setBotEmotion('alert');
-       setBotMessage(botMessages.error || textBot.error);
+         setBotMessage(errorMessage || botMessages.error || textBot.error);
        console.error('Mission submit failed:', error);
     } finally {
        setIsRunning(false);
@@ -430,6 +662,29 @@ export const EditorComponent: React.FC = () => {
                     <p className="text-sm text-gray-400 mt-2 leading-relaxed">{mission.description}</p>
                 </div>
 
+                <div className="bg-[#1E293B] rounded-xl p-4 border border-white/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-300 mb-2">План урока</p>
+                    <div className="flex items-center gap-2 mb-3">
+                        <button
+                            onClick={() => setLearningStep('theory')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'theory' ? 'bg-arcade-primary text-white' : 'bg-white/5 text-gray-300'}`}
+                        >
+                            Шаг 1: Теория
+                        </button>
+                        <button
+                            onClick={() => setLearningStep('practice')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'practice' ? 'bg-arcade-success text-[#0F172A]' : 'bg-white/5 text-gray-300'}`}
+                        >
+                            Шаг 2: Практика
+                        </button>
+                    </div>
+                    <p className="text-xs text-gray-300">
+                        {learningStep === 'theory'
+                            ? 'Сначала прочитайте теорию и подсказки. Потом нажмите «Шаг 2: Практика».'
+                            : 'Теперь можно писать код и нажимать «Запуск».'}
+                    </p>
+                </div>
+
                 {/* Objectives */}
                 <div className="bg-[#1E293B] rounded-xl p-4 border border-white/5">
                     <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -465,7 +720,7 @@ export const EditorComponent: React.FC = () => {
                         <div className="bg-[#0F172A]/70 border border-white/5 rounded-lg p-3">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 mb-2">{text.expectedOutputLabel}</p>
                             <div className="font-mono text-xs text-emerald-200 bg-black/30 rounded-md p-2 border border-emerald-500/20">
-                                {learningData.expectedOutput || textLearning.expectedOutput}
+                                {(mission as any)?.learning?.expectedOutput || learningData.expectedOutput || textLearning.expectedOutput}
                             </div>
                         </div>
 
@@ -475,7 +730,7 @@ export const EditorComponent: React.FC = () => {
                                 {text.commonErrorsTitle}
                             </p>
                             <ul className="text-xs text-gray-300 space-y-1.5 list-disc pl-4">
-                                {(learningData.commonErrors || []).map((error: string, idx: number) => (
+                                {(((mission as any)?.learning?.commonErrors) || learningData.commonErrors || []).map((error: string, idx: number) => (
                                     <li key={idx}>{error}</li>
                                 ))}
                             </ul>
@@ -487,7 +742,7 @@ export const EditorComponent: React.FC = () => {
                                 {text.miniCheckTitle}
                             </p>
                             <p className="text-xs text-gray-300 leading-relaxed">
-                                    {learningData.miniCheck || textLearning.miniCheck}
+                                    {(mission as any)?.learning?.miniCheck || learningData.miniCheck || textLearning.miniCheck}
                             </p>
                         </div>
                     </div>
@@ -499,6 +754,15 @@ export const EditorComponent: React.FC = () => {
                         <Bot size={14} />
                         {text.askMentor}
                     </button>
+
+                    {learningStep === 'theory' && (
+                        <button
+                            onClick={() => setLearningStep('practice')}
+                            className="mt-2 w-full py-2 bg-arcade-success/20 hover:bg-arcade-success/35 text-arcade-success text-xs font-bold rounded-lg transition-colors border border-arcade-success/30"
+                        >
+                            Я прочитал(а), перейти к практике
+                        </button>
+                    )}
                 </div>
 
             </div>
@@ -550,11 +814,11 @@ export const EditorComponent: React.FC = () => {
                 </button>
                 <button 
                     onClick={runCode}
-                    disabled={isRunning}
+                    disabled={isRunning || learningStep !== 'practice'}
                     className="bg-arcade-action text-white px-4 py-1.5 rounded-lg font-black uppercase text-xs flex items-center gap-2 shadow-neon-orange hover:scale-105 transition-transform disabled:opacity-60"
                 >
                     {isRunning ? <Sparkles size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-                    <span>{text.run}</span>
+                    <span>{learningStep === 'practice' ? text.run : 'Сначала теория'}</span>
                 </button>
                 <button
                     onClick={() => switchMission(activeMissionIndex + 1)}
