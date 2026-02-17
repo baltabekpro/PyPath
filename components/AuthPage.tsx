@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Mail, User, Eye, EyeOff, Sparkles, Terminal } from 'lucide-react';
-import { apiPost } from '../api';
+import { apiGet, apiPost } from '../api';
 
 interface AuthPageProps {
     onAuthSuccess: (token: string, user: any) => void;
@@ -34,12 +34,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             localStorage.setItem('token', response.access_token);
             
             // Get user data
-            const userResponse = await fetch('http://localhost:8000/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${response.access_token}`
-                }
-            });
-            const userData = await userResponse.json();
+            const userData = await apiGet<any>('/auth/me');
             
             onAuthSuccess(response.access_token, userData);
         } catch (err: any) {
@@ -65,12 +60,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             localStorage.setItem('token', response.access_token);
             
             // Get user data
-            const userResponse = await fetch('http://localhost:8000/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${response.access_token}`
-                }
-            });
-            const userData = await userResponse.json();
+            const userData = await apiGet<any>('/auth/me');
             
             onAuthSuccess(response.access_token, userData);
         } catch (err: any) {

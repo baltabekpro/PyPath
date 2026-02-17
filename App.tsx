@@ -14,7 +14,7 @@ import { AuthPage } from './components/AuthPage';
 import { Menu, Bell } from 'lucide-react';
 import { UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
 import { ActionToast } from './components/ActionToast';
-import { notificationsApi, type NotificationItem } from './api';
+import { apiGet, notificationsApi, type NotificationItem } from './api';
 
 const AdminPanel = lazy(() => import('./components/AdminPanel').then((mod) => ({ default: mod.AdminPanel })));
 
@@ -40,18 +40,9 @@ const App: React.FC = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await fetch('http://localhost:8000/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            setCurrentUser(userData);
-            setIsAuthenticated(true);
-          } else {
-            localStorage.removeItem('token');
-          }
+          const userData = await apiGet<any>('/auth/me');
+          setCurrentUser(userData);
+          setIsAuthenticated(true);
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
