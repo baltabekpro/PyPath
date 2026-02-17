@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api-proxy/(.*)", "destination": "https://pypath-api.loca.lt/$1" },
+    { "source": "/api-proxy/(.*)", "destination": "http://94.131.85.176:8080/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
