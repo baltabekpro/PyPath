@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon-6uuhjn-x.svg" />
+    <title>PyPath Code Arcade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              arcade: {
+                bg: '#0F172A',        // Deep Space (Slate-900)
+                card: '#1E293B',      // Lighter Slate
+                primary: '#A855F7',   // Magic Purple
+                action: '#F97316',    // Action Orange
+                success: '#34D399',   // Emerald Green
+                mentor: '#22D3EE',    // Cyan Robot
+                danger: '#F43F5E',    // Rose Red
+                text: '#F1F5F9',      // Soft White
+                muted: '#94A3B8',     // Muted Slate
+              }
+            },
+            fontFamily: {
+              sans: ['Nunito', 'sans-serif'],
+              display: ['Outfit', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            boxShadow: {
+              'neon-purple': '0 0 15px rgba(168, 85, 247, 0.5)',
+              'neon-orange': '0 0 15px rgba(249, 115, 22, 0.5)',
+              'neon-green': '0 0 15px rgba(52, 211, 153, 0.5)',
+              'press': '0 4px 0 rgba(0,0,0,0.4)',
+              'press-active': '0 0px 0 rgba(0,0,0,0.4)',
+            },
+            animation: {
+              'float': 'float 3s ease-in-out infinite',
+              'bounce-sm': 'bounce-sm 2s infinite',
+              'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'shake': 'shake 0.4s ease-in-out',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              'bounce-sm': {
+                '0%, 100%': { transform: 'translateY(-5%)', animationTimingFunction: 'cubic-bezier(0.8,0,1,1)' },
+                '50%': { transform: 'translateY(0)', animationTimingFunction: 'cubic-bezier(0,0,0.2,1)' },
+              },
+              'pulse-glow': {
+                '0%, 100%': { opacity: 1, boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)' },
+                '50%': { opacity: .7, boxShadow: '0 0 10px rgba(168, 85, 247, 0.2)' },
+              },
+              shake: {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '25%': { transform: 'translateX(-5px)' },
+                '75%': { transform: 'translateX(5px)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@monaco-editor/react": "https://esm.sh/@monaco-editor/react@^4.6.0",
+    "xterm": "https://esm.sh/xterm@^5.3.0",
+    "xterm-addon-fit": "https://esm.sh/xterm-addon-fit@^0.8.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index-uWvFOx2C.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Beg8tuEN.css">
+</head>
+  <body class="bg-arcade-bg text-arcade-text font-sans antialiased overflow-hidden selection:bg-arcade-primary/30 selection:text-white">
+    <div id="root"></div>
+  </body>
+</html>

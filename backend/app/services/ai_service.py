@@ -11,7 +11,19 @@ class AIService:
     def __init__(self):
         settings = get_settings()
         genai.configure(api_key=settings.google_api_key)
-        self.model = genai.GenerativeModel(settings.gemini_model)
+        
+        # Configure generation settings for faster responses
+        generation_config = genai.types.GenerationConfig(
+            max_output_tokens=1024,  # Limit response length
+            temperature=0.7,  # Balance creativity and speed
+            top_p=0.95,
+            top_k=40,
+        )
+        
+        self.model = genai.GenerativeModel(
+            settings.gemini_model,
+            generation_config=generation_config
+        )
         self.chat_sessions: Dict[str, genai.ChatSession] = {}
         self.message_history: Dict[str, List[Dict[str, str]]] = {}
         
