@@ -23,7 +23,7 @@ interface FileNode {
 const getFileIcon = (name: string) => {
     if (name.endsWith('.py')) return <FileCode size={16} className="text-blue-400" />;
     if (name.endsWith('.json')) return <FileText size={16} className="text-yellow-400" />;
-    return <FileText size={16} className="text-gray-500" />;
+    return <FileText size={16} className="text-slate-500 dark:text-slate-300" />;
 }
 
 const extractCourseIdFromChapter = (chapter?: string | null): number | null => {
@@ -608,7 +608,7 @@ export const EditorComponent: React.FC = () => {
     <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A]">
         <div className="text-center">
           <div className="inline-block size-12 border-4 border-arcade-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-400 text-sm">Загрузка миссии...</p>
+          <p className="text-slate-600 dark:text-slate-300 text-sm">Загрузка миссии...</p>
         </div>
       </div>
     );
@@ -619,7 +619,7 @@ export const EditorComponent: React.FC = () => {
             <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A] p-6">
                 <div className="max-w-lg w-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
                     <p className="text-slate-900 dark:text-white font-bold mb-2">Арена пока недоступна</p>
-                    <p className="text-gray-400 text-sm">Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.</p>
+                    <p className="text-slate-600 dark:text-slate-300 text-sm">Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.</p>
                 </div>
             </div>
         );
@@ -638,17 +638,17 @@ export const EditorComponent: React.FC = () => {
         <div className="flex items-center p-2 gap-2 bg-slate-50 dark:bg-[#1E293B]/50 border-b border-slate-200 dark:border-white/5">
             <button 
                 onClick={() => setSidebarTab('mission')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'mission' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'mission' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
             >
                 <Flag size={14} /> {text.missionTab}
             </button>
             <button 
                 onClick={() => setSidebarTab('files')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'files' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'files' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
             >
                 <Folder size={14} /> {text.filesTab}
             </button>
-            <button onClick={() => setIsSidebarCollapsed(true)} className="p-2 text-gray-500 hover:text-slate-900 dark:hover:text-white"><PanelLeftClose size={16}/></button>
+            <button onClick={() => setIsSidebarCollapsed(true)} className="p-2 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"><PanelLeftClose size={16}/></button>
         </div>
 
         {/* --- MISSION TAB --- */}
@@ -659,7 +659,7 @@ export const EditorComponent: React.FC = () => {
                 <div>
                     <div className="text-[10px] text-arcade-action font-bold uppercase tracking-widest mb-1">{mission.chapter}</div>
                     <h2 className="text-xl font-display font-black text-slate-900 dark:text-white leading-tight">{mission.title}</h2>
-                    <p className="text-sm text-gray-400 mt-2 leading-relaxed">{mission.description}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">{mission.description}</p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-[#1E293B] rounded-xl p-4 border border-slate-200 dark:border-white/10">
@@ -678,7 +678,7 @@ export const EditorComponent: React.FC = () => {
                             Шаг 2: Практика
                         </button>
                     </div>
-                    <p className="text-xs text-gray-300">
+                    <p className="text-xs text-slate-700 dark:text-gray-300">
                         {learningStep === 'theory'
                             ? 'Сначала прочитайте теорию и подсказки. Потом нажмите «Шаг 2: Практика».'
                             : 'Теперь можно писать код и нажимать «Запуск».'}
@@ -687,7 +687,7 @@ export const EditorComponent: React.FC = () => {
 
                 {/* Objectives */}
                 <div className="bg-slate-50 dark:bg-[#1E293B] rounded-xl p-4 border border-slate-200 dark:border-white/5">
-                    <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <h3 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <CheckCircle2 size={14} className="text-arcade-success"/>
                         {text.goalsTitle}
                     </h3>
@@ -697,7 +697,7 @@ export const EditorComponent: React.FC = () => {
                                 <div className={`mt-0.5 size-4 rounded border flex items-center justify-center shrink-0 ${obj.completed ? 'bg-arcade-success border-arcade-success' : 'border-gray-600 bg-transparent'}`}>
                                     {obj.completed && <CheckCircle2 size={12} className="text-[#0F172A]" strokeWidth={3} />}
                                 </div>
-                                <span className={obj.completed ? 'text-gray-500 line-through' : 'text-slate-700 dark:text-gray-200'}>{obj.text}</span>
+                                <span className={obj.completed ? 'text-slate-500 dark:text-slate-300 line-through' : 'text-slate-700 dark:text-gray-200'}>{obj.text}</span>
                             </div>
                         ))}
                     </div>
@@ -772,7 +772,7 @@ export const EditorComponent: React.FC = () => {
         {sidebarTab === 'files' && (
             <div className="flex-1 py-2 overflow-y-auto custom-scrollbar bg-white dark:bg-[#0F172A]">
                      {files.filter(f => f.type === 'file').map(f => (
-                     <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-indigo-50 dark:bg-white/5 text-slate-900 dark:text-white' : 'border-transparent text-gray-500'}`} onClick={() => setActiveFileId(f.id)}>
+                     <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-indigo-50 dark:bg-white/5 text-slate-900 dark:text-white' : 'border-transparent text-slate-500 dark:text-slate-300'}`} onClick={() => setActiveFileId(f.id)}>
                         {getFileIcon(f.name)} <span>{f.name}</span>
                      </div>
                 ))}
@@ -787,10 +787,10 @@ export const EditorComponent: React.FC = () => {
         <div className="h-14 flex items-center justify-between px-4 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="flex items-center gap-2">
                 {isSidebarCollapsed && (
-                    <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 text-gray-400 hover:text-slate-900 dark:hover:text-white"><PanelLeftOpen size={20}/></button>
+                    <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"><PanelLeftOpen size={20}/></button>
                 )}
-                <span className="text-xs font-bold text-gray-400 md:hidden">{activeFile?.name}</span>
-                {!isSidebarCollapsed && <span className="text-xs font-bold text-gray-500 font-mono hidden md:inline-block">/ {activeFile?.name}</span>}
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 md:hidden">{activeFile?.name}</span>
+                {!isSidebarCollapsed && <span className="text-xs font-bold text-slate-500 dark:text-slate-300 font-mono hidden md:inline-block">/ {activeFile?.name}</span>}
              </div>
 
              <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none opacity-50 md:opacity-100">
@@ -801,14 +801,14 @@ export const EditorComponent: React.FC = () => {
                 <button
                     onClick={() => switchMission(activeMissionIndex - 1)}
                     disabled={activeMissionIndex <= 0 || isRunning}
-                    className="p-2 rounded-lg border border-slate-700 text-gray-300 disabled:opacity-40"
+                    className="p-2 rounded-lg border border-slate-700 text-slate-700 dark:text-gray-300 disabled:opacity-40"
                 >
                     <ChevronLeft size={16} />
                 </button>
                 <button
                     onClick={() => saveWorkspace(true)}
                     disabled={isSavingCode || isRunning}
-                    className="px-3 py-1.5 rounded-lg border border-slate-700 text-gray-200 text-xs font-bold uppercase flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-800 dark:text-gray-200 text-xs font-bold uppercase flex items-center gap-1.5 disabled:opacity-50"
                 >
                     <Save size={14} /> {isSavingCode ? 'Saving...' : 'Save'}
                 </button>
@@ -823,7 +823,7 @@ export const EditorComponent: React.FC = () => {
                 <button
                     onClick={() => switchMission(activeMissionIndex + 1)}
                     disabled={activeMissionIndex >= missionList.length - 1 || isRunning}
-                    className="p-2 rounded-lg border border-slate-700 text-gray-300 disabled:opacity-40"
+                    className="p-2 rounded-lg border border-slate-700 text-slate-700 dark:text-gray-300 disabled:opacity-40"
                 >
                     <ChevronRight size={16} />
                 </button>
@@ -898,9 +898,9 @@ export const EditorComponent: React.FC = () => {
                 >
                     <div className="flex items-center gap-2">
                         <TerminalIcon size={12} className="text-arcade-mentor" />
-                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest font-mono">{text.terminalTitle}</span>
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-gray-300 uppercase tracking-widest font-mono">{text.terminalTitle}</span>
                     </div>
-                    {isTerminalOpen ? <ChevronDown size={14} className="text-gray-500"/> : <ChevronDown size={14} className="text-gray-500 rotate-180"/>}
+                    {isTerminalOpen ? <ChevronDown size={14} className="text-slate-500 dark:text-slate-300"/> : <ChevronDown size={14} className="text-slate-500 dark:text-slate-300 rotate-180"/>}
                 </div>
                 <div className="flex-1 p-2 relative bg-slate-100 dark:bg-[#0c120e] overflow-hidden">
                     <div className="size-full" ref={terminalRef}></div>

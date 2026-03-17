@@ -141,12 +141,12 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     } catch {
                         showAction(text.toastShared);
                     }
-                }} className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-white hover:bg-white transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30">
+                }} className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-slate-200 dark:text-white hover:bg-white dark:hover:bg-white/20 transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30">
                     <Share2 size={20} />
                 </button>
                 <button 
                     onClick={() => setView(View.SETTINGS)}
-                    className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-white hover:bg-white transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 flex items-center gap-2"
+                    className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-slate-200 dark:text-white hover:bg-white dark:hover:bg-white/20 transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 flex items-center gap-2"
                 >
                     <Edit3 size={20} />
                     <span className="text-sm font-bold hidden md:inline">{text.edit}</span>
@@ -184,7 +184,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <h1 className="text-3xl md:text-5xl font-display font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                         {currentUser.name}
                     </h1>
-                    <p className="text-gray-400 font-medium max-w-lg mx-auto md:mx-0 leading-relaxed">
+                    <p className="text-slate-600 dark:text-gray-400 font-medium max-w-lg mx-auto md:mx-0 leading-relaxed">
                         {currentUser.bio || text.defaultBio}
                     </p>
                     
@@ -220,7 +220,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                             <Zap size={20} className="text-yellow-400" />
                                 {text.skillsMatrix || 'Матрица навыков'}
                         </h3>
-                        <div className="text-xs font-bold text-gray-500 bg-slate-100 dark:bg-black/30 px-2 py-1 rounded">{text.lastUpdated || 'Обновлено'}: {lastUpdatedLabel}</div>
+                        <div className="text-xs font-bold text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-black/30 px-2 py-1 rounded">{text.lastUpdated || 'Обновлено'}: {lastUpdatedLabel}</div>
                     </div>
                     
                     <div className="h-[300px] w-full relative z-10">
@@ -251,7 +251,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                             <div className="h-full w-full flex items-center justify-center text-center px-6">
                                 <div className="bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
                                     <p className="text-slate-900 dark:text-white font-bold mb-1">Навыки пока не заполнены</p>
-                                    <p className="text-gray-400 text-sm">Решите несколько задач на арене — график появится автоматически.</p>
+                                    <p className="text-slate-600 dark:text-gray-400 text-sm">Решите несколько задач на арене — график появится автоматически.</p>
                                 </div>
                             </div>
                         )}
@@ -263,7 +263,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                     <h3 className="font-display font-black text-xl text-slate-900 dark:text-white mb-4">Уровень после каждого задания</h3>
                                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                                         <div className="h-64 bg-slate-50 dark:bg-black/20 rounded-2xl p-3 border border-slate-200 dark:border-white/5">
-                                                        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Линейная динамика</p>
+                                                        <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-2">Линейная динамика</p>
                                                         {lineProgressData.length > 0 ? (
                                                             <ResponsiveContainer width="100%" height="90%">
                                                                 <LineChart data={lineProgressData}>
@@ -275,11 +275,11 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                                                 </LineChart>
                                                             </ResponsiveContainer>
                                                         ) : (
-                                                            <div className="h-full flex items-center justify-center text-sm text-gray-400">Недостаточно данных по заданиям</div>
+                                                            <div className="h-full flex items-center justify-center text-sm text-slate-600 dark:text-gray-400">Недостаточно данных по заданиям</div>
                                                         )}
                                                 </div>
                                                 <div className="h-64 bg-slate-50 dark:bg-black/20 rounded-2xl p-3 border border-slate-200 dark:border-white/5">
-                                                        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Прогресс по темам</p>
+                                                        <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-2">Прогресс по темам</p>
                                                         {topicProgressData.length > 0 ? (
                                                             <ResponsiveContainer width="100%" height="90%">
                                                                 <BarChart data={topicProgressData}>
@@ -291,7 +291,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                                                 </BarChart>
                                                             </ResponsiveContainer>
                                                         ) : (
-                                                            <div className="h-full flex items-center justify-center text-sm text-gray-400">Недостаточно данных по темам</div>
+                                                            <div className="h-full flex items-center justify-center text-sm text-slate-600 dark:text-gray-400">Недостаточно данных по темам</div>
                                                         )}
                                                 </div>
                                         </div>
@@ -313,10 +313,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                         <>
                                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                            <TrophyIcon size={28} className="text-white drop-shadow-md group-hover:scale-110 transition-transform" />
-                                           <span className="text-[10px] font-bold text-gray-300 text-center leading-tight px-1">{item.name}</span>
+                                           <span className="text-[10px] font-bold text-slate-700 dark:text-gray-300 text-center leading-tight px-1">{item.name}</span>
                                         </>
                                     ) : (
-                                        <Plus size={24} className="text-gray-600" />
+                                        <Plus size={24} className="text-gray-600 dark:text-gray-400" />
                                     )}
                                 </div>
                              );
@@ -332,15 +332,15 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <h3 className="font-bold text-slate-900 dark:text-white mb-4">Личный режим</h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
-                            <span className="text-gray-400">Рейтинг мира</span>
+                            <span className="text-slate-600 dark:text-gray-400">Рейтинг мира</span>
                             <span className="text-slate-900 dark:text-white font-bold">#{currentUser.rank}</span>
                         </div>
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
-                            <span className="text-gray-400">Текущая лига</span>
+                            <span className="text-slate-600 dark:text-gray-400">Текущая лига</span>
                             <span className="text-slate-900 dark:text-white font-bold">{currentUser.league || '—'}</span>
                         </div>
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
-                            <span className="text-gray-400">Серия дней</span>
+                            <span className="text-slate-600 dark:text-gray-400">Серия дней</span>
                             <span className="text-slate-900 dark:text-white font-bold">{currentUser.streak}</span>
                         </div>
                     </div>

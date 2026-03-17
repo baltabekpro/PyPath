@@ -82,7 +82,7 @@ export const Leaderboard: React.FC = () => {
 
           <div className="flex justify-center mb-6">
                <div className="flex gap-1 bg-slate-100 dark:bg-black/40 p-1 rounded-full border border-slate-200 dark:border-white/10 backdrop-blur-md">
-                                     <div className="px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-black shadow-neon-white">
+                                     <div className="px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-slate-900 shadow-neon-white">
                                          {text?.periods?.all || 'Все'}
                                      </div>
                </div>
@@ -108,7 +108,7 @@ export const Leaderboard: React.FC = () => {
                       <div className="size-20 md:size-24 rounded-full border-4 border-slate-300 shadow-[0_0_30px_rgba(203,213,225,0.3)] z-10 relative overflow-hidden bg-slate-800">
                           <img src={topThree[1].avatar} className="size-full object-cover" />
                       </div>
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-300 text-slate-900 font-black px-2 py-0.5 rounded text-xs z-20 shadow-lg border-2 border-slate-900">
+                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-300 text-slate-900 dark:text-slate-100 font-black px-2 py-0.5 rounded text-xs z-20 shadow-lg border-2 border-slate-900">
                           #2
                       </div>
                   </div>
@@ -165,7 +165,7 @@ export const Leaderboard: React.FC = () => {
                     className={`bg-[#1E293B] hover:bg-[#283548] border ${player.name === CURRENT_USER.name ? 'border-arcade-primary/50 bg-arcade-primary/5' : 'border-white/5'} hover:border-white/10 rounded-xl p-4 flex items-center gap-4 md:gap-6 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg group`}
                   >
                       {/* Rank */}
-                      <div className="font-mono font-bold text-gray-500 text-xl w-8 text-center group-hover:text-white transition-colors">
+                      <div className="font-mono font-bold text-slate-500 dark:text-gray-400 text-xl w-8 text-center group-hover:text-slate-900 dark:group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                           {player.displayRank}
                       </div>
 
@@ -173,7 +173,7 @@ export const Leaderboard: React.FC = () => {
                       <div className="flex flex-col items-center w-8">
                           {player.change === 'up' && <ChevronUp size={20} className="text-arcade-success" />}
                           {player.change === 'down' && <ChevronDown size={20} className="text-arcade-danger" />}
-                          {player.change === 'same' && <Minus size={20} className="text-gray-600" />}
+                          {player.change === 'same' && <Minus size={20} className="text-gray-600 dark:text-gray-400" />}
                           {player.changeAmount && (
                               <span className={`text-[10px] font-bold ${player.change === 'up' ? 'text-arcade-success' : 'text-arcade-danger'}`}>
                                   {player.change === 'up' ? '+' : '-'}{player.changeAmount}
@@ -188,13 +188,13 @@ export const Leaderboard: React.FC = () => {
                           </div>
                           <div>
                               <div className="flex items-center gap-2">
-                                  <h3 className={`font-bold text-base md:text-lg ${player.name === CURRENT_USER.name ? 'text-arcade-primary' : 'text-white'}`}>{player.name}</h3>
-                                  <div className="hidden sm:flex items-center gap-1 bg-black/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide text-gray-400 border border-white/5">
+                                  <h3 className={`font-bold text-base md:text-lg ${player.name === CURRENT_USER.name ? 'text-arcade-primary' : 'text-slate-900 dark:text-white'}`}>{player.name}</h3>
+                                  <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-100 dark:bg-black/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide text-slate-600 dark:text-gray-400 border border-white/5">
                                       {getTierIcon(player.tier)}
                                       <span>{player.league}</span>
                                   </div>
                               </div>
-                              <p className="text-xs text-gray-500 font-medium">{player.title}</p>
+                              <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">{player.title}</p>
                           </div>
                       </div>
 
@@ -224,8 +224,8 @@ export const Leaderboard: React.FC = () => {
                
                <div className="flex items-center gap-6">
                    <div className="text-right hidden md:block">
-                       <p className="text-[10px] text-gray-400 font-bold uppercase">{text.nextRank}</p>
-                       <div className="w-32 h-1.5 bg-gray-700 rounded-full mt-1 overflow-hidden">
+                       <p className="text-[10px] text-slate-600 dark:text-gray-400 font-bold uppercase">{text.nextRank}</p>
+                       <div className="w-32 h-1.5 bg-slate-200 dark:bg-slate-200 dark:bg-gray-700 rounded-full mt-1 overflow-hidden">
                            <div className="h-full bg-arcade-primary w-[75%] rounded-full shadow-[0_0_10px_#A855F7]"></div>
                        </div>
                    </div>

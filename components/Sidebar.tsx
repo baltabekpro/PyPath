@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isAdmin 
                 className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group relative overflow-hidden font-display font-bold text-lg active:scale-95 ${
                   currentView === item.view
                     ? 'bg-arcade-primary text-white shadow-neon-purple translate-x-2'
-                    : 'text-slate-500 dark:text-arcade-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+                    : 'text-slate-500 dark:text-slate-400 dark:text-arcade-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
                 }`}
               >
                 <item.Icon 

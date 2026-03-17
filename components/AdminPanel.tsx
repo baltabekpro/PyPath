@@ -36,7 +36,7 @@ const emptyMissionForm = {
 };
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
-  const formFieldClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:border-arcade-primary focus:outline-none shadow-inner transition-colors';
+  const formFieldClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:border-arcade-primary focus:outline-none shadow-inner transition-colors placeholder-slate-500 dark:placeholder-slate-400';
   const [activeTab, setActiveTab] = useState<Tab>('courses');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -354,7 +354,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       </div>
 
       {message && (
-        <div className="bg-arcade-primary/10 border border-arcade-primary/40 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white">
+        <div className="bg-arcade-primary/10 border border-arcade-primary/40 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 dark:text-white">
           {message}
         </div>
       )}
@@ -394,7 +394,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
             </div>
             <div className="flex gap-3">
               <button onClick={submitCourse} disabled={saving} className="px-4 py-2 rounded-lg bg-arcade-primary text-white font-bold flex items-center gap-2 disabled:opacity-50"><Save size={16} /> Сохранить</button>
-              {editingCourseId && <button onClick={() => { setEditingCourseId(null); setCourseForm(emptyCourseForm); }} className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white">Очистить</button>}
+              {editingCourseId && <button onClick={() => { setEditingCourseId(null); setCourseForm(emptyCourseForm); }} className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 dark:text-white">Очистить</button>}
             </div>
           </div>
 
@@ -407,7 +407,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
                   <p className="text-xs text-slate-500 dark:text-gray-400">{course.difficulty} • {course.totalLessons} уроков • {course.locked ? 'Locked' : 'Open'}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => editCourse(course)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">Изменить</button>
+                  <button onClick={() => editCourse(course)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 dark:text-white">Изменить</button>
                   <button onClick={() => duplicateCourse(course)} className="px-3 py-1.5 text-xs rounded bg-arcade-primary/20 text-arcade-primary">Копия</button>
                   <button onClick={() => removeCourse(course.id)} className="px-3 py-1.5 text-xs rounded bg-red-500/20 text-red-300 flex items-center gap-1"><Trash2 size={12} /> Удалить</button>
                 </div>
@@ -430,7 +430,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
               <input className={formFieldClass} placeholder="Сложность" value={missionForm.difficulty} onChange={(e) => setMissionForm((p) => ({ ...p, difficulty: e.target.value }))} />
             </div>
             <div className="flex gap-2 flex-wrap">
-              <button onClick={applyDemoMissionTemplate} type="button" className="px-3 py-1.5 text-xs rounded bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white">Подставить пример</button>
+              <button onClick={applyDemoMissionTemplate} type="button" className="px-3 py-1.5 text-xs rounded bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 dark:text-white">Подставить пример</button>
             </div>
             <input className={formFieldClass} placeholder="Название" value={missionForm.title} onChange={(e) => setMissionForm((p) => ({ ...p, title: e.target.value }))} />
             <textarea className={`${formFieldClass} min-h-20`} placeholder="Описание" value={missionForm.description} onChange={(e) => setMissionForm((p) => ({ ...p, description: e.target.value }))} />
@@ -442,7 +442,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
             <p className="text-xs text-slate-500 dark:text-gray-400">Проверка задания будет идти по ожидаемому тексту в выводе и по факту запуска без ошибок.</p>
             <div className="flex gap-3">
               <button onClick={submitMission} disabled={saving} className="px-4 py-2 rounded-lg bg-arcade-primary text-white font-bold flex items-center gap-2 disabled:opacity-50"><Save size={16} /> Сохранить</button>
-              {editingMissionId && <button onClick={() => { setEditingMissionId(null); setMissionForm(emptyMissionForm); }} className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white">Очистить</button>}
+              {editingMissionId && <button onClick={() => { setEditingMissionId(null); setMissionForm(emptyMissionForm); }} className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 dark:text-white">Очистить</button>}
             </div>
           </div>
 
@@ -455,7 +455,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
                   <p className="text-xs text-slate-500 dark:text-gray-400 truncate">{mission.title} • XP {mission.xpReward}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => editMission(mission)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">Изменить</button>
+                  <button onClick={() => editMission(mission)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 dark:text-white">Изменить</button>
                   <button onClick={() => duplicateMission(mission)} className="px-3 py-1.5 text-xs rounded bg-arcade-primary/20 text-arcade-primary">Копия</button>
                   <button onClick={() => removeMission(mission.id)} className="px-3 py-1.5 text-xs rounded bg-red-500/20 text-red-300 flex items-center gap-1"><Trash2 size={12} /> Удалить</button>
                 </div>

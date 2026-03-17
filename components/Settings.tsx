@@ -208,7 +208,7 @@ export const Settings: React.FC = () => {
                   <img src={formData.avatar} alt="Avatar" className="size-12 md:size-16 rounded-full border-2 border-arcade-primary bg-black object-cover relative z-10" />
                   <div className="relative z-10 overflow-hidden">
                     <p className="text-slate-900 dark:text-white font-bold text-base md:text-lg truncate">{formData.name}</p>
-                    <p className="text-slate-500 dark:text-py-muted text-xs md:text-sm truncate">{formData.email}</p>
+                    <p className="text-slate-500 dark:text-slate-400 dark:text-py-muted text-xs md:text-sm truncate">{formData.email}</p>
                   </div>
               </div>
 
@@ -223,7 +223,7 @@ export const Settings: React.FC = () => {
                                                     className={`w-full flex items-center gap-4 px-6 py-4 text-sm font-medium transition-colors border-b border-slate-200 dark:border-white/5 last:border-0 relative ${activeTab === item.id ? 'bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
                                                 >
                                                         <div className={`absolute left-0 top-0 bottom-0 w-1 bg-arcade-primary transition-all duration-300 ${activeTab === item.id ? 'opacity-100 h-full' : 'opacity-0 h-0'}`}></div>
-                                                        <TabIcon size={18} className={activeTab === item.id ? 'text-arcade-primary' : 'text-gray-500'} />
+                                                        <TabIcon size={18} className={activeTab === item.id ? 'text-arcade-primary' : 'text-slate-500 dark:text-gray-400'} />
                                                         {item.label}
                                                         {activeTab === item.id && <ArrowRight size={14} className="ml-auto text-arcade-primary animate-pulse" />}
                                                 </button>
@@ -278,7 +278,7 @@ export const Settings: React.FC = () => {
                    <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 uppercase flex items-center gap-2">
                                     <AtSign size={14} /> {text.nickname}
                                 </label>
                                 <div className="relative">
@@ -292,7 +292,7 @@ export const Settings: React.FC = () => {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 uppercase flex items-center gap-2">
                                     <Mail size={14} /> Email
                                 </label>
                                 <input 
@@ -306,7 +306,7 @@ export const Settings: React.FC = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-600 dark:text-gray-400 uppercase flex items-center gap-2">
                                 <FileText size={14} /> {text.about}
                             </label>
                             <textarea 

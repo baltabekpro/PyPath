@@ -226,7 +226,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                     <p className="text-xs text-slate-500 dark:text-slate-400">{topic.section}</p>
                     <p className="font-semibold text-sm">{topic.title}</p>
                     <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">Теория + {topic.practices.length} практик</p>
-                    <p className="text-xs mt-1 text-emerald-700">Выполнено: {done}/{topic.practices.length}</p>
+                    <p className="text-xs mt-1 text-emerald-700 dark:text-emerald-400">Выполнено: {done}/{topic.practices.length}</p>
                   </button>
                 );
               })}
@@ -259,7 +259,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                 <div>
                   <h3 className="font-semibold mb-3">2. Практика ({selectedTopic.practices.length} заданий)</h3>
                   {!topicProgress.theoryOpened && (
-                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
                       Сначала откройте теорию, после этого практические задания станут активными.
                     </p>
                   )}

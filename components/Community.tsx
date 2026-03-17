@@ -137,7 +137,7 @@ export const Community: React.FC = () => {
                             <button onClick={() => setShowPreview((prev) => !prev)} className="text-xs font-bold text-py-muted hover:text-white transition-colors">{text.preview}</button>
                         </div>
                         {showPreview && draftPost.trim() && (
-                            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-gray-300 whitespace-pre-wrap">
+                            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap">
                                 {draftPost}
                             </div>
                         )}
@@ -182,7 +182,7 @@ export const Community: React.FC = () => {
                             <button onClick={() => sharePost(post)} className="text-py-muted hover:text-white"><MoreHorizontal size={18}/></button>
                         </div>
 
-                        <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                        <p className="text-slate-700 dark:text-gray-300 text-sm leading-relaxed mb-4">
                             {post.content}
                         </p>
 
@@ -258,7 +258,7 @@ export const Community: React.FC = () => {
                             <div className="relative">
                                 <img src={contributor.avatar} className="size-10 rounded-full" alt={contributor.name} />
                                 <div className="absolute -top-1 -right-1 bg-py-dark rounded-full p-0.5">
-                                    <div className="bg-yellow-500 text-[8px] font-bold text-black size-4 flex items-center justify-center rounded-full">
+                                    <div className="bg-yellow-500 text-[8px] font-bold text-slate-900 size-4 flex items-center justify-center rounded-full">
                                         {i + 1}
                                     </div>
                                 </div>

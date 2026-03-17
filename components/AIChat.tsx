@@ -152,7 +152,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                     <div className={`size-8 rounded-full bg-cyan-400 blur-md opacity-60 animate-pulse-glow ${oracleState === 'alert' ? 'bg-orange-500' : ''}`}></div>
                     
                     {/* Mascott Icon */}
-                    <Bot size={28} className={`relative z-20 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-colors duration-300 ${oracleState === 'alert' ? 'text-orange-100' : ''}`} />
+                    <Bot size={28} className={`relative z-20 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-colors duration-300 ${oracleState === 'alert' ? 'text-orange-900 dark:text-orange-100' : ''}`} />
                 </div>
 
                 {/* Rotating Rings (Analyzing State) */}
@@ -193,14 +193,14 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                         
                         {/* Energy Bar */}
                         <div className={`flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5 ${embedded ? 'mr-10' : ''}`}>
-                            <Zap size={12} className={energy > 0 ? "text-yellow-400 fill-yellow-400" : "text-gray-600"} />
+                            <Zap size={12} className={energy > 0 ? "text-yellow-400 fill-yellow-400" : "text-gray-600 dark:text-gray-400"} />
                             <span className="text-xs font-mono font-bold text-yellow-100">{energy}/5</span>
                         </div>
 
                         {!embedded && (
                             <button 
                                 onClick={() => setIsOpen(false)}
-                                className="absolute -top-2 -right-2 p-4 text-gray-400 hover:text-white transition-colors"
+                                className="absolute -top-2 -right-2 p-4 text-slate-600 dark:text-gray-400 hover:text-white transition-colors"
                             >
                                 <X size={18} />
                             </button>
@@ -221,7 +221,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                     ${msg.sender === 'user' 
                                         ? 'bg-cyan-600 text-white rounded-tr-none' 
                                         : msg.type === 'error'
-                                            ? 'bg-orange-900/20 border border-orange-500/30 text-orange-100 rounded-tl-none'
+                                            ? 'bg-orange-100 dark:bg-orange-900/20 border border-orange-500/30 text-orange-900 dark:text-orange-100 rounded-tl-none'
                                             : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-100 rounded-tl-none'
                                     }
                                 `}>
@@ -275,7 +275,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyPress} 
                                 placeholder={AI_CHAT_DATA?.inputPlaceholder || text.inputPlaceholder} 
-                                className="w-full bg-transparent border-b border-slate-300 dark:border-white/10 py-3 pl-2 pr-10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:border-arcade-primary outline-none transition-colors font-mono text-sm"
+                                className="w-full bg-transparent border-b border-slate-300 dark:border-white/10 py-3 pl-2 pr-10 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-arcade-primary outline-none transition-colors font-mono text-sm"
                             />
                             <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500 w-0 group-focus-within:w-full transition-all duration-500"></div>
                             <button 

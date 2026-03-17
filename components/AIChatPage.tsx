@@ -191,7 +191,7 @@ export const AIChatPage: React.FC = () => {
           <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-cyan-900/30 bg-slate-100/80 dark:bg-cyan-950/10">
               <div className="flex items-center min-w-0">
                   <Activity size={18} className="text-indigo-600 dark:text-cyan-400 mr-3 animate-pulse" />
-                  <span className="text-xs font-bold text-slate-700 dark:text-cyan-100 tracking-[0.2em] truncate">{text.neuralHistory}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-cyan-100 tracking-[0.2em] truncate">{text.neuralHistory}</span>
               </div>
               <button
                 onClick={handleNewChat}
@@ -217,11 +217,11 @@ export const AIChatPage: React.FC = () => {
                           </span>
                       </div>
                       <p className="text-xs text-slate-700 dark:text-slate-300 font-medium group-hover:text-indigo-700 dark:group-hover:text-cyan-200 truncate">{log.msg}</p>
-                      {log.preview ? <p className="text-[10px] text-slate-500 dark:text-slate-500 truncate mt-1">{log.preview}</p> : null}
+                      {log.preview ? <p className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 truncate mt-1">{log.preview}</p> : null}
                   </button>
               ))}
               {chatHistoryLogs.length === 0 ? (
-                <div className="text-xs text-slate-500 dark:text-slate-500">Чатов пока нет. Нажмите + чтобы начать.</div>
+                <div className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400">Чатов пока нет. Нажмите + чтобы начать.</div>
               ) : null}
           </div>
 
@@ -251,7 +251,7 @@ export const AIChatPage: React.FC = () => {
                   <div className="h-4 w-px bg-slate-300 dark:bg-cyan-900/50"></div>
                   <div className="flex items-center gap-2">
                       <span className={`size-2 rounded-full ${coreState === 'processing' ? 'bg-yellow-400 animate-ping' : 'bg-green-500'}`}></span>
-                      <span className="text-[10px] font-bold text-slate-600 dark:text-cyan-200 uppercase tracking-widest">
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 dark:text-cyan-200 uppercase tracking-widest">
                           {coreState === 'processing' ? text.processing : text.ready}
                       </span>
                   </div>
@@ -338,7 +338,7 @@ export const AIChatPage: React.FC = () => {
                                   max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed shadow-xl backdrop-blur-sm border
                                   ${msg.sender === 'user'
                                       ? 'bg-indigo-100 dark:bg-indigo-600/20 border-indigo-300 dark:border-indigo-500/30 text-indigo-900 dark:text-indigo-100 rounded-tr-none'
-                                      : 'bg-white dark:bg-[#0F172A]/80 border-slate-200 dark:border-cyan-500/20 text-slate-800 dark:text-cyan-50 rounded-tl-none'
+                                      : 'bg-white dark:bg-[#0F172A]/80 border-slate-200 dark:border-cyan-500/20 text-slate-800 dark:text-slate-200 dark:text-cyan-50 rounded-tl-none'
                                   }
                               `}>
                                   {msg.sender === 'ai' && <div className="text-[10px] font-bold text-indigo-600 dark:text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> {text.responseOutput}</div>}
@@ -380,7 +380,7 @@ export const AIChatPage: React.FC = () => {
                               onChange={(e) => setInputValue(e.target.value)}
                               onKeyDown={handleKeyPress}
                               placeholder={AI_CHAT_PAGE_DATA?.inputPlaceholder || text.inputPlaceholder} 
-                              className="w-full bg-transparent border-none text-slate-900 dark:text-cyan-100 placeholder-slate-400 dark:placeholder-cyan-900/50 focus:ring-0 outline-none h-10 font-mono text-sm"
+                              className="w-full bg-transparent border-none text-slate-900 dark:text-cyan-100 placeholder-slate-500 dark:placeholder-cyan-700/50 focus:ring-0 outline-none h-10 font-mono text-sm"
                           />
                           <button 
                               onClick={() => handleSend()}
@@ -392,7 +392,7 @@ export const AIChatPage: React.FC = () => {
                       </div>
                   </div>
                   <div className="text-center mt-3">
-                      <p className="text-[10px] text-slate-500 dark:text-slate-500 font-bold tracking-widest uppercase">{text.safeNotice}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">{text.safeNotice}</p>
                   </div>
               </div>
 

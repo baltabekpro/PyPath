@@ -85,7 +85,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                         <Terminal size={40} className="text-white" strokeWidth={2.5} />
                     </div>
                     <h1 className="text-4xl font-display font-black text-white mb-2">PyPath</h1>
-                    <p className="text-gray-400 font-medium">Взломай путь к знаниям</p>
+                    <p className="text-slate-600 dark:text-gray-400 font-medium">Взломай путь к знаниям</p>
                 </div>
 
                 {/* Auth Card */}
@@ -97,7 +97,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
                                 isLogin 
                                     ? 'bg-arcade-primary text-white shadow-lg' 
-                                    : 'text-gray-400 hover:text-white'
+                                    : 'text-slate-600 dark:text-gray-400 hover:text-white'
                             }`}
                         >
                             Вход
@@ -107,7 +107,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
                                 !isLogin 
                                     ? 'bg-arcade-action text-white shadow-lg' 
-                                    : 'text-gray-400 hover:text-white'
+                                    : 'text-slate-600 dark:text-gray-400 hover:text-white'
                             }`}
                         >
                             Регистрация
@@ -125,9 +125,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     {isLogin ? (
                         <form onSubmit={handleLogin} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-400 mb-2">Логин</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Логин</label>
                                 <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
                                         type="text"
                                         value={loginData.username}
@@ -140,9 +140,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-400 mb-2">Пароль</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Пароль</label>
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={loginData.password}
@@ -154,7 +154,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 hover:text-white transition-colors"
                                     >
                                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
@@ -178,9 +178,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                         /* Register Form */
                         <form onSubmit={handleRegister} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-400 mb-2">Логин</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Логин</label>
                                 <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
                                         type="text"
                                         value={registerData.username}
@@ -193,9 +193,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-400 mb-2">Email</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Email</label>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
                                         type="email"
                                         value={registerData.email}
@@ -208,9 +208,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-400 mb-2">Полное имя</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Полное имя</label>
                                 <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
                                         type="text"
                                         value={registerData.fullName}
@@ -223,9 +223,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-400 mb-2">Пароль</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Пароль</label>
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={registerData.password}
@@ -237,7 +237,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 hover:text-white transition-colors"
                                     >
                                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
@@ -261,7 +261,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </div>
 
                 {/* Footer Text */}
-                <p className="text-center text-gray-500 text-sm mt-6">
+                <p className="text-center text-slate-500 dark:text-gray-400 text-sm mt-6">
                     Присоединяйся к тысячам разработчиков
                 </p>
             </div>

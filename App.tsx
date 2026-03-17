@@ -156,7 +156,7 @@ const App: React.FC = () => {
               <div className="min-h-[40vh] flex items-center justify-center">
                 <div className="text-center">
                   <div className="size-8 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-xs text-gray-400">Загружаем админку...</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Загружаем админку...</p>
                 </div>
               </div>
             }
@@ -211,7 +211,7 @@ const App: React.FC = () => {
            <div className="md:hidden absolute top-4 left-4 z-20">
                <button 
                  onClick={() => setIsMobileMenuOpen(true)}
-                 className="p-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                 className="p-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-900 dark:hover:text-slate-900 dark:hover:text-white"
                >
                  <Menu size={20} />
                </button>
@@ -288,7 +288,7 @@ const App: React.FC = () => {
                     }
                     showToast(appText.markAllRead, 'success');
                   }}
-                  className="w-full mt-1 py-2 text-xs font-bold text-arcade-primary hover:text-white transition-colors"
+                  className="w-full mt-1 py-2 text-xs font-bold text-arcade-primary hover:text-slate-900 dark:hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   {appText.markAllRead}
                 </button>

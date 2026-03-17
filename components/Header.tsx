@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
       {/* Mobile Menu Toggle */}
       <button 
         onClick={onMenuClick}
-        className="md:hidden p-2 bg-slate-100 dark:bg-white/10 rounded-xl text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors mr-2"
+        className="md:hidden p-2 bg-slate-100 dark:bg-white/10 rounded-xl text-slate-700 dark:text-slate-300 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors mr-2"
       >
           <Menu size={24} />
       </button>
@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
              </div>
              <div className="flex flex-col min-w-[140px]">
                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-1">
-                   <span className="text-slate-700 dark:text-white">{text.xpLabel}</span>
+                   <span className="text-slate-700 dark:text-slate-300 dark:text-white">{text.xpLabel}</span>
                  <span className="text-arcade-action">{currentUser.xp} / {maxXp}</span>
                  </div>
                  <div className="w-full h-2.5 bg-slate-200 dark:bg-gray-800 rounded-full overflow-hidden border border-slate-300 dark:border-white/5">
