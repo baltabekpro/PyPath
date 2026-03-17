@@ -20,7 +20,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     useEffect(() => {
         const loadDashboardData = async () => {
             try {
-                const [user, statsData, missionsData, coursesData, uiData, topicsData, progressData] = await Promise.all([
+                const [
+                    userResult,
+                    statsResult,
+                    missionsResult,
+                    coursesResult,
+                    uiDataResult,
+                    topicsDataResult,
+                    progressDataResult,
+                ] = await Promise.allSettled([
                     apiGet<any>('/currentUser'),
                     apiGet<any>('/stats'),
                     apiGet<any[]>('/missions'),
@@ -29,13 +37,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                     apiGet<any[]>('/courses/journey'),
                     apiGet<any>('/courses/journey/progress')
                 ]);
-                setCurrentUser(user);
-                setStats(statsData);
-                setMissions(missionsData);
-                setCourses(coursesData);
-                setDailyQuests(uiData?.dashboard?.dailyQuests || []);
-                setJourneyTopics(Array.isArray(topicsData) ? topicsData : []);
-                setJourneyProgress(progressData && typeof progressData === 'object' ? progressData : {});
+
+                if (userResult.status === 'fulfilled') setCurrentUser(userResult.value);
+                if (statsResult.status === 'fulfilled') setStats(statsResult.value);
+                if (missionsResult.status === 'fulfilled') setMissions(missionsResult.value);
+                if (coursesResult.status === 'fulfilled') setCourses(coursesResult.value);
+                if (uiDataResult.status === 'fulfilled') setDailyQuests(uiDataResult.value?.dashboard?.dailyQuests || []);
+                if (topicsDataResult.status === 'fulfilled') setJourneyTopics(Array.isArray(topicsDataResult.value) ? topicsDataResult.value : []);
+                if (progressDataResult.status === 'fulfilled') {
+                    setJourneyProgress(progressDataResult.value && typeof progressDataResult.value === 'object' ? progressDataResult.value : {});
+                }
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
             }

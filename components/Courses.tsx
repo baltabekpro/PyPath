@@ -21,14 +21,21 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   useEffect(() => {
     const loadCourses = async () => {
         try {
-            const [coursesData, topicsData, progressData] = await Promise.all([
-              apiGet<any[]>('/courses'),
-              apiGet<any[]>('/courses/journey'),
-              apiGet<any>('/courses/journey/progress'),
-            ]);
-            setCourses(coursesData);
-            setJourneyTopics(Array.isArray(topicsData) ? topicsData : []);
-            setJourneyProgress(progressData && typeof progressData === 'object' ? progressData : {});
+                        const [coursesDataResult, topicsDataResult, progressDataResult] = await Promise.allSettled([
+                            apiGet<any[]>('/courses'),
+                            apiGet<any[]>('/courses/journey'),
+                            apiGet<any>('/courses/journey/progress'),
+                        ]);
+
+                        if (coursesDataResult.status === 'fulfilled') {
+                            setCourses(coursesDataResult.value);
+                        }
+                        if (topicsDataResult.status === 'fulfilled') {
+                            setJourneyTopics(Array.isArray(topicsDataResult.value) ? topicsDataResult.value : []);
+                        }
+                        if (progressDataResult.status === 'fulfilled') {
+                            setJourneyProgress(progressDataResult.value && typeof progressDataResult.value === 'object' ? progressDataResult.value : {});
+                        }
         } catch (error) {
             console.error('Failed to load courses:', error);
         }
