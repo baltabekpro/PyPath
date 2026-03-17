@@ -118,7 +118,7 @@ export const Achievements: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex gap-4 md:gap-8 text-center bg-slate-100 dark:bg-white dark:bg-white dark:bg-black/20 p-4 rounded-2xl border border-slate-200 dark:border-white/10 backdrop-blur-sm">
+                    <div className="flex gap-4 md:gap-8 text-center bg-slate-100 dark:bg-black/20 p-4 rounded-2xl border border-slate-200 dark:border-white/10 backdrop-blur-sm">
                         <div>
                             <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.points ?? 0}</p>
                             <p className="text-[10px] text-slate-600 dark:text-gray-400 font-bold uppercase">{text.pointsLabel}</p>
@@ -157,7 +157,7 @@ export const Achievements: React.FC = () => {
 
             {/* Trophy Grid */}
             {filteredList.length === 0 ? (
-                <div className="bg-white dark:bg-white dark:bg-black/20 border border-white/10 rounded-2xl p-8 text-center">
+                <div className="bg-white dark:bg-black/20 border border-white/10 rounded-2xl p-8 text-center">
                     <p className="text-slate-900 dark:text-white font-bold mb-2">Достижения пока недоступны</p>
                     <p className="text-slate-600 dark:text-gray-400 text-sm">Когда данные появятся, все награды отобразятся здесь.</p>
                 </div>
@@ -298,7 +298,7 @@ export const Achievements: React.FC = () => {
 
                                 {/* Flavor Text (Only unlocked) */}
                                 {selectedAchievement.unlocked && (
-                                    <div className="relative z-10 bg-slate-50 dark:bg-slate-50 dark:bg-black/30 p-3 rounded-xl border border-white/5 mb-6 italic text-slate-700 dark:text-gray-300 text-sm font-serif">
+                                    <div className="relative z-10 bg-slate-50 dark:bg-black/30 p-3 rounded-xl border border-white/5 mb-6 italic text-slate-700 dark:text-gray-300 text-sm font-serif">
                                         "{selectedAchievement.flavorText}"
                                     </div>
                                 )}

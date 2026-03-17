@@ -240,7 +240,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                 <h1 className="text-2xl font-bold mb-4">{selectedTopic.title}</h1>
                 {isSaving && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Сохраняем прогресс...</p>}
 
-                <div className="mb-6 p-4 rounded-xl border border-indigo-200 bg-indigo-50">
+                <div className="mb-6 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold inline-flex items-center gap-2">
                       <BookOpen size={18} className="text-indigo-600" />
@@ -277,7 +277,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                           key={`${selectedTopic.id}-${index}`}
                           disabled={!unlocked}
                           onClick={() => togglePractice(index)}
-                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         >
                           <span className="text-sm">{index + 1}. {task}</span>
                           {done && <CheckCircle2 size={18} className="text-emerald-600" />}

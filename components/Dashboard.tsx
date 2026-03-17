@@ -96,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
       
       {/* Welcome & Mentor Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-arcade-primary/20 to-transparent p-6 rounded-3xl border border-slate-200 dark:border-slate-200 dark:border-white/5 relative overflow-hidden">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-arcade-primary/20 to-transparent p-6 rounded-3xl border border-slate-200 dark:border-white/5 relative overflow-hidden">
         <div className="absolute top-0 right-0 size-64 bg-arcade-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
         
         <div className="flex items-center gap-6 z-10 w-full md:w-auto">
@@ -107,7 +107,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                  <Bot size={40} className="text-white" strokeWidth={2.5}/>
              </div>
              <div>
-                 <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-slate-200 dark:border-slate-200 dark:border-white/5">
+                 <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-slate-200 dark:border-white/5">
                           <p className="text-sm md:text-base text-slate-900 dark:text-white font-medium">{text.greeting?.replace('{name}', currentUser.name) || `Привет, ${currentUser.name}`}</p>
                  </div>
                       <h1 className="text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white leading-none">{text.baseTitle || 'Твоя учебная зона'}</h1>
@@ -117,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         {/* Streak Counter (Fire) */}
         <div 
             onClick={() => setView(View.ACHIEVEMENTS)}
-            className="flex items-center gap-4 bg-slate-100 dark:bg-slate-100 dark:bg-black/40 p-3 pr-6 rounded-2xl border border-orange-500/30 shadow-neon-orange transform hover:scale-105 transition-transform cursor-pointer group"
+            className="flex items-center gap-4 bg-slate-100 dark:bg-black/40 p-3 pr-6 rounded-2xl border border-orange-500/30 shadow-neon-orange transform hover:scale-105 transition-transform cursor-pointer group"
         >
              <div className="size-12 bg-gradient-to-t from-red-600 to-yellow-400 rounded-xl flex items-center justify-center animate-pulse-glow group-hover:rotate-6 transition-transform">
                  <Flame size={28} className="text-white fill-white" />
@@ -192,14 +192,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         <div 
                             key={`${quest.link ?? 'quest'}-${i}`} 
                             onClick={() => setView(quest.link as View)}
-                            className={`bg-white dark:bg-white dark:bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10' : 'border-slate-200 dark:border-slate-200 dark:border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform cursor-pointer hover:border-white/20`}
+                            className={`bg-white dark:bg-arcade-card border-2 ${quest.done ? 'border-arcade-success/50 bg-arcade-success/10 dark:bg-arcade-success/10' : 'border-slate-200 dark:border-white/5'} p-4 rounded-2xl flex flex-col items-center text-center gap-3 hover:translate-y-[-4px] transition-transform cursor-pointer hover:border-white/20`}
                         >
                             <div className={`size-12 rounded-full flex items-center justify-center ${quest.done ? 'bg-arcade-success text-white' : 'bg-slate-100 dark:bg-white/5 ' + quest.color}`}>
                                 {quest.done ? <Award size={24} /> : <QuestIcon size={24} />}
                             </div>
                             <div>
                                 <h4 className={`font-bold text-sm ${quest.done ? 'text-arcade-success line-through' : 'text-slate-900 dark:text-white'}`}>{quest.title}</h4>
-                                <div className="inline-block mt-1 bg-black/40 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-200 dark:border-white/5">
+                                <div className="inline-block mt-1 bg-black/40 px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/5">
                                     <span className="text-[10px] font-bold text-slate-600 dark:text-gray-400 uppercase">{quest.reward}</span>
                                 </div>
                             </div>
@@ -288,28 +288,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="space-y-6">
             
             {/* Player Stats */}
-            <div className="bg-white dark:bg-white dark:bg-arcade-card border border-slate-200 dark:border-slate-200 dark:border-white/5 rounded-3xl p-6 relative overflow-hidden">
+            <div className="bg-white dark:bg-arcade-card border border-slate-200 dark:border-white/5 rounded-3xl p-6 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-display font-black text-slate-900 dark:text-white">{text.stats}</h3>
                     <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">{text.details || 'Детали'}</button>
                 </div>
                 
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-slate-200 dark:border-white/5">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
                             <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsTotalXp || 'Общий XP'}</span>
                         </div>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">{(stats.totalXp ?? 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-slate-200 dark:border-white/5">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
                             <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsSolved || 'Решено задач'}</span>
                         </div>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">{stats.problemsSolved ?? 0}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-slate-200 dark:border-white/5">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
                             <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsTime || 'Время кодинга'}</span>
