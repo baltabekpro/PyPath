@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import { CURRENT_USER, SKILLS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { Shield, Target, Flame, Medal, Edit3, Share2, Zap, Trophy, Plus } from 'lucide-react';
 import { View } from '../types';
@@ -46,18 +46,24 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
         const [stats, setStats] = useState(STATS);
         const [skills, setSkills] = useState(SKILLS);
     const [lastUpdatedLabel, setLastUpdatedLabel] = useState('Обновлено только что');
+    const [activity, setActivity] = useState<any[]>([]);
+    const [chartBundle, setChartBundle] = useState<{ lineByTasks: any[]; topicProgress: any[]; updatedAt?: string | null } | null>(null);
 
   useEffect(() => {
     const loadProfileData = async () => {
         try {
-                        const [userData, statsData, skillsData] = await Promise.all([
+                        const [userData, statsData, skillsData, activityData, chartData] = await Promise.all([
                 apiGet<any>('/currentUser'),
                 apiGet<any>('/stats'),
-                                apiGet<any[]>('/skills')
+                            apiGet<any[]>('/skills'),
+                            apiGet<any[]>('/activity'),
+                            apiGet<any>('/progress/charts')
             ]);
             setCurrentUser(userData);
             setStats(statsData);
             setSkills(skillsData);
+                    setActivity(activityData || []);
+                    setChartBundle(chartData || null);
             setLastUpdatedLabel(new Date().toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
         } catch (error) {
             console.error('Failed to load profile data:', error);
@@ -86,6 +92,22 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
         { label: battleStatText.leagueRank, value: currentUser.rank, suffix: '#', icon: Medal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
         { label: battleStatText.accuracy, value: stats.accuracy, suffix: '%', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
   ];
+
+  const normalizedSkills = (skills || []).map((item: any, index: number) => ({
+      subject: String(item?.subject || item?.skill || `Навык ${index + 1}`),
+      score: Number(item?.score || item?.value || 0),
+      fullMark: Number(item?.fullMark || 100),
+  }));
+
+  const lineProgressData = (chartBundle?.lineByTasks?.length ? chartBundle.lineByTasks : (activity || []).map((item: any, index: number) => ({
+      task: index + 1,
+      level: Number(item?.value || item?.xp || 0),
+  })));
+
+  const topicProgressData = (chartBundle?.topicProgress?.length ? chartBundle.topicProgress : normalizedSkills.map((item: any) => ({
+      topic: String(item?.subject || 'Тема'),
+      progress: Number(item?.score || 0),
+  })));
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in relative bg-[#0F172A]">
@@ -202,9 +224,9 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     </div>
                     
                     <div className="h-[300px] w-full relative z-10">
-                            {loadRadar && skills.length > 0 ? (
+                            {loadRadar && normalizedSkills.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skills}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={normalizedSkills}>
                                 <PolarGrid stroke="#334155" />
                                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 'bold' }} />
                                 <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
@@ -235,6 +257,45 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                         )}
                     </div>
                 </div>
+
+                                {/* Combined Progress Charts */}
+                                <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
+                                        <h3 className="font-display font-black text-xl text-white mb-4">Уровень после каждого задания</h3>
+                                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                                <div className="h-64 bg-black/20 rounded-2xl p-3 border border-white/5">
+                                                        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Линейная динамика</p>
+                                                        {lineProgressData.length > 0 ? (
+                                                            <ResponsiveContainer width="100%" height="90%">
+                                                                <LineChart data={lineProgressData}>
+                                                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                                                      <XAxis dataKey="task" stroke="#94A3B8" />
+                                                                    <YAxis stroke="#94A3B8" />
+                                                                    <Tooltip />
+                                                                    <Line type="monotone" dataKey="level" stroke="#22D3EE" strokeWidth={2.5} dot={false} />
+                                                                </LineChart>
+                                                            </ResponsiveContainer>
+                                                        ) : (
+                                                            <div className="h-full flex items-center justify-center text-sm text-gray-400">Недостаточно данных по заданиям</div>
+                                                        )}
+                                                </div>
+                                                <div className="h-64 bg-black/20 rounded-2xl p-3 border border-white/5">
+                                                        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Прогресс по темам</p>
+                                                        {topicProgressData.length > 0 ? (
+                                                            <ResponsiveContainer width="100%" height="90%">
+                                                                <BarChart data={topicProgressData}>
+                                                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                                                    <XAxis dataKey="topic" stroke="#94A3B8" tick={{ fontSize: 10 }} />
+                                                                    <YAxis stroke="#94A3B8" />
+                                                                    <Tooltip />
+                                                                    <Bar dataKey="progress" fill="#34D399" radius={[6, 6, 0, 0]} />
+                                                                </BarChart>
+                                                            </ResponsiveContainer>
+                                                        ) : (
+                                                            <div className="h-full flex items-center justify-center text-sm text-gray-400">Недостаточно данных по темам</div>
+                                                        )}
+                                                </div>
+                                        </div>
+                                </div>
 
                 {/* Showcase Trophies */}
                 <div>

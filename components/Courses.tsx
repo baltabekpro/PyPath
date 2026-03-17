@@ -47,13 +47,11 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   };
 
   const handleStartMission = () => {
-      // Logic: Start mission -> Go to Practice (Editor)
-      // Ideally pass "Briefing" context, for now we just switch view
       if (selectedLevel) {
           localStorage.setItem('activeCourseId', String(selectedLevel.id));
       }
       setSelectedLevel(null);
-      setView(View.PRACTICE);
+      setView(View.COURSE_JOURNEY);
   };
 
   const generatePath = () => {
@@ -72,7 +70,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   };
 
   return (
-    <div className="relative h-full flex flex-col bg-[#0F172A] overflow-hidden">
+    <div className="relative h-full flex flex-col bg-slate-100 overflow-hidden">
        
        {/* Background Decor */}
        <div className="absolute inset-0 pointer-events-none">
@@ -81,13 +79,13 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
        </div>
 
        {/* Map Header */}
-       <header className="z-20 bg-[#0F172A]/90 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between sticky top-0 shadow-2xl">
-           <button onClick={() => setView(View.DASHBOARD)} className="flex items-center gap-2 text-arcade-muted hover:text-white transition-colors">
+       <header className="z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 shadow-sm">
+           <button onClick={() => setView(View.DASHBOARD)} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors">
                <ChevronLeft size={20} />
                <span className="font-bold text-sm uppercase tracking-wider hidden sm:inline">{text.backToLobby || 'Назад'}</span>
            </button>
            <div className="flex flex-col items-center">
-               <h1 className="text-white font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
+               <h1 className="text-slate-900 font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
                <div className="flex items-center gap-1.5 text-[10px] font-bold text-arcade-action uppercase tracking-widest">
                    <MapIcon size={12} />
                    <span>{text.season || 'Сезон обучения'} {currentSeason}</span>
@@ -111,12 +109,12 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                              {courses.length === 0 && (
                                      <div className="absolute inset-0 flex items-center justify-center z-20 px-6">
-                                             <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-center">
-                                                     <h3 className="text-white font-bold text-lg mb-2">Курсы пока не загружены</h3>
-                                                     <p className="text-gray-400 text-sm mb-4">Структура экрана сохранена. Проверьте интеграцию данных API `/courses`.</p>
+                                             <div className="w-full bg-white border border-slate-200 rounded-2xl p-6 text-center">
+                                                     <h3 className="text-slate-900 font-bold text-lg mb-2">Курсы пока не загружены</h3>
+                                                     <p className="text-slate-600 text-sm mb-4">Структура экрана сохранена. Проверьте интеграцию данных API /courses.</p>
                                                      <button
                                                          onClick={() => setView(View.DASHBOARD)}
-                                                         className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-bold"
+                                                         className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-700 text-white text-sm font-bold"
                                                      >
                                                          Вернуться на главную
                                                      </button>
@@ -146,10 +144,10 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                    relative transition-all duration-300 flex items-center justify-center shadow-2xl group
                                    ${course.isBoss ? 'size-24 rounded-2xl rotate-45' : 'size-20 rounded-full'}
                                    ${isLocked 
-                                        ? 'bg-[#0F172A] border-2 border-slate-700 text-slate-700 opacity-60' 
+                                        ? 'bg-slate-200 border-2 border-slate-300 text-slate-400 opacity-70' 
                                         : isCurrent
                                             ? 'bg-gradient-to-b from-arcade-action to-red-600 border-4 border-white text-white scale-110 shadow-[0_0_30px_rgba(249,115,22,0.6)] animate-pulse-glow'
-                                            : 'bg-[#1E293B] border-4 border-arcade-success text-arcade-success'
+                                            : 'bg-white border-4 border-arcade-success text-arcade-success'
                                    }
                                    ${shakingId === course.id ? 'animate-shake' : ''}
                                    ${!isLocked && 'hover:scale-110 active:scale-95 cursor-pointer'}
@@ -169,13 +167,18 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                            {/* Info Label */}
                            <div className={`mt-4 text-center transition-opacity ${isLocked ? 'opacity-30' : 'opacity-100'}`}>
-                               <div className="bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/5 inline-block">
+                               <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200 inline-block shadow-sm">
                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-0.5">
                                        {course.isBoss ? text.bossLabel : `${text.chapterPrefix} ${course.id}`}
                                    </span>
-                                   <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[2px]' : 'text-gray-200'}`}>
+                                   <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[1px]' : 'text-slate-800'}`}>
                                        {course.title}
                                    </span>
+                                                                     {course.gradeBand && (
+                                                                            <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider mt-1 block">
+                                                                                {course.gradeBand === 'pre' ? 'До 8/9' : `${course.gradeBand} класс`}
+                                                                            </span>
+                                                                     )}
                                </div>
                            </div>
 
@@ -191,27 +194,30 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
            <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedLevel(null)}></div>
                
-               <div className="relative w-full max-w-lg bg-[#1E293B] border border-white/10 rounded-t-3xl md:rounded-3xl p-0 shadow-2xl transform transition-transform animate-float-up overflow-hidden">
+               <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-t-3xl md:rounded-3xl p-0 shadow-2xl transform transition-transform animate-float-up overflow-hidden">
                    
                    {/* Cyber Header */}
                    <div className="h-32 bg-gradient-to-br from-arcade-primary/20 to-purple-900/20 relative p-6 flex flex-col justify-end">
                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                       <button onClick={() => setSelectedLevel(null)} className="absolute top-4 right-4 p-2 bg-black/30 rounded-full text-white hover:bg-white/20"><X size={18}/></button>
+                       <button onClick={() => setSelectedLevel(null)} className="absolute top-4 right-4 p-2 bg-white/60 rounded-full text-slate-800 hover:bg-white"><X size={18}/></button>
                        
                        <div className="flex items-center gap-3 relative z-10">
                             <div className={`size-12 rounded-xl flex items-center justify-center shadow-lg ${selectedLevel.isBoss ? 'bg-red-500' : 'bg-arcade-primary'} text-white`}>
                                 {getIcon(selectedLevel.icon)}
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{text.briefing}</p>
-                                <h2 className="text-xl font-display font-black text-white leading-tight">{selectedLevel.title}</h2>
+                                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{text.briefing}</p>
+                                <h2 className="text-xl font-display font-black text-slate-900 leading-tight">{selectedLevel.title}</h2>
+                                                                {selectedLevel.section && (
+                                                                    <p className="text-xs text-emerald-200 mt-1">{selectedLevel.section}</p>
+                                                                )}
                             </div>
                        </div>
                    </div>
 
                    {/* Body */}
                    <div className="p-6 space-y-6">
-                       <p className="text-gray-300 text-sm leading-relaxed border-l-2 border-arcade-action pl-4 italic">
+                       <p className="text-slate-700 text-sm leading-relaxed border-l-2 border-arcade-action pl-4 italic">
                            "{selectedLevel.description}"
                        </p>
 

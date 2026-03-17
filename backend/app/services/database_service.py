@@ -163,9 +163,18 @@ class DatabaseService:
 
         return query.all()
 
-    def create_post(self, post_data: PostCreate) -> Post:
+    def create_post(self, post_data: PostCreate, user: Optional[User] = None) -> Post:
         """Create new post"""
-        post = Post(**post_data.model_dump())
+        payload = post_data.model_dump()
+        payload.setdefault("author_name", (user.name if user and user.name else "Ученик"))
+        payload.setdefault("author_avatar", (user.avatar if user and user.avatar else "https://api.dicebear.com/7.x/avataaars/svg?seed=PyPath"))
+        payload.setdefault("author_level", int(user.level_num if user and user.level_num else 1))
+        payload.setdefault("time", "Только что")
+        payload.setdefault("likes", 0)
+        payload.setdefault("comments", 0)
+        payload.setdefault("liked", False)
+
+        post = Post(**payload)
         self.db.add(post)
         self.db.commit()
         self.db.refresh(post)
@@ -191,6 +200,16 @@ class DatabaseService:
     # Course operations
     def _get_courses_ordered(self) -> List[Course]:
         return self.db.query(Course).order_by(Course.id.asc()).all()
+
+    def _infer_course_meta(self, course: Course) -> dict:
+        title = str(course.title or '').lower()
+        if 'глава 1' in title or 'глава 2' in title:
+            return {"gradeBand": "pre", "section": "Подготовка к 8/9"}
+        if 'глава 3' in title or 'глава 4' in title:
+            return {"gradeBand": "8", "section": "8 класс: основы и циклы"}
+        if 'глава 5' in title or 'глава 6' in title or 'босс' in title:
+            return {"gradeBand": "9", "section": "9 класс: функции и проект"}
+        return {"gradeBand": "common", "section": "Общий модуль"}
 
     def _get_course_season(self, course_id: int) -> int:
         return ((course_id - 1) // COURSE_SEASON_SIZE) + 1
@@ -473,6 +492,8 @@ class DatabaseService:
                 "id": course.id,
                 "title": course.title,
                 "description": course.description,
+                "gradeBand": self._infer_course_meta(course).get("gradeBand"),
+                "section": self._infer_course_meta(course).get("section"),
                 "progress": int(course.progress or 0),
                 "totalLessons": int(course.total_lessons or 0),
                 "icon": course.icon,
@@ -514,9 +535,152 @@ class DatabaseService:
 
         return response
 
+    def get_progress_charts(self, user: Optional[User] = None) -> dict:
+        """Build chart-ready progress data: line by tasks and topic completion."""
+        if not user:
+            return {
+                "lineByTasks": [],
+                "topicProgress": [],
+                "updatedAt": None,
+            }
+
+        settings = self._get_user_settings(user)
+        raw_events = settings.get("progress_events")
+        events = raw_events if isinstance(raw_events, list) else []
+
+        successful = [item for item in events if isinstance(item, dict) and item.get("success")]
+        line_by_tasks = []
+        for index, item in enumerate(successful):
+            xp_total = item.get("xpTotal")
+            try:
+                level_value = int(xp_total if xp_total is not None else (index + 1) * 10)
+            except (TypeError, ValueError):
+                level_value = (index + 1) * 10
+            line_by_tasks.append(
+                {
+                    "task": index + 1,
+                    "level": level_value,
+                    "missionId": str(item.get("missionId") or ""),
+                }
+            )
+
+        missions = self.get_missions()
+        totals_by_topic: dict[str, int] = {}
+        completed_by_topic: dict[str, int] = {}
+
+        mission_progress = settings.get("mission_progress") if isinstance(settings.get("mission_progress"), dict) else {}
+
+        for mission in missions:
+            topic = str(mission.chapter or "Тема")
+            totals_by_topic[topic] = totals_by_topic.get(topic, 0) + 1
+            progress_item = mission_progress.get(mission.id)
+            if isinstance(progress_item, dict) and progress_item.get("completed"):
+                completed_by_topic[topic] = completed_by_topic.get(topic, 0) + 1
+
+        topic_progress = []
+        for topic, total in totals_by_topic.items():
+            done = completed_by_topic.get(topic, 0)
+            percent = int(round((done / total) * 100)) if total > 0 else 0
+            topic_progress.append(
+                {
+                    "topic": topic,
+                    "progress": percent,
+                    "completed": done,
+                    "total": total,
+                }
+            )
+
+        topic_progress.sort(key=lambda item: item["topic"])
+        updated_at = successful[-1].get("timestamp") if successful else None
+        return {
+            "lineByTasks": line_by_tasks,
+            "topicProgress": topic_progress,
+            "updatedAt": updated_at,
+        }
+
     def get_course_by_id(self, course_id: int) -> Optional[Course]:
         """Get course by ID"""
         return self.db.query(Course).filter(Course.id == course_id).first()
+
+    def get_course_journey(self, user: Optional[User] = None) -> list[dict]:
+        """Return structured journey topics: theory first, then 6/7 practices."""
+        courses = self.get_courses(user)
+        missions = self.get_missions()
+        topics: list[dict] = []
+
+        for course in courses:
+            course_id = int(course.get("id") or 0)
+            related = [m for m in missions if self._parse_course_id_from_chapter(m.chapter) == course_id]
+
+            theory = "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
+            for mission in related:
+                hints = mission.hints if isinstance(mission.hints, list) else []
+                theory_hint = next((str(item).replace("__THEORY__:", "").strip() for item in hints if isinstance(item, str) and item.startswith("__THEORY__:")), "")
+                if theory_hint:
+                    theory = theory_hint
+                    break
+
+            practices = [str(m.title or f"Практика по теме {course_id}") for m in related]
+            target_count = 7 if course.get("gradeBand") == "9" else 6
+            while len(practices) < target_count:
+                practices.append(f"Практика {len(practices) + 1}")
+            if len(practices) > target_count:
+                practices = practices[:target_count]
+
+            topics.append(
+                {
+                    "id": f"course-{course_id}",
+                    "section": course.get("section") or "Общий модуль",
+                    "title": str(course.get("title") or f"Тема {course_id}"),
+                    "grade": course.get("gradeBand") if course.get("gradeBand") in {"pre", "8", "9"} else "pre",
+                    "theory": theory,
+                    "practices": practices,
+                }
+            )
+
+        return topics
+
+    def get_course_journey_progress(self, user: Optional[User]) -> dict:
+        if not user:
+            return {}
+        settings = self._get_user_settings(user)
+        raw = settings.get("journey_progress")
+        if not isinstance(raw, dict):
+            return {}
+
+        sanitized: dict = {}
+        for topic_id, value in raw.items():
+            if not isinstance(value, dict):
+                continue
+            completed = value.get("completedPractices")
+            completed_list = completed if isinstance(completed, list) else []
+            normalized = sorted({int(item) for item in completed_list if isinstance(item, int) or (isinstance(item, str) and str(item).isdigit())})
+            sanitized[str(topic_id)] = {
+                "theoryOpened": bool(value.get("theoryOpened")),
+                "completedPractices": normalized,
+            }
+        return sanitized
+
+    def save_course_journey_progress(self, user: Optional[User], topic_id: str, progress: dict) -> dict:
+        if not user:
+            return {}
+
+        settings = self._get_user_settings(user)
+        all_progress = settings.get("journey_progress") if isinstance(settings.get("journey_progress"), dict) else {}
+
+        completed = progress.get("completedPractices") if isinstance(progress, dict) else []
+        completed_list = completed if isinstance(completed, list) else []
+        normalized = sorted({int(item) for item in completed_list if isinstance(item, int) or (isinstance(item, str) and str(item).isdigit())})
+
+        all_progress[str(topic_id)] = {
+            "theoryOpened": bool(progress.get("theoryOpened") if isinstance(progress, dict) else False),
+            "completedPractices": normalized,
+            "updatedAt": datetime.utcnow().isoformat(),
+        }
+
+        settings["journey_progress"] = all_progress
+        self._save_user_settings(user, settings)
+        return self.get_course_journey_progress(user)
 
     def create_course(self, payload: CourseCreate) -> Course:
         """Create a new course"""
@@ -765,6 +929,35 @@ class DatabaseService:
         }
         settings["mission_progress"] = progress
         self._save_user_settings(user, settings)
+
+    def _append_progress_event(
+        self,
+        user: Optional[User],
+        mission: Mission,
+        success: bool,
+        xp_earned: int,
+        xp_total: int,
+    ) -> None:
+        if not user:
+            return
+
+        settings = self._get_user_settings(user)
+        raw_events = settings.get("progress_events")
+        events = raw_events if isinstance(raw_events, list) else []
+
+        events.append(
+            {
+                "missionId": mission.id,
+                "topic": mission.chapter or "Тема",
+                "success": bool(success),
+                "xpEarned": int(xp_earned),
+                "xpTotal": int(xp_total),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
+
+        settings["progress_events"] = events[-300:]
+        user.settings = settings
 
     def _execute_python_code(self, code: str) -> dict:
         is_safe, safety_error = self._validate_python_code_safety(code)
@@ -1480,6 +1673,15 @@ class DatabaseService:
 
             if xp_earned > 0:
                 user.xp = int(user.xp or 0) + xp_earned
+
+        if user:
+            self._append_progress_event(
+                user=user,
+                mission=mission,
+                success=all_completed,
+                xp_earned=xp_earned,
+                xp_total=int(user.xp or 0),
+            )
 
         attempt_meta = self._register_mission_attempt(user, mission_id, all_completed)
 

@@ -19,6 +19,7 @@ from app.schemas.requests import (
     CourseUpdate,
     MissionCreate,
     MissionUpdate,
+    JourneyProgressUpdate,
 )
 from app.services.database_service import DatabaseService
 from app.api.dependencies import get_db_service, get_current_user_optional, get_current_user
@@ -236,6 +237,15 @@ def get_skills(
     return service.get_skills(user)
 
 
+@router.get("/progress/charts", tags=["User"])
+def get_progress_charts(
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Get chart-ready progress data (task timeline + topic completion)."""
+    return service.get_progress_charts(user)
+
+
 @router.get("/courses", tags=["Courses"])
 def get_courses(
     user: Optional[User] = Depends(get_current_user_optional),
@@ -243,6 +253,34 @@ def get_courses(
 ):
     """Get all available courses with progress tracking"""
     return service.get_courses(user)
+
+
+@router.get("/courses/journey", tags=["Courses"])
+def get_courses_journey(
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Get course journey structure: theory first + 6/7 practices per topic."""
+    return service.get_course_journey(user)
+
+
+@router.get("/courses/journey/progress", tags=["Courses"])
+def get_courses_journey_progress(
+    user: User = Depends(get_current_user),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Get user-specific progress for journey topics."""
+    return service.get_course_journey_progress(user)
+
+
+@router.put("/courses/journey/progress", tags=["Courses"])
+def update_courses_journey_progress(
+    payload: JourneyProgressUpdate,
+    user: User = Depends(get_current_user),
+    service: DatabaseService = Depends(get_db_service)
+):
+    """Persist user-specific progress for one journey topic."""
+    return service.save_course_journey_progress(user, payload.topicId, payload.progress.model_dump())
 
 
 @router.post("/courses", status_code=201, tags=["Courses"])
@@ -258,6 +296,8 @@ def create_course(
         "id": course.id,
         "title": course.title,
         "description": course.description,
+        "gradeBand": service._infer_course_meta(course).get("gradeBand"),
+        "section": service._infer_course_meta(course).get("section"),
         "progress": course.progress,
         "totalLessons": course.total_lessons,
         "icon": course.icon,
@@ -286,6 +326,8 @@ def update_course(
         "id": course.id,
         "title": course.title,
         "description": course.description,
+        "gradeBand": service._infer_course_meta(course).get("gradeBand"),
+        "section": service._infer_course_meta(course).get("section"),
         "progress": course.progress,
         "totalLessons": course.total_lessons,
         "icon": course.icon,
@@ -322,6 +364,8 @@ def get_course_by_id(course_id: int, service: DatabaseService = Depends(get_db_s
         "id": course.id,
         "title": course.title,
         "description": course.description,
+        "gradeBand": service._infer_course_meta(course).get("gradeBand"),
+        "section": service._infer_course_meta(course).get("section"),
         "progress": course.progress,
         "totalLessons": course.total_lessons,
         "icon": course.icon,
@@ -399,7 +443,7 @@ def create_post(
     service: DatabaseService = Depends(get_db_service)
 ):
     """Create new community post with code snippets and tags"""
-    post = service.create_post(payload)
+    post = service.create_post(payload, user)
     return {
         "id": post.id,
         "author": {

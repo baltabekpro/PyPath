@@ -4,10 +4,11 @@ import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../consta
 import { ActionToast } from './ActionToast';
 import { apiPut, authApi, notificationsApi } from '../api';
 
-type SettingsTab = 'profile' | 'notifications';
+type SettingsTab = 'profile' | 'appearance' | 'notifications';
 
 const DEFAULT_SETTINGS_TABS = [
     { id: 'profile', label: 'Профиль', icon: 'User' },
+    { id: 'appearance', label: 'Оформление', icon: 'Sparkles' },
     { id: 'notifications', label: 'Уведомления', icon: 'Bell' },
 ];
 
@@ -52,6 +53,7 @@ export const Settings: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
     const [actionMessage, setActionMessage] = useState('');
     const [notificationState, setNotificationState] = useState(notificationOptions);
+                const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
         const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
         const [isChangingPassword, setIsChangingPassword] = useState(false);
 
@@ -176,6 +178,13 @@ export const Settings: React.FC = () => {
       if (confirmed) {
           showAction(text.toastDeleteRequested);
       }
+  };
+
+  const setTheme = (mode: 'light' | 'dark') => {
+      setThemeMode(mode);
+      localStorage.setItem('theme', mode);
+      window.dispatchEvent(new CustomEvent('app-theme-changed'));
+      showAction(mode === 'light' ? 'Светлая тема включена' : 'Тёмная тема включена');
   };
 
   return (
@@ -362,6 +371,29 @@ export const Settings: React.FC = () => {
                    </div>
                 </div>
               )}
+
+                            {activeTab === 'appearance' && (
+                                <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in space-y-4">
+                                    <h3 className="text-white font-bold text-lg">Тема интерфейса</h3>
+                                    <p className="text-gray-400 text-sm">По умолчанию используется светлый дизайн. Вы можете переключиться в тёмный режим.</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => setTheme('light')}
+                                            className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'light' ? 'border-emerald-400 bg-emerald-500/10 text-white' : 'border-white/10 bg-black/20 text-gray-300 hover:bg-black/30'}`}
+                                        >
+                                            <p className="font-bold">Светлая тема</p>
+                                            <p className="text-xs opacity-80 mt-1">Рекомендуется для обучения и чтения теории.</p>
+                                        </button>
+                                        <button
+                                            onClick={() => setTheme('dark')}
+                                            className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'dark' ? 'border-purple-400 bg-purple-500/10 text-white' : 'border-white/10 bg-black/20 text-gray-300 hover:bg-black/30'}`}
+                                        >
+                                            <p className="font-bold">Тёмная тема</p>
+                                            <p className="text-xs opacity-80 mt-1">Для вечернего режима и контрастного интерфейса.</p>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
               {/* NOTIFICATIONS SETTINGS */}
               {activeTab === 'notifications' && (

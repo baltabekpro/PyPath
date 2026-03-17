@@ -42,6 +42,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const progressPercent = activeCourse?.progress ?? 0;
     const text = UI_TEXTS?.dashboard ?? {};
     const visibleDailyQuests = dailyQuests;
+        const preTopics = [
+            'Алгоритмическое мышление',
+            'Блок-схемы и логика',
+            'Переменные и ввод/вывод',
+            'Первые условия и циклы',
+        ];
+        const pythonInteresting = [
+            'Python в играх (pygame)',
+            'Python для анализа данных',
+            'Боты и автоматизация',
+            'Визуализация графиков',
+        ];
+        const datasetSites = [
+            { label: 'Kaggle Datasets', url: 'https://www.kaggle.com/datasets' },
+            { label: 'UCI ML Repository', url: 'https://archive.ics.uci.edu' },
+            { label: 'Google Dataset Search', url: 'https://datasetsearch.research.google.com' },
+        ];
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
@@ -158,6 +175,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                     )})}
                 </div>
             </div>
+
+                        {/* Pre 8/9 + Python Topics */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+                                <h3 className="text-lg font-black text-slate-900 mb-3">До 8/9 класса</h3>
+                                <p className="text-sm text-slate-600 mb-3">База, которую нужно понять до тем 8/9 классов.</p>
+                                <div className="space-y-2">
+                                    {preTopics.map((topic) => (
+                                        <div key={topic} className="text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
+                                            {topic}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+                                <h3 className="text-lg font-black text-slate-900 mb-3">Интересные темы Python</h3>
+                                <p className="text-sm text-slate-600 mb-3">Практические направления для мотивации.</p>
+                                <div className="space-y-2">
+                                    {pythonInteresting.map((topic) => (
+                                        <div key={topic} className="text-sm px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900">
+                                            {topic}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white border border-slate-200 rounded-2xl p-5">
+                            <h3 className="text-lg font-black text-slate-900 mb-2">Сайты с данными для практики</h3>
+                            <p className="text-sm text-slate-600 mb-3">Используйте реальные датасеты для проектов.</p>
+                            <div className="flex flex-wrap gap-2">
+                                {datasetSites.map((site) => (
+                                    <a
+                                        key={site.url}
+                                        href={site.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-sm px-3 py-2 rounded-lg bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100"
+                                    >
+                                        {site.label}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
 
         </div>
 

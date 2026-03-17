@@ -1,6 +1,7 @@
 export enum View {
   DASHBOARD = 'DASHBOARD',
   COURSES = 'COURSES',
+  COURSE_JOURNEY = 'COURSE_JOURNEY',
   PRACTICE = 'PRACTICE', // Editor
   AI_CHAT = 'AI_CHAT', // Full screen chat
   PROFILE = 'PROFILE',
@@ -39,6 +40,8 @@ export interface Course {
   id: number;
   title: string;
   description: string;
+  gradeBand?: 'pre' | '8' | '9' | 'common';
+  section?: string;
   progress: number;
   totalLessons: number;
   icon: string;

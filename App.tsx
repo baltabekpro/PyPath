@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Editor } from './components/Editor';
 import { Courses } from './components/Courses';
+import { CourseJourney } from './components/CourseJourney';
 import { Profile } from './components/Profile';
 import { Settings } from './components/Settings';
 import { Leaderboard } from './components/Leaderboard';
@@ -29,8 +30,31 @@ const App: React.FC = () => {
   const appText = UI_TEXTS?.app ?? {};
   const [toastMessage, setToastMessage] = useState('');
   const [toastTone, setToastTone] = useState<'success' | 'info' | 'warning'>('info');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem('theme');
+    return stored === 'dark' ? 'dark' : 'light';
+  });
   const role = String(currentUser?.settings?.role ?? currentUser?.role ?? '').toLowerCase();
   const isAdmin = role === 'admin' || Boolean(currentUser?.settings?.is_admin);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const onThemeChanged = () => {
+      const stored = localStorage.getItem('theme');
+      setTheme(stored === 'dark' ? 'dark' : 'light');
+    };
+    window.addEventListener('app-theme-changed', onThemeChanged as EventListener);
+    return () => window.removeEventListener('app-theme-changed', onThemeChanged as EventListener);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -115,6 +139,8 @@ const App: React.FC = () => {
         return <AIChatPage />;
       case View.COURSES:
         return <Courses setView={handleViewChange} />;
+      case View.COURSE_JOURNEY:
+        return <CourseJourney setView={handleViewChange} />;
       case View.PROFILE:
         return <Profile setView={handleViewChange} />;
       case View.ACHIEVEMENTS:
@@ -145,7 +171,7 @@ const App: React.FC = () => {
 
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen bg-py-dark text-py-text flex items-center justify-center">
+      <div className="min-h-screen bg-slate-100 text-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="size-10 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm text-gray-300">Загружаем данные...</p>
@@ -159,7 +185,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-py-dark font-sans text-py-text selection:bg-py-green/30 selection:text-white relative">
+    <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 selection:bg-emerald-300/40 selection:text-slate-900 relative">
       <ActionToast visible={Boolean(toastMessage)} message={toastMessage} tone={toastTone} />
       
       {/* Mobile Menu Overlay */}

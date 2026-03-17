@@ -108,6 +108,16 @@ class MissionCodeUpdate(BaseModel):
     activeFileId: str | None = None
 
 
+class JourneyTopicProgressUpdate(BaseModel):
+    theoryOpened: bool = False
+    completedPractices: list[int] = Field(default_factory=list)
+
+
+class JourneyProgressUpdate(BaseModel):
+    topicId: str = Field(min_length=1)
+    progress: JourneyTopicProgressUpdate
+
+
 class NotificationPreference(BaseModel):
     label: str
     enabled: bool
