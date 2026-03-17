@@ -47,10 +47,10 @@ export const AIChatPage: React.FC = () => {
 
     const formatMessage = (value: string) => {
         const escaped = escapeHtml(value);
-        const withCode = escaped.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/30 border border-cyan-500/20 rounded-lg p-3 my-2 overflow-x-auto text-xs"><code>$1</code></pre>');
+        const withCode = escaped.replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-cyan-500/20 rounded-lg p-3 my-2 overflow-x-auto text-xs"><code>$1</code></pre>');
         const withBold = withCode.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        const withInlineCode = withBold.replace(/`([^`]+)`/g, '<code class="bg-black/40 px-1 py-0.5 rounded text-cyan-300">$1</code>');
-        const withHeadings = withInlineCode.replace(/^###\s+(.*)$/gm, '<div class="font-bold text-cyan-300 mt-2 mb-1">$1</div>');
+        const withInlineCode = withBold.replace(/`([^`]+)`/g, '<code class="bg-slate-200 dark:bg-black/40 px-1 py-0.5 rounded text-indigo-600 dark:text-cyan-300">$1</code>');
+        const withHeadings = withInlineCode.replace(/^###\s+(.*)$/gm, '<div class="font-bold text-indigo-700 dark:text-cyan-300 mt-2 mb-1">$1</div>');
         return { __html: withHeadings.replace(/\n/g, '<br/>') };
     };
 
@@ -180,22 +180,22 @@ export const AIChatPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full bg-[#0B1121] font-mono overflow-hidden relative">
+    <div className="flex h-full bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 font-mono overflow-hidden relative">
       
       {/* Background Grid & Effects */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.9)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-50"></div>
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0F172A]/50 to-[#0F172A] pointer-events-none"></div>
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.25)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(15,23,42,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.9)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-60 dark:opacity-50"></div>
+    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-100/60 to-slate-50 dark:via-[#0F172A]/50 dark:to-[#0F172A] pointer-events-none"></div>
 
       {/* --- LEFT SIDEBAR: NEURAL HISTORY --- */}
-      <aside className="hidden md:flex w-72 bg-[#0F172A]/90 border-r border-cyan-900/30 flex-col backdrop-blur-md relative z-20">
-          <div className="h-16 flex items-center justify-between px-4 border-b border-cyan-900/30 bg-cyan-950/10">
+      <aside className="hidden md:flex w-72 bg-white/90 dark:bg-[#0F172A]/90 border-r border-slate-200 dark:border-cyan-900/30 flex-col backdrop-blur-md relative z-20">
+          <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-cyan-900/30 bg-slate-100/80 dark:bg-cyan-950/10">
               <div className="flex items-center min-w-0">
-                  <Activity size={18} className="text-cyan-400 mr-3 animate-pulse" />
-                  <span className="text-xs font-bold text-cyan-100 tracking-[0.2em] truncate">{text.neuralHistory}</span>
+                  <Activity size={18} className="text-indigo-600 dark:text-cyan-400 mr-3 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-700 dark:text-cyan-100 tracking-[0.2em] truncate">{text.neuralHistory}</span>
               </div>
               <button
                 onClick={handleNewChat}
-                className="shrink-0 ml-2 p-2 rounded bg-cyan-900/20 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300"
+                className="shrink-0 ml-2 p-2 rounded bg-indigo-100 dark:bg-cyan-900/20 hover:bg-indigo-200 dark:hover:bg-cyan-500/20 border border-indigo-300 dark:border-cyan-500/30 text-indigo-700 dark:text-cyan-300"
                 title="Новый чат"
               >
                 <Plus size={14} />
@@ -204,7 +204,7 @@ export const AIChatPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
               {chatHistoryLogs.map((log: any, index: number) => (
-                  <button key={`${log?.id ?? log?.code ?? 'log'}-${index}`} onClick={() => handleSelectChat(log.id)} className={`w-full text-left group p-3 rounded bg-[#0B1121] border transition-all cursor-pointer ${log.id === activeChatId ? 'border-cyan-500/60' : 'border-cyan-900/20 hover:border-cyan-500/30'}`}>
+                  <button key={`${log?.id ?? log?.code ?? 'log'}-${index}`} onClick={() => handleSelectChat(log.id)} className={`w-full text-left group p-3 rounded bg-slate-50 dark:bg-[#0B1121] border transition-all cursor-pointer ${log.id === activeChatId ? 'border-indigo-500/60 dark:border-cyan-500/60' : 'border-slate-200 dark:border-cyan-900/20 hover:border-indigo-500/40 dark:hover:border-cyan-500/30'}`}>
                       <div className="flex justify-between items-center mb-1">
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                               log.status === 'success' ? 'bg-green-500/10 text-green-400' :
@@ -212,27 +212,27 @@ export const AIChatPage: React.FC = () => {
                           }`}>
                               {log.code}
                           </span>
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
                               <Clock size={10} /> {log.time}
                           </span>
                       </div>
-                      <p className="text-xs text-slate-300 font-medium group-hover:text-cyan-200 truncate">{log.msg}</p>
-                      {log.preview ? <p className="text-[10px] text-slate-500 truncate mt-1">{log.preview}</p> : null}
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium group-hover:text-indigo-700 dark:group-hover:text-cyan-200 truncate">{log.msg}</p>
+                      {log.preview ? <p className="text-[10px] text-slate-500 dark:text-slate-500 truncate mt-1">{log.preview}</p> : null}
                   </button>
               ))}
               {chatHistoryLogs.length === 0 ? (
-                <div className="text-xs text-slate-500">Чатов пока нет. Нажмите + чтобы начать.</div>
+                <div className="text-xs text-slate-500 dark:text-slate-500">Чатов пока нет. Нажмите + чтобы начать.</div>
               ) : null}
           </div>
 
-          <div className="p-4 border-t border-cyan-900/30 bg-cyan-950/5">
+          <div className="p-4 border-t border-slate-200 dark:border-cyan-900/30 bg-slate-100/70 dark:bg-cyan-950/5">
               <div className="flex items-center gap-3">
-                  <div className="size-8 rounded bg-cyan-900/20 flex items-center justify-center border border-cyan-500/20">
-                      <Hash size={16} className="text-cyan-500"/>
+                  <div className="size-8 rounded bg-indigo-100 dark:bg-cyan-900/20 flex items-center justify-center border border-indigo-300 dark:border-cyan-500/20">
+                      <Hash size={16} className="text-indigo-600 dark:text-cyan-500"/>
                   </div>
                   <div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase">{text.systemUptimeLabel}</div>
-                      <div className="text-xs font-bold text-cyan-300">{AI_CHAT_PAGE_DATA?.systemUptime || text.systemUptime}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">{text.systemUptimeLabel}</div>
+                      <div className="text-xs font-bold text-indigo-700 dark:text-cyan-300">{AI_CHAT_PAGE_DATA?.systemUptime || text.systemUptime}</div>
                   </div>
               </div>
           </div>
@@ -242,22 +242,22 @@ export const AIChatPage: React.FC = () => {
       <main className="flex-1 flex flex-col relative z-10">
           
           {/* Header */}
-          <header className="h-16 flex items-center justify-between px-6 border-b border-cyan-900/30 bg-[#0F172A]/80 backdrop-blur-sm z-30">
+          <header className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-cyan-900/30 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-sm z-30">
               <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-cyan-400">
+                  <div className="flex items-center gap-2 text-indigo-600 dark:text-cyan-400">
                       <Cpu size={20} />
                       <h1 className="font-display font-black tracking-wider text-lg">{text.syncCenter}</h1>
                   </div>
-                  <div className="h-4 w-px bg-cyan-900/50"></div>
+                  <div className="h-4 w-px bg-slate-300 dark:bg-cyan-900/50"></div>
                   <div className="flex items-center gap-2">
                       <span className={`size-2 rounded-full ${coreState === 'processing' ? 'bg-yellow-400 animate-ping' : 'bg-green-500'}`}></span>
-                      <span className="text-[10px] font-bold text-cyan-200 uppercase tracking-widest">
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-cyan-200 uppercase tracking-widest">
                           {coreState === 'processing' ? text.processing : text.ready}
                       </span>
                   </div>
               </div>
               <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-cyan-600 font-mono">{AI_CHAT_PAGE_DATA?.version || text.version}</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-cyan-600 font-mono">{AI_CHAT_PAGE_DATA?.version || text.version}</span>
               </div>
           </header>
 
@@ -294,7 +294,7 @@ export const AIChatPage: React.FC = () => {
                   {/* Empty State Welcome */}
                   {messages.length === 0 && (
                       <div className="m-auto text-center max-w-md animate-fade-in relative mt-[400px] md:mt-[350px]">
-                          <div className="inline-flex items-center gap-2 bg-cyan-950/50 text-cyan-300 px-4 py-2 rounded-full border border-cyan-500/30 mb-6 backdrop-blur-md shadow-lg">
+                          <div className="inline-flex items-center gap-2 bg-indigo-100 dark:bg-cyan-950/50 text-indigo-700 dark:text-cyan-300 px-4 py-2 rounded-full border border-indigo-300 dark:border-cyan-500/30 mb-6 backdrop-blur-md shadow-lg">
                               <Sparkles size={16} />
                               <span className="text-xs font-bold uppercase tracking-wider">{text.mentorActivated}</span>
                           </div>
@@ -306,10 +306,10 @@ export const AIChatPage: React.FC = () => {
                                       <button 
                                                                                 key={`${ability?.id ?? ability?.label ?? 'ability'}-${index}`}
                                         onClick={() => handleSend(ability.prompt)}
-                                        className="bg-[#0F172A]/80 border border-cyan-900/50 p-4 rounded-xl hover:bg-cyan-900/20 hover:border-cyan-500/50 transition-all group backdrop-blur-sm"
+                                                                                className="bg-white/90 dark:bg-[#0F172A]/80 border border-slate-200 dark:border-cyan-900/50 p-4 rounded-xl hover:bg-indigo-50 dark:hover:bg-cyan-900/20 hover:border-indigo-300 dark:hover:border-cyan-500/50 transition-all group backdrop-blur-sm"
                                       >
                                           <AbilityIcon size={24} className={`${ability.color} mb-2 mx-auto`} />
-                                          <div className="text-[10px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider">{ability.label}</div>
+                                                                                    <div className="text-[10px] font-bold text-slate-500 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white uppercase tracking-wider">{ability.label}</div>
                                       </button>
                                   );
                               })}
@@ -325,11 +325,11 @@ export const AIChatPage: React.FC = () => {
                               <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 border shadow-lg ${
                                   msg.sender === 'user' 
                                     ? 'bg-indigo-600 border-indigo-400/30' 
-                                    : 'bg-cyan-950 border-cyan-500/30'
+                                    : 'bg-slate-100 dark:bg-cyan-950 border-slate-300 dark:border-cyan-500/30'
                               }`}>
                                   {msg.sender === 'user' 
                                     ? <img src={CURRENT_USER.avatar} className="size-full rounded-xl" />
-                                    : <Bot size={20} className="text-cyan-400" />
+                                                                        : <Bot size={20} className="text-indigo-600 dark:text-cyan-400" />
                                   }
                               </div>
 
@@ -337,11 +337,11 @@ export const AIChatPage: React.FC = () => {
                               <div className={`
                                   max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed shadow-xl backdrop-blur-sm border
                                   ${msg.sender === 'user'
-                                      ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-100 rounded-tr-none'
-                                      : 'bg-[#0F172A]/80 border-cyan-500/20 text-cyan-50 rounded-tl-none'
+                                      ? 'bg-indigo-100 dark:bg-indigo-600/20 border-indigo-300 dark:border-indigo-500/30 text-indigo-900 dark:text-indigo-100 rounded-tr-none'
+                                      : 'bg-white dark:bg-[#0F172A]/80 border-slate-200 dark:border-cyan-500/20 text-slate-800 dark:text-cyan-50 rounded-tl-none'
                                   }
                               `}>
-                                  {msg.sender === 'ai' && <div className="text-[10px] font-bold text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> {text.responseOutput}</div>}
+                                  {msg.sender === 'ai' && <div className="text-[10px] font-bold text-indigo-600 dark:text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> {text.responseOutput}</div>}
                                   {msg.sender === 'ai' ? (
                                       <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={formatMessage(msg.text)} />
                                   ) : (
@@ -353,10 +353,10 @@ export const AIChatPage: React.FC = () => {
                       
                       {isTyping && (
                           <div className="flex gap-4">
-                              <div className="size-10 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                              <div className="size-10 rounded-xl bg-slate-100 dark:bg-cyan-950 border border-slate-300 dark:border-cyan-500/30 flex items-center justify-center shrink-0">
                                   <Activity size={20} className="text-cyan-400 animate-pulse" />
                               </div>
-                              <div className="bg-[#0F172A]/60 border border-cyan-500/20 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5">
+                              <div className="bg-white dark:bg-[#0F172A]/60 border border-slate-200 dark:border-cyan-500/20 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5">
                                   <span className="size-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                   <span className="size-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                                   <span className="size-1.5 bg-cyan-400 rounded-full animate-bounce"></span>
@@ -368,11 +368,11 @@ export const AIChatPage: React.FC = () => {
               </div>
 
               {/* --- INPUT DECK --- */}
-              <div className="p-4 md:p-6 bg-[#0F172A]/90 border-t border-cyan-900/30 backdrop-blur-md relative z-20">
+              <div className="p-4 md:p-6 bg-slate-100/90 dark:bg-[#0F172A]/90 border-t border-slate-200 dark:border-cyan-900/30 backdrop-blur-md relative z-20">
                   <div className="max-w-3xl mx-auto relative group">
-                      <div className="absolute inset-0 bg-cyan-500/5 rounded-2xl blur-sm group-focus-within:bg-cyan-500/10 transition-colors"></div>
-                      <div className="relative bg-[#0B1121] border border-cyan-900/50 rounded-2xl flex items-center p-2 shadow-lg group-focus-within:border-cyan-500/50 transition-colors">
-                          <div className="pl-3 pr-2 text-cyan-500">
+                      <div className="absolute inset-0 bg-indigo-500/5 dark:bg-cyan-500/5 rounded-2xl blur-sm group-focus-within:bg-indigo-500/10 dark:group-focus-within:bg-cyan-500/10 transition-colors"></div>
+                      <div className="relative bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-cyan-900/50 rounded-2xl flex items-center p-2 shadow-inner group-focus-within:border-arcade-primary transition-colors">
+                          <div className="pl-3 pr-2 text-indigo-600 dark:text-cyan-500">
                               <ChevronRight size={20} className="animate-pulse" />
                           </div>
                           <input 
@@ -380,19 +380,19 @@ export const AIChatPage: React.FC = () => {
                               onChange={(e) => setInputValue(e.target.value)}
                               onKeyDown={handleKeyPress}
                               placeholder={AI_CHAT_PAGE_DATA?.inputPlaceholder || text.inputPlaceholder} 
-                              className="w-full bg-transparent border-none text-cyan-100 placeholder-cyan-900/50 focus:ring-0 outline-none h-10 font-mono text-sm"
+                              className="w-full bg-transparent border-none text-slate-900 dark:text-cyan-100 placeholder-slate-400 dark:placeholder-cyan-900/50 focus:ring-0 outline-none h-10 font-mono text-sm"
                           />
                           <button 
                               onClick={() => handleSend()}
                               disabled={!inputValue.trim()}
-                              className="p-2 bg-cyan-900/30 text-cyan-400 rounded-xl hover:bg-cyan-500 hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-cyan-900/30 disabled:hover:text-cyan-400"
+                              className="p-2 bg-indigo-100 dark:bg-cyan-900/30 text-indigo-600 dark:text-cyan-400 rounded-xl hover:bg-indigo-500 dark:hover:bg-cyan-500 hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-indigo-100 dark:disabled:hover:bg-cyan-900/30 disabled:hover:text-indigo-600 dark:disabled:hover:text-cyan-400"
                           >
                               <Send size={18} />
                           </button>
                       </div>
                   </div>
                   <div className="text-center mt-3">
-                      <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{text.safeNotice}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-500 font-bold tracking-widest uppercase">{text.safeNotice}</p>
                   </div>
               </div>
 

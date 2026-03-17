@@ -99,7 +99,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
         : { completedPractices: [] };
 
   return (
-    <div className="relative h-full flex flex-col bg-slate-100 overflow-hidden">
+    <div className="relative h-full flex flex-col bg-slate-100 dark:bg-[#0c120e] overflow-hidden">
        
        {/* Background Decor */}
        <div className="absolute inset-0 pointer-events-none">
@@ -108,13 +108,13 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
        </div>
 
        {/* Map Header */}
-       <header className="z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 shadow-sm">
-           <button onClick={() => setView(View.DASHBOARD)} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors">
+       <header className="z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10 p-4 flex items-center justify-between sticky top-0 shadow-sm">
+           <button onClick={() => setView(View.DASHBOARD)} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                <ChevronLeft size={20} />
                <span className="font-bold text-sm uppercase tracking-wider hidden sm:inline">{text.backToLobby || 'Назад'}</span>
            </button>
            <div className="flex flex-col items-center">
-               <h1 className="text-slate-900 font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
+               <h1 className="text-slate-900 dark:text-white font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
                <div className="flex items-center gap-1.5 text-[10px] font-bold text-arcade-action uppercase tracking-widest">
                    <MapIcon size={12} />
                    <span>{text.season || 'Сезон обучения'} {currentSeason}</span>
@@ -141,12 +141,12 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                              {courses.length === 0 && (
                                      <div className="absolute inset-0 flex items-center justify-center z-20 px-6">
-                                             <div className="w-full bg-white border border-slate-200 rounded-2xl p-6 text-center">
-                                                     <h3 className="text-slate-900 font-bold text-lg mb-2">Курсы пока не загружены</h3>
-                                                     <p className="text-slate-600 text-sm mb-4">Структура экрана сохранена. Проверьте интеграцию данных API /courses.</p>
+                                             <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 text-center">
+                                                     <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">Курсы пока не загружены</h3>
+                                                     <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">Структура экрана сохранена. Проверьте интеграцию данных API /courses.</p>
                                                      <button
                                                          onClick={() => setView(View.DASHBOARD)}
-                                                         className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-700 text-white text-sm font-bold"
+                                                         className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold"
                                                      >
                                                          Вернуться на главную
                                                      </button>
@@ -176,10 +176,10 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                    relative transition-all duration-300 flex items-center justify-center shadow-2xl group
                                    ${course.isBoss ? 'size-24 rounded-2xl rotate-45' : 'size-20 rounded-full'}
                                    ${isLocked 
-                                        ? 'bg-slate-200 border-2 border-slate-300 text-slate-400 opacity-70' 
+                                        ? 'bg-slate-200 dark:bg-slate-800 border-2 border-slate-300 dark:border-white/10 text-slate-400 opacity-70' 
                                         : isCurrent
                                             ? 'bg-gradient-to-b from-arcade-action to-red-600 border-4 border-white text-white scale-110 shadow-[0_0_30px_rgba(249,115,22,0.6)] animate-pulse-glow'
-                                            : 'bg-white border-4 border-arcade-success text-arcade-success'
+                                            : 'bg-white dark:bg-slate-900 border-4 border-arcade-success text-arcade-success'
                                    }
                                    ${shakingId === course.id ? 'animate-shake' : ''}
                                    ${!isLocked && 'hover:scale-110 active:scale-95 cursor-pointer'}
@@ -191,7 +191,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                
                                {/* Current Tag */}
                                {isCurrent && (
-                                   <div className={`absolute -top-10 bg-white text-arcade-action px-2 py-0.5 rounded-lg font-black text-[10px] uppercase shadow-lg animate-bounce-sm whitespace-nowrap ${course.isBoss ? '-rotate-45' : ''}`}>
+                                   <div className={`absolute -top-10 bg-white dark:bg-slate-900 text-arcade-action px-2 py-0.5 rounded-lg font-black text-[10px] uppercase shadow-lg animate-bounce-sm whitespace-nowrap ${course.isBoss ? '-rotate-45' : ''}`}>
                                        {text.currentLevel}
                                    </div>
                                )}
@@ -199,11 +199,11 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                            {/* Info Label */}
                            <div className={`mt-4 text-center transition-opacity ${isLocked ? 'opacity-30' : 'opacity-100'}`}>
-                               <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200 inline-block shadow-sm">
+                               <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 inline-block shadow-sm">
                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-0.5">
                                        {course.isBoss ? text.bossLabel : `${text.chapterPrefix} ${course.id}`}
                                    </span>
-                                   <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[1px]' : 'text-slate-800'}`}>
+                                   <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[1px]' : 'text-slate-800 dark:text-slate-100'}`}>
                                        {course.title}
                                    </span>
                                                                      {course.gradeBand && (
@@ -226,20 +226,20 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
            <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedLevel(null)}></div>
                
-               <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-t-3xl md:rounded-3xl p-0 shadow-2xl transform transition-transform animate-float-up overflow-hidden">
+               <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-t-3xl md:rounded-3xl p-0 shadow-2xl transform transition-transform animate-float-up overflow-hidden">
                    
                    {/* Cyber Header */}
                    <div className="h-32 bg-gradient-to-br from-arcade-primary/20 to-purple-900/20 relative p-6 flex flex-col justify-end">
                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                       <button onClick={() => setSelectedLevel(null)} className="absolute top-4 right-4 p-2 bg-white/60 rounded-full text-slate-800 hover:bg-white"><X size={18}/></button>
+                       <button onClick={() => setSelectedLevel(null)} className="absolute top-4 right-4 p-2 bg-white/70 dark:bg-slate-800 rounded-full text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"><X size={18}/></button>
                        
                        <div className="flex items-center gap-3 relative z-10">
                             <div className={`size-12 rounded-xl flex items-center justify-center shadow-lg ${selectedLevel.isBoss ? 'bg-red-500' : 'bg-arcade-primary'} text-white`}>
                                 {getIcon(selectedLevel.icon)}
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{text.briefing}</p>
-                                <h2 className="text-xl font-display font-black text-slate-900 leading-tight">{selectedLevel.title}</h2>
+                                <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{text.briefing}</p>
+                                <h2 className="text-xl font-display font-black text-slate-900 dark:text-white leading-tight">{selectedLevel.title}</h2>
                                                                 {selectedLevel.section && (
                                                                     <p className="text-xs text-emerald-200 mt-1">{selectedLevel.section}</p>
                                                                 )}
@@ -249,31 +249,31 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                    {/* Body */}
                    <div className="p-6 space-y-6">
-                       <p className="text-slate-700 text-sm leading-relaxed border-l-2 border-arcade-action pl-4 italic">
+                       <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed border-l-2 border-arcade-action pl-4 italic">
                            "{selectedLevel.description}"
                        </p>
 
                        {/* Rewards Grid */}
                        <div className="grid grid-cols-2 gap-3">
-                           <div className="bg-[#0F172A] p-3 rounded-xl border border-white/5 flex items-center gap-3">
+                           <div className="bg-slate-100 dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
                                <Award size={20} className="text-yellow-400" />
                                <div>
                                    <p className="text-[10px] text-gray-500 font-bold uppercase">Прогресс</p>
-                                   <p className="font-bold text-white">{selectedLevel.progress}%</p>
+                                   <p className="font-bold text-slate-900 dark:text-white">{selectedLevel.progress}%</p>
                                </div>
                            </div>
-                           <div className="bg-[#0F172A] p-3 rounded-xl border border-white/5 flex items-center gap-3">
+                           <div className="bg-slate-100 dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
                                <Zap size={20} className="text-arcade-success" />
                                <div>
                                    <p className="text-[10px] text-gray-500 font-bold uppercase">{text.difficulty}</p>
-                                   <p className="font-bold text-white">{selectedLevel.difficulty}</p>
+                                   <p className="font-bold text-slate-900 dark:text-white">{selectedLevel.difficulty}</p>
                                </div>
                            </div>
                        </div>
 
                        {typeof selectedLevel.completedLessons === 'number' && (
-                           <div className="text-xs text-gray-400 bg-[#0F172A] border border-white/5 rounded-lg px-3 py-2">
-                               Уроки: <span className="text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}
+                           <div className="text-xs text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
+                               Уроки: <span className="text-slate-900 dark:text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}
                            </div>
                        )}
 

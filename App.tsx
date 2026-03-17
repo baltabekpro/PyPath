@@ -171,10 +171,10 @@ const App: React.FC = () => {
 
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen bg-slate-100 text-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-100 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="size-10 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-gray-300">Загружаем данные...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300">Загружаем данные...</p>
         </div>
       </div>
     );
@@ -211,7 +211,7 @@ const App: React.FC = () => {
            <div className="md:hidden absolute top-4 left-4 z-20">
                <button 
                  onClick={() => setIsMobileMenuOpen(true)}
-                 className="p-2 bg-py-surface border border-py-accent rounded-lg text-gray-400 hover:text-white"
+                 className="p-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                >
                  <Menu size={20} />
                </button>
@@ -248,32 +248,32 @@ const App: React.FC = () => {
         {showNotifications && (
             <>
             <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowNotifications(false)}></div>
-            <div className="absolute top-20 right-4 md:right-24 z-50 w-80 bg-[#1E293B] border border-white/10 rounded-2xl shadow-2xl p-4 animate-in fade-in slide-in-from-top-5">
-                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+            <div className="absolute top-20 right-4 md:right-24 z-50 w-80 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-4 animate-float-up">
+                <h3 className="text-slate-900 dark:text-white font-bold mb-3 flex items-center gap-2">
                     <Bell size={16} className="text-arcade-primary"/>
                   {appText.notificationsTitle}
                 </h3>
                 <div className="space-y-2 mb-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Новые</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Новые</p>
                   <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
                     {appNotifications.filter((n) => !n.read).map((item) => (
-                      <div key={item.id} className="bg-black/20 p-3 rounded-xl border border-white/5 hover:bg-white/5 cursor-pointer transition-colors">
-                        <p className="text-[10px] text-gray-400 mb-1 font-bold">{item.time}</p>
-                        <p className="text-sm text-gray-200">{item.text}</p>
+                      <div key={item.id} className="bg-slate-50 dark:bg-black/20 p-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 font-bold">{item.time}</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-200">{item.text}</p>
                       </div>
                     ))}
                     {appNotifications.filter((n) => !n.read).length === 0 && (
-                      <p className="text-xs text-gray-500">Нет новых уведомлений</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Нет новых уведомлений</p>
                     )}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">История</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">История</p>
                   <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
                     {appNotifications.filter((n) => n.read).map((item) => (
-                      <div key={item.id} className="bg-black/10 p-3 rounded-xl border border-white/5 opacity-80">
-                        <p className="text-[10px] text-gray-500 mb-1 font-bold">{item.time}</p>
-                        <p className="text-sm text-gray-300">{item.text}</p>
+                      <div key={item.id} className="bg-slate-50 dark:bg-black/10 p-3 rounded-xl border border-slate-200 dark:border-white/10 opacity-80">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 font-bold">{item.time}</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-300">{item.text}</p>
                       </div>
                     ))}
                   </div>
@@ -297,22 +297,6 @@ const App: React.FC = () => {
         )}
 
       </main>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #28392e;
-          border-radius: 20px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: #0df259;
-        }
-      `}</style>
     </div>
   );
 };

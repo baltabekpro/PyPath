@@ -36,6 +36,7 @@ const emptyMissionForm = {
 };
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
+  const formFieldClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:border-arcade-primary focus:outline-none shadow-inner transition-colors';
   const [activeTab, setActiveTab] = useState<Tab>('courses');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -328,46 +329,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
   if (!isAdmin) {
     return (
       <div className="p-6 md:p-10 max-w-4xl mx-auto">
-        <div className="bg-[#1E293B] border border-red-500/30 rounded-2xl p-6 text-center">
+        <div className="bg-white dark:bg-[#1E293B] border border-red-300 dark:border-red-500/30 rounded-3xl shadow-2xl p-6 text-center animate-float-up">
           <ShieldAlert className="mx-auto mb-3 text-red-400" />
-          <h2 className="text-white text-xl font-black mb-2">Доступ запрещён</h2>
-          <p className="text-gray-400">Этот раздел доступен только администраторам.</p>
+          <h2 className="text-slate-900 dark:text-white text-xl font-black mb-2">Доступ запрещён</h2>
+          <p className="text-slate-600 dark:text-gray-400">Этот раздел доступен только администраторам.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in pt-6 pb-24">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in pt-6 pb-24 text-slate-900 dark:text-slate-100">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-black text-white">Админка</h1>
-          <p className="text-gray-400 text-sm">Простое управление курсами и заданиями</p>
+          <h1 className="text-3xl font-display font-black text-slate-900 dark:text-white">Админка</h1>
+          <p className="text-slate-600 dark:text-gray-400 text-sm">Простое управление курсами и заданиями</p>
         </div>
         <button
           onClick={loadData}
-          className="px-4 py-2 rounded-xl bg-white/10 text-white border border-white/10 hover:bg-white/20 flex items-center gap-2"
+          className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
         >
           <RefreshCw size={16} /> Обновить
         </button>
       </div>
 
       {message && (
-        <div className="bg-arcade-primary/20 border border-arcade-primary/40 rounded-xl px-4 py-3 text-sm text-white">
+        <div className="bg-arcade-primary/10 border border-arcade-primary/40 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white">
           {message}
         </div>
       )}
 
-      <div className="flex gap-2 bg-[#0F172A] border border-white/10 rounded-xl p-1 w-fit">
+      <div className="flex gap-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-xl p-1 w-fit">
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold ${activeTab === 'courses' ? 'bg-arcade-primary text-white' : 'text-gray-400 hover:text-white'}`}
+          className={`px-4 py-2 rounded-lg text-sm font-bold ${activeTab === 'courses' ? 'bg-arcade-primary text-white' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
         >
           Курсы
         </button>
         <button
           onClick={() => setActiveTab('missions')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold ${activeTab === 'missions' ? 'bg-arcade-primary text-white' : 'text-gray-400 hover:text-white'}`}
+          className={`px-4 py-2 rounded-lg text-sm font-bold ${activeTab === 'missions' ? 'bg-arcade-primary text-white' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
         >
           Задания
         </button>
@@ -375,38 +376,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
 
       {activeTab === 'courses' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-5 space-y-4">
-            <h3 className="text-white font-bold">{editingCourseId ? `Редактировать курс #${editingCourseId}` : 'Создать курс'}</h3>
-            <input className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Название" value={courseForm.title} onChange={(e) => setCourseForm((p) => ({ ...p, title: e.target.value }))} />
-            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-24" placeholder="Описание" value={courseForm.description} onChange={(e) => setCourseForm((p) => ({ ...p, description: e.target.value }))} />
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-5 space-y-4 animate-float-up">
+            <h3 className="text-slate-900 dark:text-white font-bold">{editingCourseId ? `Редактировать курс #${editingCourseId}` : 'Создать курс'}</h3>
+            <input className={formFieldClass} placeholder="Название" value={courseForm.title} onChange={(e) => setCourseForm((p) => ({ ...p, title: e.target.value }))} />
+            <textarea className={`${formFieldClass} min-h-24`} placeholder="Описание" value={courseForm.description} onChange={(e) => setCourseForm((p) => ({ ...p, description: e.target.value }))} />
             <div className="grid grid-cols-2 gap-3">
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" type="number" min={1} value={courseForm.totalLessons} onChange={(e) => setCourseForm((p) => ({ ...p, totalLessons: Number(e.target.value) }))} />
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Сложность" value={courseForm.difficulty} onChange={(e) => setCourseForm((p) => ({ ...p, difficulty: e.target.value }))} />
+              <input className={formFieldClass} type="number" min={1} value={courseForm.totalLessons} onChange={(e) => setCourseForm((p) => ({ ...p, totalLessons: Number(e.target.value) }))} />
+              <input className={formFieldClass} placeholder="Сложность" value={courseForm.difficulty} onChange={(e) => setCourseForm((p) => ({ ...p, difficulty: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Иконка (Terminal)" value={courseForm.icon} onChange={(e) => setCourseForm((p) => ({ ...p, icon: e.target.value }))} />
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Цвет (text-arcade-success)" value={courseForm.color} onChange={(e) => setCourseForm((p) => ({ ...p, color: e.target.value }))} />
+              <input className={formFieldClass} placeholder="Иконка (Terminal)" value={courseForm.icon} onChange={(e) => setCourseForm((p) => ({ ...p, icon: e.target.value }))} />
+              <input className={formFieldClass} placeholder="Цвет (text-arcade-success)" value={courseForm.color} onChange={(e) => setCourseForm((p) => ({ ...p, color: e.target.value }))} />
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-300">
+            <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-gray-300">
               <label className="flex items-center gap-2"><input type="checkbox" checked={courseForm.isBoss} onChange={(e) => setCourseForm((p) => ({ ...p, isBoss: e.target.checked }))} /> Финальный курс</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={courseForm.locked} onChange={(e) => setCourseForm((p) => ({ ...p, locked: e.target.checked }))} /> Скрыть для учеников</label>
             </div>
             <div className="flex gap-3">
               <button onClick={submitCourse} disabled={saving} className="px-4 py-2 rounded-lg bg-arcade-primary text-white font-bold flex items-center gap-2 disabled:opacity-50"><Save size={16} /> Сохранить</button>
-              {editingCourseId && <button onClick={() => { setEditingCourseId(null); setCourseForm(emptyCourseForm); }} className="px-4 py-2 rounded-lg bg-white/10 text-white">Очистить</button>}
+              {editingCourseId && <button onClick={() => { setEditingCourseId(null); setCourseForm(emptyCourseForm); }} className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white">Очистить</button>}
             </div>
           </div>
 
-          <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-5 space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            <h3 className="text-white font-bold">Список курсов ({courses.length})</h3>
-            {loading ? <p className="text-gray-400">Загрузка...</p> : courses.map((course) => (
-              <div key={course.id} className="bg-[#0F172A] border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-5 space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar animate-float-up">
+            <h3 className="text-slate-900 dark:text-white font-bold">Список курсов ({courses.length})</h3>
+            {loading ? <p className="text-slate-500 dark:text-gray-400">Загрузка...</p> : courses.map((course) => (
+              <div key={course.id} className="bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-white font-bold">#{course.id} {course.title}</p>
-                  <p className="text-xs text-gray-400">{course.difficulty} • {course.totalLessons} уроков • {course.locked ? 'Locked' : 'Open'}</p>
+                  <p className="text-slate-900 dark:text-white font-bold">#{course.id} {course.title}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400">{course.difficulty} • {course.totalLessons} уроков • {course.locked ? 'Locked' : 'Open'}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => editCourse(course)} className="px-3 py-1.5 text-xs rounded bg-white/10 text-white">Изменить</button>
+                  <button onClick={() => editCourse(course)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">Изменить</button>
                   <button onClick={() => duplicateCourse(course)} className="px-3 py-1.5 text-xs rounded bg-arcade-primary/20 text-arcade-primary">Копия</button>
                   <button onClick={() => removeCourse(course.id)} className="px-3 py-1.5 text-xs rounded bg-red-500/20 text-red-300 flex items-center gap-1"><Trash2 size={12} /> Удалить</button>
                 </div>
@@ -418,43 +419,43 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
 
       {activeTab === 'missions' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-5 space-y-4">
-            <h3 className="text-white font-bold">{editingMissionId ? `Редактировать задание ${editingMissionId}` : 'Создать задание'}</h3>
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-5 space-y-4 animate-float-up">
+            <h3 className="text-slate-900 dark:text-white font-bold">{editingMissionId ? `Редактировать задание ${editingMissionId}` : 'Создать задание'}</h3>
             <div className="grid grid-cols-2 gap-3">
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="ID задания" value={missionForm.id} disabled={Boolean(editingMissionId)} onChange={(e) => setMissionForm((p) => ({ ...p, id: e.target.value }))} />
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="XP" type="number" value={missionForm.xpReward} onChange={(e) => setMissionForm((p) => ({ ...p, xpReward: Number(e.target.value) }))} />
+              <input className={formFieldClass} placeholder="ID задания" value={missionForm.id} disabled={Boolean(editingMissionId)} onChange={(e) => setMissionForm((p) => ({ ...p, id: e.target.value }))} />
+              <input className={formFieldClass} placeholder="XP" type="number" value={missionForm.xpReward} onChange={(e) => setMissionForm((p) => ({ ...p, xpReward: Number(e.target.value) }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Глава" value={missionForm.chapter} onChange={(e) => setMissionForm((p) => ({ ...p, chapter: e.target.value }))} />
-              <input className="bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Сложность" value={missionForm.difficulty} onChange={(e) => setMissionForm((p) => ({ ...p, difficulty: e.target.value }))} />
+              <input className={formFieldClass} placeholder="Глава" value={missionForm.chapter} onChange={(e) => setMissionForm((p) => ({ ...p, chapter: e.target.value }))} />
+              <input className={formFieldClass} placeholder="Сложность" value={missionForm.difficulty} onChange={(e) => setMissionForm((p) => ({ ...p, difficulty: e.target.value }))} />
             </div>
             <div className="flex gap-2 flex-wrap">
-              <button onClick={applyDemoMissionTemplate} type="button" className="px-3 py-1.5 text-xs rounded bg-white/10 text-white">Подставить пример</button>
+              <button onClick={applyDemoMissionTemplate} type="button" className="px-3 py-1.5 text-xs rounded bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white">Подставить пример</button>
             </div>
-            <input className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Название" value={missionForm.title} onChange={(e) => setMissionForm((p) => ({ ...p, title: e.target.value }))} />
-            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-20" placeholder="Описание" value={missionForm.description} onChange={(e) => setMissionForm((p) => ({ ...p, description: e.target.value }))} />
-            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-20" placeholder="Теория для ученика (что и почему нужно сделать)" value={missionForm.theoryText} onChange={(e) => setMissionForm((p) => ({ ...p, theoryText: e.target.value }))} />
-            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-24 font-mono text-xs" placeholder="Код-заготовка" value={missionForm.starterCode} onChange={(e) => setMissionForm((p) => ({ ...p, starterCode: e.target.value }))} />
-            <input className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white" placeholder="Ожидаемый текст в выводе (например: Привет)" value={missionForm.expectedOutput} onChange={(e) => setMissionForm((p) => ({ ...p, expectedOutput: e.target.value }))} />
-            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-16" placeholder="Цели задания (каждая с новой строки)" value={missionForm.objectivesText} onChange={(e) => setMissionForm((p) => ({ ...p, objectivesText: e.target.value }))} />
-            <textarea className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2 text-white min-h-16" placeholder="Подсказки ученику (каждая с новой строки)" value={missionForm.hintsText} onChange={(e) => setMissionForm((p) => ({ ...p, hintsText: e.target.value }))} />
-            <p className="text-xs text-gray-400">Проверка задания будет идти по ожидаемому тексту в выводе и по факту запуска без ошибок.</p>
+            <input className={formFieldClass} placeholder="Название" value={missionForm.title} onChange={(e) => setMissionForm((p) => ({ ...p, title: e.target.value }))} />
+            <textarea className={`${formFieldClass} min-h-20`} placeholder="Описание" value={missionForm.description} onChange={(e) => setMissionForm((p) => ({ ...p, description: e.target.value }))} />
+            <textarea className={`${formFieldClass} min-h-20`} placeholder="Теория для ученика (что и почему нужно сделать)" value={missionForm.theoryText} onChange={(e) => setMissionForm((p) => ({ ...p, theoryText: e.target.value }))} />
+            <textarea className={`${formFieldClass} min-h-24 font-mono text-xs`} placeholder="Код-заготовка" value={missionForm.starterCode} onChange={(e) => setMissionForm((p) => ({ ...p, starterCode: e.target.value }))} />
+            <input className={formFieldClass} placeholder="Ожидаемый текст в выводе (например: Привет)" value={missionForm.expectedOutput} onChange={(e) => setMissionForm((p) => ({ ...p, expectedOutput: e.target.value }))} />
+            <textarea className={`${formFieldClass} min-h-16`} placeholder="Цели задания (каждая с новой строки)" value={missionForm.objectivesText} onChange={(e) => setMissionForm((p) => ({ ...p, objectivesText: e.target.value }))} />
+            <textarea className={`${formFieldClass} min-h-16`} placeholder="Подсказки ученику (каждая с новой строки)" value={missionForm.hintsText} onChange={(e) => setMissionForm((p) => ({ ...p, hintsText: e.target.value }))} />
+            <p className="text-xs text-slate-500 dark:text-gray-400">Проверка задания будет идти по ожидаемому тексту в выводе и по факту запуска без ошибок.</p>
             <div className="flex gap-3">
               <button onClick={submitMission} disabled={saving} className="px-4 py-2 rounded-lg bg-arcade-primary text-white font-bold flex items-center gap-2 disabled:opacity-50"><Save size={16} /> Сохранить</button>
-              {editingMissionId && <button onClick={() => { setEditingMissionId(null); setMissionForm(emptyMissionForm); }} className="px-4 py-2 rounded-lg bg-white/10 text-white">Очистить</button>}
+              {editingMissionId && <button onClick={() => { setEditingMissionId(null); setMissionForm(emptyMissionForm); }} className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white">Очистить</button>}
             </div>
           </div>
 
-          <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-5 space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            <h3 className="text-white font-bold">Список заданий ({sortedMissions.length})</h3>
-            {loading ? <p className="text-gray-400">Загрузка...</p> : sortedMissions.map((mission) => (
-              <div key={mission.id} className="bg-[#0F172A] border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-5 space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar animate-float-up">
+            <h3 className="text-slate-900 dark:text-white font-bold">Список заданий ({sortedMissions.length})</h3>
+            {loading ? <p className="text-slate-500 dark:text-gray-400">Загрузка...</p> : sortedMissions.map((mission) => (
+              <div key={mission.id} className="bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-white font-bold truncate">{mission.id}</p>
-                  <p className="text-xs text-gray-400 truncate">{mission.title} • XP {mission.xpReward}</p>
+                  <p className="text-slate-900 dark:text-white font-bold truncate">{mission.id}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 truncate">{mission.title} • XP {mission.xpReward}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => editMission(mission)} className="px-3 py-1.5 text-xs rounded bg-white/10 text-white">Изменить</button>
+                  <button onClick={() => editMission(mission)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">Изменить</button>
                   <button onClick={() => duplicateMission(mission)} className="px-3 py-1.5 text-xs rounded bg-arcade-primary/20 text-arcade-primary">Копия</button>
                   <button onClick={() => removeMission(mission.id)} className="px-3 py-1.5 text-xs rounded bg-red-500/20 text-red-300 flex items-center gap-1"><Trash2 size={12} /> Удалить</button>
                 </div>

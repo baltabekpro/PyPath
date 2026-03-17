@@ -172,12 +172,12 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => setView(View.COURSES)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft size={18} />
             Назад к курсам
@@ -192,7 +192,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <aside className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-4">
+          <aside className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <GraduationCap size={18} className="text-indigo-600" />
               <h2 className="font-bold">Полный курс</h2>
@@ -206,7 +206,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                     setGrade(tab);
                     setSelectedTopicId(topicsData.find((t) => t.grade === tab)?.id || '');
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${grade === tab ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${grade === tab ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
                 >
                   {tab === 'pre' ? 'До 8/9' : `${tab} класс`}
                 </button>
@@ -221,11 +221,11 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                   <button
                     key={topic.id}
                     onClick={() => setSelectedTopicId(topic.id)}
-                    className={`w-full text-left p-3 rounded-xl border ${selectedTopic?.id === topic.id ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-white'}`}
+                    className={`w-full text-left p-3 rounded-xl border ${selectedTopic?.id === topic.id ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900'}`}
                   >
-                    <p className="text-xs text-slate-500">{topic.section}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{topic.section}</p>
                     <p className="font-semibold text-sm">{topic.title}</p>
-                    <p className="text-xs text-slate-600 mt-1">Теория + {topic.practices.length} практик</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">Теория + {topic.practices.length} практик</p>
                     <p className="text-xs mt-1 text-emerald-700">Выполнено: {done}/{topic.practices.length}</p>
                   </button>
                 );
@@ -233,12 +233,12 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             </div>
           </aside>
 
-          <section className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6">
+          <section className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
             {selectedTopic && (
               <>
-                <p className="text-sm text-slate-500">{selectedTopic.section}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
                 <h1 className="text-2xl font-bold mb-4">{selectedTopic.title}</h1>
-                {isSaving && <p className="text-xs text-slate-500 mb-2">Сохраняем прогресс...</p>}
+                {isSaving && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Сохраняем прогресс...</p>}
 
                 <div className="mb-6 p-4 rounded-xl border border-indigo-200 bg-indigo-50">
                   <div className="flex items-center justify-between mb-2">
@@ -253,7 +253,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                       Открыть теорию
                     </button>
                   </div>
-                  <p className="text-sm text-slate-700">{selectedTopic.theory}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
                 </div>
 
                 <div>
@@ -264,7 +264,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                     </p>
                   )}
                   {topicProgress.theoryOpened && (
-                    <p className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg p-3 mb-3">
                       Практика открывается по порядку: сначала 1 задание, затем 2 и далее.
                     </p>
                   )}
@@ -277,7 +277,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                           key={`${selectedTopic.id}-${index}`}
                           disabled={!unlocked}
                           onClick={() => togglePractice(index)}
-                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         >
                           <span className="text-sm">{index + 1}. {task}</span>
                           {done && <CheckCircle2 size={18} className="text-emerald-600" />}
