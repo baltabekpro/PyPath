@@ -109,8 +109,8 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
       progress: Number(item?.score || 0),
   })));
 
-  return (
-    <div className="min-h-screen pb-20 animate-fade-in relative bg-[#0F172A]">
+    return (
+        <div className="min-h-screen pb-20 animate-fade-in relative bg-slate-100 dark:bg-[#0F172A]">
                 <ActionToast visible={Boolean(actionMessage)} message={actionMessage} tone="info" />
         
         {/* --- Hero Banner --- */}
@@ -141,12 +141,12 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     } catch {
                         showAction(text.toastShared);
                     }
-                }} className="p-2 bg-black/30 backdrop-blur-md rounded-xl text-white hover:bg-white/10 transition-colors border border-white/10 hover:border-white/30">
+                }} className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-white hover:bg-white transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30">
                     <Share2 size={20} />
                 </button>
                 <button 
                     onClick={() => setView(View.SETTINGS)}
-                    className="p-2 bg-black/30 backdrop-blur-md rounded-xl text-white hover:bg-white/10 transition-colors border border-white/10 hover:border-white/30 flex items-center gap-2"
+                    className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-white hover:bg-white transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 flex items-center gap-2"
                 >
                     <Edit3 size={20} />
                     <span className="text-sm font-bold hidden md:inline">{text.edit}</span>
@@ -167,21 +167,21 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     )}
                     
                     {/* Avatar Container */}
-                    <div className="size-32 md:size-40 rounded-3xl bg-[#0F172A] p-1.5 relative z-10 shadow-[0_0_40px_rgba(168,85,247,0.4)] overflow-hidden border-2 border-arcade-primary group-hover:border-white transition-colors">
+                    <div className="size-32 md:size-40 rounded-3xl bg-white dark:bg-[#0F172A] p-1.5 relative z-10 shadow-[0_0_40px_rgba(168,85,247,0.25)] overflow-hidden border-2 border-arcade-primary group-hover:border-white transition-colors">
                         <img src={currentUser.avatar} alt="Profile" className="size-full rounded-2xl object-cover bg-slate-800" />
                         {/* Glitch Overlay on Hover */}
                         <div className="absolute inset-0 bg-arcade-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
                     </div>
                     
                     {/* Rank Badge */}
-                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-arcade-primary text-white font-black px-4 py-1.5 rounded-xl text-xs uppercase tracking-widest shadow-lg border-2 border-[#0F172A] z-20 flex items-center gap-2 whitespace-nowrap">
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-arcade-primary text-white font-black px-4 py-1.5 rounded-xl text-xs uppercase tracking-widest shadow-lg border-2 border-slate-100 dark:border-[#0F172A] z-20 flex items-center gap-2 whitespace-nowrap">
                         <Shield size={12} fill="currentColor"/> {currentUser.level}
                     </div>
                 </div>
 
                 {/* Name & Bio */}
                 <div className="flex-1 text-center md:text-left pt-12 md:pt-0">
-                    <h1 className="text-3xl md:text-5xl font-display font-black text-white mb-2 tracking-tight">
+                    <h1 className="text-3xl md:text-5xl font-display font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                         {currentUser.name}
                     </h1>
                     <p className="text-gray-400 font-medium max-w-lg mx-auto md:mx-0 leading-relaxed">
@@ -204,7 +204,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                         <div key={stat.label} className={`rounded-2xl p-4 border ${stat.border} ${stat.bg} flex flex-col items-center justify-center gap-2 transition-transform hover:scale-105`}>
                             <stat.icon size={24} className={stat.color} />
                             <div className="text-center">
-                                <div className="text-2xl font-black text-white leading-none">
+                                <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">
                                     <CountUp end={stat.value} suffix={stat.suffix} />
                                 </div>
                                 <div className={`text-[10px] font-bold uppercase tracking-wider ${stat.color} mt-1`}>{stat.label}</div>
@@ -214,13 +214,13 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 </div>
 
                 {/* Skills Radar */}
-                <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5 relative overflow-hidden">
+                <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-6 border border-slate-200 dark:border-white/5 relative overflow-hidden">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-display font-black text-xl text-white flex items-center gap-2">
+                        <h3 className="font-display font-black text-xl text-slate-900 dark:text-white flex items-center gap-2">
                             <Zap size={20} className="text-yellow-400" />
                                 {text.skillsMatrix || 'Матрица навыков'}
                         </h3>
-                        <div className="text-xs font-bold text-gray-500 bg-black/30 px-2 py-1 rounded">{text.lastUpdated || 'Обновлено'}: {lastUpdatedLabel}</div>
+                        <div className="text-xs font-bold text-gray-500 bg-slate-100 dark:bg-black/30 px-2 py-1 rounded">{text.lastUpdated || 'Обновлено'}: {lastUpdatedLabel}</div>
                     </div>
                     
                     <div className="h-[300px] w-full relative z-10">
@@ -249,8 +249,8 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                         </ResponsiveContainer>
                         ) : (
                             <div className="h-full w-full flex items-center justify-center text-center px-6">
-                                <div className="bg-black/20 border border-white/10 rounded-2xl p-5">
-                                    <p className="text-white font-bold mb-1">Навыки пока не заполнены</p>
+                                <div className="bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+                                    <p className="text-slate-900 dark:text-white font-bold mb-1">Навыки пока не заполнены</p>
                                     <p className="text-gray-400 text-sm">Решите несколько задач на арене — график появится автоматически.</p>
                                 </div>
                             </div>
@@ -259,10 +259,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 </div>
 
                                 {/* Combined Progress Charts */}
-                                <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
-                                        <h3 className="font-display font-black text-xl text-white mb-4">Уровень после каждого задания</h3>
+                                <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-6 border border-slate-200 dark:border-white/5">
+                                    <h3 className="font-display font-black text-xl text-slate-900 dark:text-white mb-4">Уровень после каждого задания</h3>
                                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                                <div className="h-64 bg-black/20 rounded-2xl p-3 border border-white/5">
+                                        <div className="h-64 bg-slate-50 dark:bg-black/20 rounded-2xl p-3 border border-slate-200 dark:border-white/5">
                                                         <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Линейная динамика</p>
                                                         {lineProgressData.length > 0 ? (
                                                             <ResponsiveContainer width="100%" height="90%">
@@ -278,7 +278,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                                             <div className="h-full flex items-center justify-center text-sm text-gray-400">Недостаточно данных по заданиям</div>
                                                         )}
                                                 </div>
-                                                <div className="h-64 bg-black/20 rounded-2xl p-3 border border-white/5">
+                                                <div className="h-64 bg-slate-50 dark:bg-black/20 rounded-2xl p-3 border border-slate-200 dark:border-white/5">
                                                         <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Прогресс по темам</p>
                                                         {topicProgressData.length > 0 ? (
                                                             <ResponsiveContainer width="100%" height="90%">
@@ -299,7 +299,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
 
                 {/* Showcase Trophies */}
                 <div>
-                     <h3 className="font-display font-black text-xl text-white mb-4 flex items-center gap-2">
+                     <h3 className="font-display font-black text-xl text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                         <Trophy size={20} className="text-arcade-action" />
                                 {text.showcase || 'Витрина достижений'}
                      </h3>
@@ -328,23 +328,23 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
 
             {/* --- RIGHT COLUMN --- */}
             <div className="space-y-8">
-                <div className="bg-[#1E293B] rounded-3xl p-6 border border-white/5">
-                    <h3 className="font-bold text-white mb-4">Личный режим</h3>
+                <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-6 border border-slate-200 dark:border-white/5">
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Личный режим</h3>
                     <div className="space-y-3 text-sm">
-                        <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-xl px-3 py-2">
+                        <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
                             <span className="text-gray-400">Рейтинг мира</span>
-                            <span className="text-white font-bold">#{currentUser.rank}</span>
+                            <span className="text-slate-900 dark:text-white font-bold">#{currentUser.rank}</span>
                         </div>
-                        <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-xl px-3 py-2">
+                        <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
                             <span className="text-gray-400">Текущая лига</span>
-                            <span className="text-white font-bold">{currentUser.league || '—'}</span>
+                            <span className="text-slate-900 dark:text-white font-bold">{currentUser.league || '—'}</span>
                         </div>
-                        <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-xl px-3 py-2">
+                        <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
                             <span className="text-gray-400">Серия дней</span>
-                            <span className="text-white font-bold">{currentUser.streak}</span>
+                            <span className="text-slate-900 dark:text-white font-bold">{currentUser.streak}</span>
                         </div>
                     </div>
-                    <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition-colors">
+                    <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-5 py-2 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs font-bold uppercase tracking-wider transition-colors">
                         Открыть рейтинг мира
                     </button>
                 </div>

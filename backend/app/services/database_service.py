@@ -668,12 +668,42 @@ class DatabaseService:
         settings = self._get_user_settings(user)
         all_progress = settings.get("journey_progress") if isinstance(settings.get("journey_progress"), dict) else {}
 
+        topic_max_practices = 7
+        for topic in self.get_course_journey(user):
+            if str(topic.get("id")) == str(topic_id):
+                practices = topic.get("practices") if isinstance(topic, dict) else []
+                if isinstance(practices, list) and practices:
+                    topic_max_practices = len(practices)
+                break
+
         completed = progress.get("completedPractices") if isinstance(progress, dict) else []
         completed_list = completed if isinstance(completed, list) else []
-        normalized = sorted({int(item) for item in completed_list if isinstance(item, int) or (isinstance(item, str) and str(item).isdigit())})
+        normalized = sorted(
+            {
+                int(item)
+                for item in completed_list
+                if (isinstance(item, int) or (isinstance(item, str) and str(item).isdigit()))
+                and 0 <= int(item) < topic_max_practices
+            }
+        )
+
+        theory_opened = bool(progress.get("theoryOpened") if isinstance(progress, dict) else False)
+        if not theory_opened:
+            normalized = []
+        else:
+            # Keep only contiguous completion from the first practice (0,1,2...).
+            contiguous: list[int] = []
+            expected = 0
+            for idx in normalized:
+                if idx == expected:
+                    contiguous.append(idx)
+                    expected += 1
+                elif idx > expected:
+                    break
+            normalized = contiguous
 
         all_progress[str(topic_id)] = {
-            "theoryOpened": bool(progress.get("theoryOpened") if isinstance(progress, dict) else False),
+            "theoryOpened": theory_opened,
             "completedPractices": normalized,
             "updatedAt": datetime.utcnow().isoformat(),
         }

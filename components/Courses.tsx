@@ -13,14 +13,22 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
   const [selectedLevel, setSelectedLevel] = useState<Course | null>(null);
   const [shakingId, setShakingId] = useState<number | null>(null);
   const [courses, setCourses] = useState(COURSES);
+    const [journeyTopics, setJourneyTopics] = useState<any[]>([]);
+    const [journeyProgress, setJourneyProgress] = useState<Record<string, { theoryOpened: boolean; completedPractices: number[] }>>({});
     const text = UI_TEXTS?.courses ?? {};
         const currentSeason = courses.find((c: any) => typeof c.currentSeason === 'number')?.currentSeason ?? 1;
 
   useEffect(() => {
     const loadCourses = async () => {
         try {
-            const coursesData = await apiGet<any[]>('/courses');
+            const [coursesData, topicsData, progressData] = await Promise.all([
+              apiGet<any[]>('/courses'),
+              apiGet<any[]>('/courses/journey'),
+              apiGet<any>('/courses/journey/progress'),
+            ]);
             setCourses(coursesData);
+            setJourneyTopics(Array.isArray(topicsData) ? topicsData : []);
+            setJourneyProgress(progressData && typeof progressData === 'object' ? progressData : {});
         } catch (error) {
             console.error('Failed to load courses:', error);
         }
@@ -69,6 +77,20 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
     return path;
   };
 
+    const totalJourneyPractices = journeyTopics.reduce((sum: number, item: any) => sum + (Array.isArray(item?.practices) ? item.practices.length : 0), 0);
+    const completedJourneyPractices = journeyTopics.reduce((sum: number, item: any) => {
+        const p = journeyProgress[String(item?.id)] || { completedPractices: [] };
+        return sum + (Array.isArray(p.completedPractices) ? p.completedPractices.length : 0);
+    }, 0);
+    const journeyPercent = totalJourneyPractices > 0 ? Math.round((completedJourneyPractices / totalJourneyPractices) * 100) : 0;
+
+    const selectedJourneyTopic = selectedLevel
+        ? journeyTopics.find((item: any) => String(item?.id) === `course-${selectedLevel.id}`)
+        : null;
+    const selectedJourneyProgress = selectedJourneyTopic
+        ? journeyProgress[String(selectedJourneyTopic.id)] || { completedPractices: [] }
+        : { completedPractices: [] };
+
   return (
     <div className="relative h-full flex flex-col bg-slate-100 overflow-hidden">
        
@@ -89,6 +111,9 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                <div className="flex items-center gap-1.5 text-[10px] font-bold text-arcade-action uppercase tracking-widest">
                    <MapIcon size={12} />
                    <span>{text.season || 'Сезон обучения'} {currentSeason}</span>
+               </div>
+               <div className="mt-1 text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
+                    Journey: {completedJourneyPractices}/{totalJourneyPractices} ({journeyPercent}%)
                </div>
            </div>
            <div className="w-16"></div>
@@ -242,6 +267,12 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                        {typeof selectedLevel.completedLessons === 'number' && (
                            <div className="text-xs text-gray-400 bg-[#0F172A] border border-white/5 rounded-lg px-3 py-2">
                                Уроки: <span className="text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}
+                           </div>
+                       )}
+
+                       {selectedJourneyTopic && (
+                           <div className="text-xs text-slate-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                               Практика темы: <span className="text-emerald-800 font-bold">{selectedJourneyProgress.completedPractices.length}</span> / {Array.isArray(selectedJourneyTopic.practices) ? selectedJourneyTopic.practices.length : 0}
                            </div>
                        )}
 

@@ -605,7 +605,7 @@ export const EditorComponent: React.FC = () => {
     // Early return while mission is loading
         if (isLoadingMission) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#0F172A]">
+    <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A]">
         <div className="text-center">
           <div className="inline-block size-12 border-4 border-arcade-primary border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-gray-400 text-sm">Загрузка миссии...</p>
@@ -616,9 +616,9 @@ export const EditorComponent: React.FC = () => {
 
     if (!mission || missionList.length === 0) {
         return (
-            <div className="flex h-full items-center justify-center bg-[#0F172A] p-6">
-                <div className="max-w-lg w-full bg-[#1E293B] border border-white/10 rounded-2xl p-8 text-center">
-                    <p className="text-white font-bold mb-2">Арена пока недоступна</p>
+            <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A] p-6">
+                <div className="max-w-lg w-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
+                    <p className="text-slate-900 dark:text-white font-bold mb-2">Арена пока недоступна</p>
                     <p className="text-gray-400 text-sm">Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.</p>
                 </div>
             </div>
@@ -626,54 +626,54 @@ export const EditorComponent: React.FC = () => {
     }
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#0F172A] font-sans p-2 md:p-4 gap-4 relative pb-20 md:pb-4">
+    <div className="flex h-full overflow-hidden bg-slate-100 dark:bg-[#0F172A] font-sans p-2 md:p-4 gap-4 relative pb-20 md:pb-4">
       
       {/* --- Sidebar: Mission & Files --- */}
       <aside className={`
-          bg-[#0F172A] border border-slate-800/50 rounded-2xl flex flex-col shrink-0 transition-all duration-300 overflow-hidden relative
+          bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800/50 rounded-2xl flex flex-col shrink-0 transition-all duration-300 overflow-hidden relative
           shadow-lg backdrop-blur-md absolute md:relative z-20 h-full
           ${isSidebarCollapsed ? 'w-0 opacity-0 border-0 p-0 pointer-events-none md:pointer-events-auto' : 'w-80 left-0'}
       `}>
         {/* Tab Switcher */}
-        <div className="flex items-center p-2 gap-2 bg-[#1E293B]/50 border-b border-white/5">
+        <div className="flex items-center p-2 gap-2 bg-slate-50 dark:bg-[#1E293B]/50 border-b border-slate-200 dark:border-white/5">
             <button 
                 onClick={() => setSidebarTab('mission')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'mission' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'mission' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
             >
                 <Flag size={14} /> {text.missionTab}
             </button>
             <button 
                 onClick={() => setSidebarTab('files')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'files' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${sidebarTab === 'files' ? 'bg-arcade-primary text-white shadow-neon-purple' : 'text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
             >
                 <Folder size={14} /> {text.filesTab}
             </button>
-            <button onClick={() => setIsSidebarCollapsed(true)} className="p-2 text-gray-500 hover:text-white"><PanelLeftClose size={16}/></button>
+            <button onClick={() => setIsSidebarCollapsed(true)} className="p-2 text-gray-500 hover:text-slate-900 dark:hover:text-white"><PanelLeftClose size={16}/></button>
         </div>
 
         {/* --- MISSION TAB --- */}
         {sidebarTab === 'mission' && (
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 bg-[#0F172A]">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 bg-white dark:bg-[#0F172A]">
                 
                 {/* Header */}
                 <div>
                     <div className="text-[10px] text-arcade-action font-bold uppercase tracking-widest mb-1">{mission.chapter}</div>
-                    <h2 className="text-xl font-display font-black text-white leading-tight">{mission.title}</h2>
+                    <h2 className="text-xl font-display font-black text-slate-900 dark:text-white leading-tight">{mission.title}</h2>
                     <p className="text-sm text-gray-400 mt-2 leading-relaxed">{mission.description}</p>
                 </div>
 
-                <div className="bg-[#1E293B] rounded-xl p-4 border border-white/10">
+                <div className="bg-slate-50 dark:bg-[#1E293B] rounded-xl p-4 border border-slate-200 dark:border-white/10">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-300 mb-2">План урока</p>
                     <div className="flex items-center gap-2 mb-3">
                         <button
                             onClick={() => setLearningStep('theory')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'theory' ? 'bg-arcade-primary text-white' : 'bg-white/5 text-gray-300'}`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'theory' ? 'bg-arcade-primary text-white' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-slate-200 dark:border-transparent'}`}
                         >
                             Шаг 1: Теория
                         </button>
                         <button
                             onClick={() => setLearningStep('practice')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'practice' ? 'bg-arcade-success text-[#0F172A]' : 'bg-white/5 text-gray-300'}`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'practice' ? 'bg-arcade-success text-[#0F172A]' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-slate-200 dark:border-transparent'}`}
                         >
                             Шаг 2: Практика
                         </button>
@@ -686,7 +686,7 @@ export const EditorComponent: React.FC = () => {
                 </div>
 
                 {/* Objectives */}
-                <div className="bg-[#1E293B] rounded-xl p-4 border border-white/5">
+                <div className="bg-slate-50 dark:bg-[#1E293B] rounded-xl p-4 border border-slate-200 dark:border-white/5">
                     <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <CheckCircle2 size={14} className="text-arcade-success"/>
                         {text.goalsTitle}
@@ -697,7 +697,7 @@ export const EditorComponent: React.FC = () => {
                                 <div className={`mt-0.5 size-4 rounded border flex items-center justify-center shrink-0 ${obj.completed ? 'bg-arcade-success border-arcade-success' : 'border-gray-600 bg-transparent'}`}>
                                     {obj.completed && <CheckCircle2 size={12} className="text-[#0F172A]" strokeWidth={3} />}
                                 </div>
-                                <span className={obj.completed ? 'text-gray-500 line-through' : 'text-gray-200'}>{obj.text}</span>
+                                <span className={obj.completed ? 'text-gray-500 line-through' : 'text-slate-700 dark:text-gray-200'}>{obj.text}</span>
                             </div>
                         ))}
                     </div>
@@ -710,7 +710,7 @@ export const EditorComponent: React.FC = () => {
                         {text.knowledgeBaseTitle}
                     </h3>
                     <div className="text-sm text-gray-300 space-y-2">
-                         <p className="font-bold text-white">{mission.theory.title}</p>
+                         <p className="font-bold text-slate-900 dark:text-white">{mission.theory.title}</p>
                          <div className="text-xs opacity-80 whitespace-pre-wrap font-mono bg-black/30 p-2 rounded-lg border border-white/5">
                              {mission.theory.content}
                          </div>
@@ -719,17 +719,17 @@ export const EditorComponent: React.FC = () => {
                     <div className="mt-4 space-y-3">
                         <div className="bg-[#0F172A]/70 border border-white/5 rounded-lg p-3">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 mb-2">{text.expectedOutputLabel}</p>
-                            <div className="font-mono text-xs text-emerald-200 bg-black/30 rounded-md p-2 border border-emerald-500/20">
+                            <div className="font-mono text-xs text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-black/30 rounded-md p-2 border border-emerald-200 dark:border-emerald-500/20">
                                 {(mission as any)?.learning?.expectedOutput || learningData.expectedOutput || textLearning.expectedOutput}
                             </div>
                         </div>
 
-                        <div className="bg-[#0F172A]/70 border border-white/5 rounded-lg p-3">
+                        <div className="bg-white dark:bg-[#0F172A]/70 border border-slate-200 dark:border-white/5 rounded-lg p-3">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-orange-300 mb-2 flex items-center gap-1.5">
                                 <AlertTriangle size={12} />
                                 {text.commonErrorsTitle}
                             </p>
-                            <ul className="text-xs text-gray-300 space-y-1.5 list-disc pl-4">
+                            <ul className="text-xs text-slate-700 dark:text-gray-300 space-y-1.5 list-disc pl-4">
                                 {(((mission as any)?.learning?.commonErrors) || learningData.commonErrors || []).map((error: string, idx: number) => (
                                     <li key={idx}>{error}</li>
                                 ))}
@@ -741,7 +741,7 @@ export const EditorComponent: React.FC = () => {
                                 <HelpCircle size={12} />
                                 {text.miniCheckTitle}
                             </p>
-                            <p className="text-xs text-gray-300 leading-relaxed">
+                            <p className="text-xs text-slate-700 dark:text-gray-300 leading-relaxed">
                                     {(mission as any)?.learning?.miniCheck || learningData.miniCheck || textLearning.miniCheck}
                             </p>
                         </div>
@@ -770,9 +770,9 @@ export const EditorComponent: React.FC = () => {
 
         {/* --- FILES TAB --- */}
         {sidebarTab === 'files' && (
-            <div className="flex-1 py-2 overflow-y-auto custom-scrollbar bg-[#0F172A]">
+            <div className="flex-1 py-2 overflow-y-auto custom-scrollbar bg-white dark:bg-[#0F172A]">
                      {files.filter(f => f.type === 'file').map(f => (
-                     <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-white/5 text-white' : 'border-transparent text-gray-500'}`} onClick={() => setActiveFileId(f.id)}>
+                     <div key={f.id} className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer text-sm font-medium font-mono border-l-[3px] ${f.id === activeFileId ? 'border-arcade-primary bg-indigo-50 dark:bg-white/5 text-slate-900 dark:text-white' : 'border-transparent text-gray-500'}`} onClick={() => setActiveFileId(f.id)}>
                         {getFileIcon(f.name)} <span>{f.name}</span>
                      </div>
                 ))}
@@ -781,13 +781,13 @@ export const EditorComponent: React.FC = () => {
       </aside>
 
       {/* --- Main Area: Code Editor --- */}
-      <div className="flex-1 flex flex-col relative min-w-0 bg-[#0F172A] rounded-2xl overflow-hidden shadow-2xl border border-slate-800/50">
+    <div className="flex-1 flex flex-col relative min-w-0 bg-white dark:bg-[#0F172A] rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800/50">
         
         {/* Action Bar */}
-        <div className="h-14 flex items-center justify-between px-4 bg-[#0F172A] border-b border-white/5 relative z-10">
+        <div className="h-14 flex items-center justify-between px-4 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-white/5 relative z-10">
              <div className="flex items-center gap-2">
                 {isSidebarCollapsed && (
-                    <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 text-gray-400 hover:text-white"><PanelLeftOpen size={20}/></button>
+                    <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 text-gray-400 hover:text-slate-900 dark:hover:text-white"><PanelLeftOpen size={20}/></button>
                 )}
                 <span className="text-xs font-bold text-gray-400 md:hidden">{activeFile?.name}</span>
                 {!isSidebarCollapsed && <span className="text-xs font-bold text-gray-500 font-mono hidden md:inline-block">/ {activeFile?.name}</span>}
@@ -832,7 +832,7 @@ export const EditorComponent: React.FC = () => {
 
         {/* Editor Container */}
         <div className="flex-1 flex flex-col relative">
-            <div className="flex-1 relative bg-[#1E293B]">
+            <div className="flex-1 relative bg-slate-100 dark:bg-[#1E293B]">
                  {activeFile && (
                      <MonacoEditor
                         height="100%"
@@ -891,9 +891,9 @@ export const EditorComponent: React.FC = () => {
             </div>
 
             {/* Terminal */}
-            <div className={`bg-[#0F172A] border-t border-slate-800 transition-all duration-300 flex flex-col relative z-20 ${isTerminalOpen ? 'h-40 md:h-48' : 'h-8'}`}>
+            <div className={`bg-white dark:bg-[#0F172A] border-t border-slate-300 dark:border-slate-800 transition-all duration-300 flex flex-col relative z-20 ${isTerminalOpen ? 'h-40 md:h-48' : 'h-8'}`}>
                 <div 
-                    className="h-8 flex items-center justify-between px-4 bg-[#0F172A] cursor-pointer hover:bg-[#1E293B] border-b border-slate-800/50" 
+                    className="h-8 flex items-center justify-between px-4 bg-white dark:bg-[#0F172A] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#1E293B] border-b border-slate-200 dark:border-slate-800/50" 
                     onClick={() => setIsTerminalOpen(!isTerminalOpen)}
                 >
                     <div className="flex items-center gap-2">

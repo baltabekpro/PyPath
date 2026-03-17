@@ -14,22 +14,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const [missions, setMissions] = useState(MISSIONS);
     const [courses, setCourses] = useState(COURSES);
     const [dailyQuests, setDailyQuests] = useState<any[]>([]);
+    const [journeyTopics, setJourneyTopics] = useState<any[]>([]);
+    const [journeyProgress, setJourneyProgress] = useState<Record<string, { theoryOpened: boolean; completedPractices: number[] }>>({});
 
     useEffect(() => {
         const loadDashboardData = async () => {
             try {
-                const [user, statsData, missionsData, coursesData, uiData] = await Promise.all([
+                const [user, statsData, missionsData, coursesData, uiData, topicsData, progressData] = await Promise.all([
                     apiGet<any>('/currentUser'),
                     apiGet<any>('/stats'),
                     apiGet<any[]>('/missions'),
                     apiGet<any[]>('/courses'),
-                    apiGet<any>('/uiData')
+                    apiGet<any>('/uiData'),
+                    apiGet<any[]>('/courses/journey'),
+                    apiGet<any>('/courses/journey/progress')
                 ]);
                 setCurrentUser(user);
                 setStats(statsData);
                 setMissions(missionsData);
                 setCourses(coursesData);
                 setDailyQuests(uiData?.dashboard?.dailyQuests || []);
+                setJourneyTopics(Array.isArray(topicsData) ? topicsData : []);
+                setJourneyProgress(progressData && typeof progressData === 'object' ? progressData : {});
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
             }
@@ -59,6 +65,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             { label: 'UCI ML Repository', url: 'https://archive.ics.uci.edu' },
             { label: 'Google Dataset Search', url: 'https://datasetsearch.research.google.com' },
         ];
+
+    const buildJourneySummary = (grade: 'pre' | '8' | '9') => {
+        const gradeTopics = journeyTopics.filter((item: any) => item?.grade === grade);
+        const total = gradeTopics.reduce((sum: number, item: any) => sum + (Array.isArray(item?.practices) ? item.practices.length : 0), 0);
+        const completed = gradeTopics.reduce((sum: number, item: any) => {
+            const p = journeyProgress[String(item?.id)] || { completedPractices: [] };
+            return sum + (Array.isArray(p.completedPractices) ? p.completedPractices.length : 0);
+        }, 0);
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { total, completed, percent };
+    };
+
+    const summaryPre = buildJourneySummary('pre');
+    const summary8 = buildJourneySummary('8');
+    const summary9 = buildJourneySummary('9');
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
@@ -175,6 +196,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                     )})}
                 </div>
             </div>
+
+                        <div className="bg-white border border-slate-200 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-3 gap-3">
+                                <h3 className="text-lg font-black text-slate-900">Прогресс полного курса</h3>
+                                <button
+                                    onClick={() => setView(View.COURSE_JOURNEY)}
+                                    className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700"
+                                >
+                                    Открыть курс
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+                                    <p className="text-xs uppercase tracking-wider text-slate-500">До 8/9</p>
+                                    <p className="text-sm font-bold text-slate-900">{summaryPre.completed}/{summaryPre.total} практик</p>
+                                    <p className="text-xs text-emerald-700 mt-1">{summaryPre.percent}%</p>
+                                </div>
+                                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+                                    <p className="text-xs uppercase tracking-wider text-slate-500">8 класс</p>
+                                    <p className="text-sm font-bold text-slate-900">{summary8.completed}/{summary8.total} практик</p>
+                                    <p className="text-xs text-emerald-700 mt-1">{summary8.percent}%</p>
+                                </div>
+                                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+                                    <p className="text-xs uppercase tracking-wider text-slate-500">9 класс</p>
+                                    <p className="text-sm font-bold text-slate-900">{summary9.completed}/{summary9.total} практик</p>
+                                    <p className="text-xs text-emerald-700 mt-1">{summary9.percent}%</p>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Pre 8/9 + Python Topics */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

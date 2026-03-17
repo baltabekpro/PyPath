@@ -128,3 +128,38 @@ def test_courses_journey_progress_roundtrip(client: TestClient, auth_headers: di
     payload = put_response.json()
     assert "course-1" in payload
     assert payload["course-1"]["theoryOpened"] is True
+
+
+def test_courses_journey_progress_blocks_practice_without_theory(client: TestClient, auth_headers: dict[str, str]) -> None:
+    put_response = client.put(
+        "/courses/journey/progress",
+        json={
+            "topicId": "course-2",
+            "progress": {
+                "theoryOpened": False,
+                "completedPractices": [0, 1, 2],
+            },
+        },
+        headers=auth_headers,
+    )
+    assert put_response.status_code == 200
+    payload = put_response.json()
+    assert payload["course-2"]["theoryOpened"] is False
+    assert payload["course-2"]["completedPractices"] == []
+
+
+def test_courses_journey_progress_enforces_sequential_practice(client: TestClient, auth_headers: dict[str, str]) -> None:
+    put_response = client.put(
+        "/courses/journey/progress",
+        json={
+            "topicId": "course-3",
+            "progress": {
+                "theoryOpened": True,
+                "completedPractices": [0, 2, 3],
+            },
+        },
+        headers=auth_headers,
+    )
+    assert put_response.status_code == 200
+    payload = put_response.json()
+    assert payload["course-3"]["completedPractices"] == [0]

@@ -153,8 +153,11 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const togglePractice = (index: number) => {
     if (!selectedTopic || !topicProgress.theoryOpened) return;
     const has = topicProgress.completedPractices.includes(index);
+    const previousDone = index === 0 || topicProgress.completedPractices.includes(index - 1);
+    if (!has && !previousDone) return;
+
     const nextCompleted = has
-      ? topicProgress.completedPractices.filter((item) => item !== index)
+      ? topicProgress.completedPractices.filter((item) => item < index)
       : [...topicProgress.completedPractices, index].sort((a, b) => a - b);
 
     const next = {
@@ -260,15 +263,21 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                       Сначала откройте теорию, после этого практические задания станут активными.
                     </p>
                   )}
+                  {topicProgress.theoryOpened && (
+                    <p className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
+                      Практика открывается по порядку: сначала 1 задание, затем 2 и далее.
+                    </p>
+                  )}
                   <div className="space-y-2">
                     {selectedTopic.practices.map((task, index) => {
                       const done = topicProgress.completedPractices.includes(index);
+                      const unlocked = topicProgress.theoryOpened && (index === 0 || topicProgress.completedPractices.includes(index - 1) || done);
                       return (
                         <button
                           key={`${selectedTopic.id}-${index}`}
-                          disabled={!topicProgress.theoryOpened}
+                          disabled={!unlocked}
                           onClick={() => togglePractice(index)}
-                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!topicProgress.theoryOpened ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
                         >
                           <span className="text-sm">{index + 1}. {task}</span>
                           {done && <CheckCircle2 size={18} className="text-emerald-600" />}
