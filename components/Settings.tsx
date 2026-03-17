@@ -35,7 +35,7 @@ const normalizeNotificationOptions = (options: any[] | undefined | null) => {
 const DEFAULT_PRESET_AVATARS = ['PyPath', 'CodeNinja', 'ByteMage', 'DebugHero', 'NeonFox'];
 
 export const Settings: React.FC = () => {
-  const inputClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-arcade-primary outline-none transition-colors shadow-inner';
+    const inputClass = 'w-full bg-white dark:bg-[#0b1220] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-arcade-primary outline-none transition-colors shadow-inner';
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const presetAvatars = SETTINGS_UI?.presetAvatars?.length ? SETTINGS_UI.presetAvatars : DEFAULT_PRESET_AVATARS;
     const tabs = SETTINGS_UI?.tabs?.length ? SETTINGS_UI.tabs : DEFAULT_SETTINGS_TABS;
@@ -203,7 +203,7 @@ export const Settings: React.FC = () => {
           {/* Left Navigation */}
           <div className="lg:col-span-4 space-y-4 md:space-y-6">
               {/* Profile Card Preview */}
-              <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 flex items-center gap-4 relative overflow-hidden">
+              <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-white/10 rounded-2xl p-4 md:p-6 flex items-center gap-4 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-arcade-primary/10 to-transparent pointer-events-none"></div>
                   <img src={formData.avatar} alt="Avatar" className="size-12 md:size-16 rounded-full border-2 border-arcade-primary bg-black object-cover relative z-10" />
                   <div className="relative z-10 overflow-hidden">
@@ -213,7 +213,7 @@ export const Settings: React.FC = () => {
               </div>
 
               {/* Menu */}
-              <div className="bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-py-accent rounded-2xl overflow-hidden shadow-lg">
+              <div className="bg-white dark:bg-[#0b1220] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-lg">
                                     {tabs.map((item: any) => {
                                             const TabIcon = getIconComponent(item.icon);
                                             return (
@@ -237,7 +237,7 @@ export const Settings: React.FC = () => {
               
               {/* PROFILE SETTINGS */}
               {activeTab === 'profile' && (
-                <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in relative overflow-hidden">
+                <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-white/10 rounded-2xl p-4 md:p-6 animate-fade-in relative overflow-hidden">
                    
                    {/* Avatar Section */}
                    <div className="mb-8 flex flex-col md:flex-row items-center gap-6 pb-8 border-b border-slate-200 dark:border-white/5">
@@ -247,7 +247,7 @@ export const Settings: React.FC = () => {
                             </div>
                             <button 
                                 onClick={generateRandomAvatar}
-                                className="absolute bottom-0 right-0 p-2 bg-arcade-action text-white rounded-full hover:bg-orange-600 transition-colors shadow-lg border-2 border-[#0F172A]"
+                                className="absolute bottom-0 right-0 p-2 bg-arcade-action text-white rounded-full hover:bg-orange-600 transition-colors shadow-lg border-2 border-white dark:border-[#0F172A]"
                                 title={text.randomAvatarTitle}
                             >
                                 <RefreshCw size={16} />
@@ -374,7 +374,7 @@ export const Settings: React.FC = () => {
               )}
 
                             {activeTab === 'appearance' && (
-                                <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in space-y-4">
+                                <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-white/10 rounded-2xl p-4 md:p-6 animate-fade-in space-y-4">
                                     <h3 className="text-slate-900 dark:text-white font-bold text-lg">Тема интерфейса</h3>
                                     <p className="text-slate-600 dark:text-gray-400 text-sm">По умолчанию используется светлый дизайн. Вы можете переключиться в тёмный режим.</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -398,7 +398,7 @@ export const Settings: React.FC = () => {
 
               {/* NOTIFICATIONS SETTINGS */}
               {activeTab === 'notifications' && (
-                  <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in">
+                  <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-white/10 rounded-2xl p-4 md:p-6 animate-fade-in">
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{text.notificationsTitle}</h2>
                       <div className="space-y-4">
                           {notificationState.map((option: any, i: number) => (
