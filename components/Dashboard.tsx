@@ -208,9 +208,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 </div>
             </div>
 
-                        <div className="bg-white border border-slate-200 rounded-2xl p-5">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-3 gap-3">
-                                <h3 className="text-lg font-black text-slate-900">Прогресс полного курса</h3>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white">Прогресс полного курса</h3>
                                 <button
                                     onClick={() => setView(View.COURSE_JOURNEY)}
                                     className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700"
@@ -219,19 +219,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                                 </button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500">До 8/9</p>
-                                    <p className="text-sm font-bold text-slate-900">{summaryPre.completed}/{summaryPre.total} практик</p>
+                                <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0c120e]">
+                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">До 8/9</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summaryPre.completed}/{summaryPre.total} практик</p>
                                     <p className="text-xs text-emerald-700 mt-1">{summaryPre.percent}%</p>
                                 </div>
-                                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500">8 класс</p>
-                                    <p className="text-sm font-bold text-slate-900">{summary8.completed}/{summary8.total} практик</p>
+                                <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0c120e]">
+                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">8 класс</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summary8.completed}/{summary8.total} практик</p>
                                     <p className="text-xs text-emerald-700 mt-1">{summary8.percent}%</p>
                                 </div>
-                                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500">9 класс</p>
-                                    <p className="text-sm font-bold text-slate-900">{summary9.completed}/{summary9.total} практик</p>
+                                <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0c120e]">
+                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">9 класс</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summary9.completed}/{summary9.total} практик</p>
                                     <p className="text-xs text-emerald-700 mt-1">{summary9.percent}%</p>
                                 </div>
                             </div>
@@ -239,21 +239,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
                         {/* Pre 8/9 + Python Topics */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white border border-slate-200 rounded-2xl p-5">
-                                <h3 className="text-lg font-black text-slate-900 mb-3">До 8/9 класса</h3>
-                                <p className="text-sm text-slate-600 mb-3">База, которую нужно понять до тем 8/9 классов.</p>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">До 8/9 класса</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">База, которую нужно понять до тем 8/9 классов.</p>
                                 <div className="space-y-2">
                                     {preTopics.map((topic) => (
-                                        <div key={topic} className="text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
+                                        <div key={topic} className="text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-200">
                                             {topic}
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="bg-white border border-slate-200 rounded-2xl p-5">
-                                <h3 className="text-lg font-black text-slate-900 mb-3">Интересные темы Python</h3>
-                                <p className="text-sm text-slate-600 mb-3">Практические направления для мотивации.</p>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">Интересные темы Python</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">Практические направления для мотивации.</p>
                                 <div className="space-y-2">
                                     {pythonInteresting.map((topic) => (
                                         <div key={topic} className="text-sm px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900">
@@ -264,9 +264,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                             </div>
                         </div>
 
-                        <div className="bg-white border border-slate-200 rounded-2xl p-5">
-                            <h3 className="text-lg font-black text-slate-900 mb-2">Сайты с данными для практики</h3>
-                            <p className="text-sm text-slate-600 mb-3">Используйте реальные датасеты для проектов.</p>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Сайты с данными для практики</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">Используйте реальные датасеты для проектов.</p>
                             <div className="flex flex-wrap gap-2">
                                 {datasetSites.map((site) => (
                                     <a

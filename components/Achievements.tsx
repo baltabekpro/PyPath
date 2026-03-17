@@ -99,7 +99,7 @@ export const Achievements: React.FC = () => {
             <ActionToast visible={Boolean(shareStatus)} message={shareStatus} tone="info" />
             
             {/* Header: Collector's Dashboard */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden shadow-2xl">
+            <div className="bg-gradient-to-r from-slate-100 to-white dark:from-slate-900 dark:to-slate-800 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-white/10 relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 w-96 h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <div className="absolute -top-20 -right-20 size-64 bg-arcade-primary/20 blur-[80px] rounded-full"></div>
 
@@ -113,14 +113,14 @@ export const Achievements: React.FC = () => {
                         </div>
                         <div>
                             <p className="text-arcade-muted text-sm font-bold uppercase tracking-widest mb-1">{text.collectorRank}</p>
-                            <h1 className="text-3xl md:text-4xl font-display font-black text-white">{rank}</h1>
-                            <p className="text-sm text-gray-400 mt-1">{text.collectedPrefix} <span className="text-white font-bold">{unlockedCount}</span> {text.collectedMiddle} <span className="text-white font-bold">{totalCount}</span> {text.collectedSuffix}</p>
+                            <h1 className="text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white">{rank}</h1>
+                            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">{text.collectedPrefix} <span className="text-slate-900 dark:text-white font-bold">{unlockedCount}</span> {text.collectedMiddle} <span className="text-slate-900 dark:text-white font-bold">{totalCount}</span> {text.collectedSuffix}</p>
                         </div>
                     </div>
 
-                    <div className="flex gap-4 md:gap-8 text-center bg-black/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                    <div className="flex gap-4 md:gap-8 text-center bg-slate-100 dark:bg-black/20 p-4 rounded-2xl border border-slate-200 dark:border-white/10 backdrop-blur-sm">
                         <div>
-                            <p className="text-2xl font-black text-white">{stats.points ?? 0}</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.points ?? 0}</p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase">{text.pointsLabel}</p>
                         </div>
                         <div className="w-px h-10 bg-white/10"></div>

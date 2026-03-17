@@ -704,21 +704,21 @@ export const EditorComponent: React.FC = () => {
                 </div>
 
                 {/* Theory Card */}
-                <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 rounded-xl p-4 border border-indigo-500/30">
-                    <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <div className="bg-gradient-to-br from-indigo-100 to-slate-100 dark:from-indigo-900/40 dark:to-slate-900 rounded-xl p-4 border border-indigo-300 dark:border-indigo-500/30">
+                    <h3 className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <BookOpen size={14} />
                         {text.knowledgeBaseTitle}
                     </h3>
-                    <div className="text-sm text-gray-300 space-y-2">
+                    <div className="text-sm text-slate-700 dark:text-gray-300 space-y-2">
                          <p className="font-bold text-slate-900 dark:text-white">{mission.theory.title}</p>
-                         <div className="text-xs opacity-80 whitespace-pre-wrap font-mono bg-black/30 p-2 rounded-lg border border-white/5">
+                         <div className="text-xs opacity-80 whitespace-pre-wrap font-mono bg-white dark:bg-black/30 p-2 rounded-lg border border-slate-200 dark:border-white/10">
                              {mission.theory.content}
                          </div>
                     </div>
 
                     <div className="mt-4 space-y-3">
-                        <div className="bg-[#0F172A]/70 border border-white/5 rounded-lg p-3">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 mb-2">{text.expectedOutputLabel}</p>
+                        <div className="bg-white dark:bg-[#0F172A]/70 border border-slate-200 dark:border-white/10 rounded-lg p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300 mb-2">{text.expectedOutputLabel}</p>
                             <div className="font-mono text-xs text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-black/30 rounded-md p-2 border border-emerald-200 dark:border-emerald-500/20">
                                 {(mission as any)?.learning?.expectedOutput || learningData.expectedOutput || textLearning.expectedOutput}
                             </div>
@@ -736,8 +736,8 @@ export const EditorComponent: React.FC = () => {
                             </ul>
                         </div>
 
-                        <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-lg p-3">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-1 flex items-center gap-1.5">
+                        <div className="bg-indigo-100 dark:bg-indigo-950/30 border border-indigo-300 dark:border-indigo-500/20 rounded-lg p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300 mb-1 flex items-center gap-1.5">
                                 <HelpCircle size={12} />
                                 {text.miniCheckTitle}
                             </p>
@@ -832,7 +832,7 @@ export const EditorComponent: React.FC = () => {
 
         {/* Editor Container */}
         <div className="flex-1 flex flex-col relative">
-            <div className="flex-1 relative bg-slate-100 dark:bg-[#1E293B]">
+            <div className="flex-1 relative bg-slate-100 dark:bg-[#0c120e]">
                  {activeFile && (
                      <MonacoEditor
                         height="100%"
@@ -902,7 +902,7 @@ export const EditorComponent: React.FC = () => {
                     </div>
                     {isTerminalOpen ? <ChevronDown size={14} className="text-gray-500"/> : <ChevronDown size={14} className="text-gray-500 rotate-180"/>}
                 </div>
-                <div className="flex-1 p-2 relative bg-[#0c120e] overflow-hidden">
+                <div className="flex-1 p-2 relative bg-slate-100 dark:bg-[#0c120e] overflow-hidden">
                     <div className="size-full" ref={terminalRef}></div>
                 </div>
             </div>
@@ -913,7 +913,7 @@ export const EditorComponent: React.FC = () => {
       {/* Full AI Chat Overlay */}
       {aiChatOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-              <div className="w-full max-w-lg h-[80%] relative shadow-2xl rounded-2xl overflow-hidden border border-arcade-primary/30 bg-[#0F172A]">
+              <div className="w-full max-w-lg h-[80%] relative shadow-2xl rounded-2xl overflow-hidden border border-arcade-primary/30 bg-white dark:bg-[#0F172A]">
                   <button 
                       onClick={() => setAiChatOpen(false)} 
                       className="absolute top-4 right-4 z-50 text-white hover:text-red-400 bg-black/50 p-2 rounded-full hover:bg-black/80 transition-all"

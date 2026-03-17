@@ -35,6 +35,7 @@ const normalizeNotificationOptions = (options: any[] | undefined | null) => {
 const DEFAULT_PRESET_AVATARS = ['PyPath', 'CodeNinja', 'ByteMage', 'DebugHero', 'NeonFox'];
 
 export const Settings: React.FC = () => {
+  const inputClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-arcade-primary outline-none transition-colors shadow-inner';
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const presetAvatars = SETTINGS_UI?.presetAvatars?.length ? SETTINGS_UI.presetAvatars : DEFAULT_PRESET_AVATARS;
     const tabs = SETTINGS_UI?.tabs?.length ? SETTINGS_UI.tabs : DEFAULT_SETTINGS_TABS;
@@ -188,38 +189,38 @@ export const Settings: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-fade-in pt-6 pb-20">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-fade-in pt-6 pb-20 text-slate-900 dark:text-slate-100">
             <ActionToast
                 visible={showSuccess || Boolean(actionMessage)}
                 message={showSuccess ? text.saved : actionMessage}
                 tone={showSuccess ? 'success' : 'info'}
             />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">{text.title}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">{text.title}</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
           {/* Left Navigation */}
           <div className="lg:col-span-4 space-y-4 md:space-y-6">
               {/* Profile Card Preview */}
-              <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6 flex items-center gap-4 relative overflow-hidden">
+              <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 flex items-center gap-4 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-arcade-primary/10 to-transparent pointer-events-none"></div>
                   <img src={formData.avatar} alt="Avatar" className="size-12 md:size-16 rounded-full border-2 border-arcade-primary bg-black object-cover relative z-10" />
                   <div className="relative z-10 overflow-hidden">
-                    <p className="text-white font-bold text-base md:text-lg truncate">{formData.name}</p>
-                    <p className="text-py-muted text-xs md:text-sm truncate">{formData.email}</p>
+                    <p className="text-slate-900 dark:text-white font-bold text-base md:text-lg truncate">{formData.name}</p>
+                    <p className="text-slate-500 dark:text-py-muted text-xs md:text-sm truncate">{formData.email}</p>
                   </div>
               </div>
 
               {/* Menu */}
-              <div className="bg-[#0c120e] border border-py-accent rounded-2xl overflow-hidden shadow-lg">
+              <div className="bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-py-accent rounded-2xl overflow-hidden shadow-lg">
                                     {tabs.map((item: any) => {
                                             const TabIcon = getIconComponent(item.icon);
                                             return (
                                                 <button 
                                                     key={item.id}
                                                     onClick={() => setActiveTab(item.id as SettingsTab)}
-                                                    className={`w-full flex items-center gap-4 px-6 py-4 text-sm font-medium transition-colors border-b border-white/5 last:border-0 relative ${activeTab === item.id ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                                                    className={`w-full flex items-center gap-4 px-6 py-4 text-sm font-medium transition-colors border-b border-slate-200 dark:border-white/5 last:border-0 relative ${activeTab === item.id ? 'bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'}`}
                                                 >
                                                         <div className={`absolute left-0 top-0 bottom-0 w-1 bg-arcade-primary transition-all duration-300 ${activeTab === item.id ? 'opacity-100 h-full' : 'opacity-0 h-0'}`}></div>
                                                         <TabIcon size={18} className={activeTab === item.id ? 'text-arcade-primary' : 'text-gray-500'} />
@@ -236,10 +237,10 @@ export const Settings: React.FC = () => {
               
               {/* PROFILE SETTINGS */}
               {activeTab === 'profile' && (
-                <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in relative overflow-hidden">
+                <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in relative overflow-hidden">
                    
                    {/* Avatar Section */}
-                   <div className="mb-8 flex flex-col md:flex-row items-center gap-6 pb-8 border-b border-white/5">
+                   <div className="mb-8 flex flex-col md:flex-row items-center gap-6 pb-8 border-b border-slate-200 dark:border-white/5">
                         <div className="relative group">
                             <div className="size-24 md:size-32 rounded-full border-4 border-arcade-primary shadow-[0_0_20px_rgba(168,85,247,0.3)] overflow-hidden bg-black">
                                 <img src={formData.avatar} alt="Current Avatar" className="size-full object-cover" />
@@ -254,7 +255,7 @@ export const Settings: React.FC = () => {
                         </div>
 
                         <div className="flex-1 w-full">
-                            <h3 className="text-white font-bold text-lg mb-3 text-center md:text-left">{text.chooseAvatar}</h3>
+                            <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-3 text-center md:text-left">{text.chooseAvatar}</h3>
                             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar justify-center md:justify-start">
                                 {presetAvatars.map((seed: string) => {
                                     const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
@@ -286,7 +287,7 @@ export const Settings: React.FC = () => {
                                         value={formData.name}
                                         onChange={handleInputChange}
                                         type="text" 
-                                        className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner" 
+                                        className={inputClass} 
                                     />
                                 </div>
                             </div>
@@ -299,7 +300,7 @@ export const Settings: React.FC = () => {
                                     value={formData.email}
                                     onChange={handleInputChange}
                                     type="email" 
-                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner" 
+                                    className={inputClass} 
                                 />
                             </div>
                         </div>
@@ -313,9 +314,9 @@ export const Settings: React.FC = () => {
                                 value={formData.bio}
                                 onChange={handleInputChange}
                                 rows={3}
-                                className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner resize-none"
+                                className={`${inputClass} resize-none`}
                             />
-                            <p className="text-[10px] text-gray-500 text-right">{text.charsLeft}: {200 - formData.bio.length}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-gray-500 text-right">{text.charsLeft}: {200 - formData.bio.length}</p>
                         </div>
 
                         {/* Save Button */}
@@ -331,8 +332,8 @@ export const Settings: React.FC = () => {
                         </div>
 
                         {/* Password Change */}
-                        <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
-                            <h3 className="text-white font-bold flex items-center gap-2">
+                        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
+                            <h3 className="text-slate-900 dark:text-white font-bold flex items-center gap-2">
                                 <Lock size={16} /> Изменить пароль
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -341,28 +342,28 @@ export const Settings: React.FC = () => {
                                     value={passwords.currentPassword}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, currentPassword: e.target.value }))}
                                     placeholder="Текущий пароль"
-                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner"
+                                    className={inputClass}
                                 />
                                 <input
                                     type="password"
                                     value={passwords.newPassword}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, newPassword: e.target.value }))}
                                     placeholder="Новый пароль"
-                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner"
+                                    className={inputClass}
                                 />
                                 <input
                                     type="password"
                                     value={passwords.confirmPassword}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, confirmPassword: e.target.value }))}
                                     placeholder="Подтвердите пароль"
-                                    className="w-full bg-[#0c120e] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-arcade-primary outline-none transition-colors shadow-inner"
+                                    className={inputClass}
                                 />
                             </div>
                             <div className="flex justify-end">
                                 <button
                                     onClick={handleChangePassword}
                                     disabled={isChangingPassword}
-                                    className="px-5 py-2 rounded-xl text-sm font-bold bg-white/5 hover:bg-white/10 border border-white/10 text-white disabled:opacity-60"
+                                    className="px-5 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white disabled:opacity-60"
                                 >
                                     {isChangingPassword ? 'Изменение...' : 'Сменить пароль'}
                                 </button>
@@ -373,20 +374,20 @@ export const Settings: React.FC = () => {
               )}
 
                             {activeTab === 'appearance' && (
-                                <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in space-y-4">
-                                    <h3 className="text-white font-bold text-lg">Тема интерфейса</h3>
-                                    <p className="text-gray-400 text-sm">По умолчанию используется светлый дизайн. Вы можете переключиться в тёмный режим.</p>
+                                <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in space-y-4">
+                                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">Тема интерфейса</h3>
+                                    <p className="text-slate-600 dark:text-gray-400 text-sm">По умолчанию используется светлый дизайн. Вы можете переключиться в тёмный режим.</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <button
                                             onClick={() => setTheme('light')}
-                                            className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'light' ? 'border-emerald-400 bg-emerald-500/10 text-white' : 'border-white/10 bg-black/20 text-gray-300 hover:bg-black/30'}`}
+                                            className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'light' ? 'border-emerald-400 bg-emerald-500/10 text-slate-900 dark:text-white' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-black/30'}`}
                                         >
                                             <p className="font-bold">Светлая тема</p>
                                             <p className="text-xs opacity-80 mt-1">Рекомендуется для обучения и чтения теории.</p>
                                         </button>
                                         <button
                                             onClick={() => setTheme('dark')}
-                                            className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'dark' ? 'border-purple-400 bg-purple-500/10 text-white' : 'border-white/10 bg-black/20 text-gray-300 hover:bg-black/30'}`}
+                                            className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'dark' ? 'border-purple-400 bg-purple-500/10 text-slate-900 dark:text-white' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-black/30'}`}
                                         >
                                             <p className="font-bold">Тёмная тема</p>
                                             <p className="text-xs opacity-80 mt-1">Для вечернего режима и контрастного интерфейса.</p>
@@ -397,12 +398,12 @@ export const Settings: React.FC = () => {
 
               {/* NOTIFICATIONS SETTINGS */}
               {activeTab === 'notifications' && (
-                  <div className="bg-py-surface border border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in">
-                      <h2 className="text-lg font-bold text-white mb-6">{text.notificationsTitle}</h2>
+                  <div className="bg-white dark:bg-py-surface border border-slate-200 dark:border-py-accent rounded-2xl p-4 md:p-6 animate-fade-in">
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{text.notificationsTitle}</h2>
                       <div className="space-y-4">
                           {notificationState.map((option: any, i: number) => (
-                              <div key={option.label} onClick={() => toggleNotification(i)} className="flex items-center justify-between p-4 bg-[#0c120e] rounded-xl border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
-                                  <span className="text-gray-300 font-medium">{option.label}</span>
+                              <div key={option.label} onClick={() => toggleNotification(i)} className="flex items-center justify-between p-4 bg-white dark:bg-[#0c120e] rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-slate-300 dark:hover:border-white/20 transition-colors">
+                                  <span className="text-slate-700 dark:text-gray-300 font-medium">{option.label}</span>
                                   <div className={`w-12 h-6 rounded-full relative transition-colors ${option.enabled ? 'bg-arcade-success' : 'bg-gray-700'}`}>
                                       <div className={`absolute top-1 size-4 bg-white rounded-full transition-all shadow-md ${option.enabled ? 'right-1' : 'left-1'}`}></div>
                                   </div>

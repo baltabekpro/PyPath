@@ -37,9 +37,9 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
 
     const formatMessage = (value: string) => {
         const escaped = escapeHtml(value);
-        const withCode = escaped.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/30 border border-white/10 rounded-lg p-2 my-2 overflow-x-auto text-xs"><code>$1</code></pre>');
+        const withCode = escaped.replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg p-2 my-2 overflow-x-auto text-xs"><code>$1</code></pre>');
         const withBold = withCode.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        const withInlineCode = withBold.replace(/`([^`]+)`/g, '<code class="bg-black/30 px-1 py-0.5 rounded text-cyan-300">$1</code>');
+        const withInlineCode = withBold.replace(/`([^`]+)`/g, '<code class="bg-slate-200 dark:bg-black/30 px-1 py-0.5 rounded text-indigo-700 dark:text-cyan-300">$1</code>');
         return { __html: withInlineCode.replace(/\n/g, '<br/>') };
     };
 
@@ -173,17 +173,17 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
             <div className={embedded ? 'w-full h-full flex flex-col' : 'fixed bottom-8 right-8 z-[60] w-[380px] h-[600px] flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 origin-bottom-right'}>
                 
                 {/* Glassmorphism Container */}
-                <div className="relative flex-1 bg-slate-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden ring-1 ring-white/10">
+                <div className="relative flex-1 bg-white dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.2)] dark:shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden ring-1 ring-slate-200 dark:ring-white/10">
                     
                     {/* Header */}
-                    <div className="h-16 border-b border-white/5 bg-slate-900/50 flex items-center justify-between px-6 shrink-0 relative overflow-hidden">
+                    <div className="h-16 border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/50 flex items-center justify-between px-6 shrink-0 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent pointer-events-none"></div>
                         <div className="flex items-center gap-3 relative z-10">
-                            <div className={`size-10 rounded-full bg-slate-800 border border-cyan-500/50 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)] ${oracleState === 'analyzing' ? 'animate-pulse' : ''}`}>
-                                <Bot size={20} className="text-cyan-400" />
+                            <div className={`size-10 rounded-full bg-white dark:bg-slate-800 border border-cyan-500/50 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)] ${oracleState === 'analyzing' ? 'animate-pulse' : ''}`}>
+                                <Bot size={20} className="text-indigo-600 dark:text-cyan-400" />
                             </div>
                             <div>
-                                <h3 className="text-white font-display font-black tracking-wide text-sm">{text.title}</h3>
+                                <h3 className="text-slate-900 dark:text-white font-display font-black tracking-wide text-sm">{text.title}</h3>
                                 <p className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
                                     <span className="size-1.5 bg-cyan-400 rounded-full animate-pulse"></span>
                                     {AI_CHAT_DATA?.statusLabel || text.statusLabel}
@@ -208,7 +208,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                     </div>
 
                     {/* Messages Body */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-slate-100 dark:to-black/20">
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                                 {msg.sender === 'ai' && (
@@ -222,7 +222,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                         ? 'bg-cyan-600 text-white rounded-tr-none' 
                                         : msg.type === 'error'
                                             ? 'bg-orange-900/20 border border-orange-500/30 text-orange-100 rounded-tl-none'
-                                            : 'bg-slate-800 border border-white/5 text-gray-100 rounded-tl-none'
+                                            : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-100 rounded-tl-none'
                                     }
                                 `}>
                                     {msg.sender === 'ai' ? (
@@ -238,7 +238,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                 <div className="size-8 rounded-full bg-slate-800 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-lg">
                                     <Bot size={16} />
                                 </div>
-                                <div className="bg-slate-800 border border-white/5 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-1.5">
+                                <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-1.5">
                                     <span className="size-1.5 bg-cyan-500/50 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                     <span className="size-1.5 bg-cyan-500/50 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                                     <span className="size-1.5 bg-cyan-500/50 rounded-full animate-bounce"></span>
@@ -249,7 +249,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                     </div>
 
                     {/* Footer / Input */}
-                    <div className="p-4 bg-slate-900/90 border-t border-white/5 backdrop-blur-md">
+                    <div className="p-4 bg-slate-100 dark:bg-slate-900/90 border-t border-slate-200 dark:border-white/10 backdrop-blur-md">
                         {/* Quick Actions */}
                         <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar-none mb-2">
                             {quickActions.map((action: any, i: number) => {
@@ -258,7 +258,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                     <button 
                                         key={action.label} 
                                         onClick={() => handleSend(action.prompt)}
-                                        className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-cyan-900/30 border border-cyan-500/20 hover:border-cyan-500/50 rounded-lg text-xs text-cyan-300 font-bold transition-all flex items-center gap-1.5 group active:scale-95"
+                                        className="whitespace-nowrap px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-cyan-900/30 border border-indigo-300 dark:border-cyan-500/20 hover:border-indigo-500 dark:hover:border-cyan-500/50 rounded-lg text-xs text-indigo-700 dark:text-cyan-300 font-bold transition-all flex items-center gap-1.5 group active:scale-95"
                                     >
                                         <ActionIcon size={12} className="group-hover:text-cyan-400" />
                                         {action.label}
@@ -275,7 +275,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyPress} 
                                 placeholder={AI_CHAT_DATA?.inputPlaceholder || text.inputPlaceholder} 
-                                className="w-full bg-transparent border-b border-white/10 py-3 pl-2 pr-10 text-white placeholder-gray-600 focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
+                                className="w-full bg-transparent border-b border-slate-300 dark:border-white/10 py-3 pl-2 pr-10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:border-arcade-primary outline-none transition-colors font-mono text-sm"
                             />
                             <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500 w-0 group-focus-within:w-full transition-all duration-500"></div>
                             <button 

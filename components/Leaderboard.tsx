@@ -57,23 +57,23 @@ export const Leaderboard: React.FC = () => {
   const list = displayedLeaders.slice(3);
 
   return (
-    <div className="h-full flex flex-col bg-[#0F172A] relative overflow-hidden">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 relative overflow-hidden">
       
       {/* Background Ambience */}
-      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-900/20 to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-200/40 dark:from-indigo-900/20 to-transparent pointer-events-none" />
       
       {/* Header & Filters */}
       <div className="p-6 md:px-8 pb-0 z-10 shrink-0">
           <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-8">
               <div>
-                  <h1 className="text-3xl md:text-4xl font-display font-black text-white italic uppercase tracking-tighter transform -skew-x-6">
+                  <h1 className="text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white italic uppercase tracking-tighter transform -skew-x-6">
                       {text.titlePrefix} <span className="text-transparent bg-clip-text bg-gradient-to-r from-arcade-action to-red-500">{text.titleHighlight}</span>
                   </h1>
                   <p className="text-arcade-muted font-bold mt-1">{text.season}</p>
               </div>
 
               {/* Filters */}
-              <div className="flex bg-[#1E293B] p-1 rounded-xl border border-white/5">
+              <div className="flex bg-white dark:bg-[#1E293B] p-1 rounded-xl border border-slate-200 dark:border-white/10">
                                     <div className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 bg-arcade-primary text-white shadow-lg">
                                         <Globe size={16} /> {text?.scopes?.global || 'Мир'}
                                     </div>
@@ -81,7 +81,7 @@ export const Leaderboard: React.FC = () => {
           </div>
 
           <div className="flex justify-center mb-6">
-               <div className="flex gap-1 bg-black/40 p-1 rounded-full border border-white/10 backdrop-blur-md">
+               <div className="flex gap-1 bg-slate-100 dark:bg-black/40 p-1 rounded-full border border-slate-200 dark:border-white/10 backdrop-blur-md">
                                      <div className="px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-black shadow-neon-white">
                                          {text?.periods?.all || 'Все'}
                                      </div>
@@ -92,9 +92,9 @@ export const Leaderboard: React.FC = () => {
       {/* Main Scrollable Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-32">
           {displayedLeaders.length === 0 && (
-              <div className="max-w-3xl mx-auto mb-8 bg-[#1E293B] border border-white/10 rounded-2xl p-8 text-center">
-                  <p className="text-white font-bold mb-2">Рейтинг пока пуст</p>
-                  <p className="text-gray-400 text-sm">Как только появятся результаты игроков, таблица лидеров отобразится здесь.</p>
+              <div className="max-w-3xl mx-auto mb-8 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
+                  <p className="text-slate-900 dark:text-white font-bold mb-2">Рейтинг пока пуст</p>
+                  <p className="text-slate-500 dark:text-gray-400 text-sm">Как только появятся результаты игроков, таблица лидеров отобразится здесь.</p>
               </div>
           )}
           
