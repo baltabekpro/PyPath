@@ -70,6 +70,13 @@ type TopicProgress = {
 
 type ProgressMap = Record<string, TopicProgress>;
 
+type TheoryContent = {
+  intro: string;
+  bullets: string[];
+  example: string;
+  hint: string;
+};
+
 const getInitialProgress = (): ProgressMap => {
   try {
     const raw = localStorage.getItem(storageKey);
@@ -80,12 +87,78 @@ const getInitialProgress = (): ProgressMap => {
   }
 };
 
+const getTheoryContent = (topic: Topic): TheoryContent => {
+  if (topic.id.includes('if')) {
+    return {
+      intro: 'Условие позволяет программе выбирать одно из действий в зависимости от результата проверки.',
+      bullets: [
+        'После if пишется условие, которое даёт True или False.',
+        'Блок после if выполняется только если условие истинно.',
+        'else нужен для альтернативного действия, когда условие ложно.',
+      ],
+      example: ['age = 14', 'if age >= 14:', '    print("Можно участвовать")', 'else:', '    print("Пока рано")'].join('\n'),
+      hint: 'Сначала сформулируйте условие словами, а потом переведите его в код.',
+    };
+  }
+
+  if (topic.id.includes('loop')) {
+    return {
+      intro: 'Циклы нужны, когда одно и то же действие повторяется несколько раз.',
+      bullets: [
+        'for удобно использовать, когда заранее известны элементы или диапазон.',
+        'while подходит для повторения до тех пор, пока условие истинно.',
+        'Важно следить, чтобы while когда-нибудь завершался.',
+      ],
+      example: ['for number in range(1, 4):', '    print(number)', '', 'count = 3', 'while count > 0:', '    print(count)', '    count -= 1'].join('\n'),
+      hint: 'Если повторений известно количество, почти всегда проще начать с for.',
+    };
+  }
+
+  if (topic.id.includes('func')) {
+    return {
+      intro: 'Функция собирает повторяющийся код в один именованный блок, который можно вызывать много раз.',
+      bullets: [
+        'Функции создаются через def.',
+        'Параметры принимают входные данные.',
+        'return возвращает результат наружу.',
+      ],
+      example: ['def add(a, b):', '    return a + b', '', 'result = add(2, 3)', 'print(result)'].join('\n'),
+      hint: 'Если один и тот же код повторяется два раза, уже стоит подумать о функции.',
+    };
+  }
+
+  if (topic.id.includes('list')) {
+    return {
+      intro: 'Списки хранят последовательность элементов, а словари помогают быстро находить значение по ключу.',
+      bullets: [
+        'Элементы списка доступны по индексу.',
+        'В словаре у каждого значения есть свой ключ.',
+        'Обе структуры часто используются для хранения учебных данных и результатов.',
+      ],
+      example: ['students = ["Аня", "Борис"]', 'profile = {"name": "Аня", "score": 95}', 'print(students[0])', 'print(profile["score"])'].join('\n'),
+      hint: 'Если нужен порядок, берите список. Если нужен доступ по имени поля, берите словарь.',
+    };
+  }
+
+  return {
+    intro: topic.theory,
+    bullets: [
+      'Сначала разберите основное понятие своими словами.',
+      'Потом проверьте себя на коротком примере.',
+      'После этого переходите к практике по шагам.',
+    ],
+    example: 'print("Разбор темы")',
+    hint: 'Теория должна помочь вам понять идею до решения задач.',
+  };
+};
+
 export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const [topicsData, setTopicsData] = useState<Topic[]>(TOPICS);
   const [grade, setGrade] = useState<GradeTab>('8');
   const [selectedTopicId, setSelectedTopicId] = useState<string>('g8-if');
   const [progress, setProgress] = useState<ProgressMap>(getInitialProgress);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveNote, setSaveNote] = useState('');
 
   useEffect(() => {
     const loadJourney = async () => {
@@ -112,6 +185,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     () => topics.find((topic) => topic.id === selectedTopicId) || topics[0],
     [topics, selectedTopicId],
   );
+  const theoryContent = useMemo(() => (selectedTopic ? getTheoryContent(selectedTopic) : null), [selectedTopic]);
 
   const topicProgress = selectedTopic ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] } : { theoryOpened: false, completedPractices: [] };
 
@@ -123,19 +197,33 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const persistTopicProgress = async (topicId: string, topicState: TopicProgress) => {
     try {
       setIsSaving(true);
-      const synced = await apiPut<ProgressMap>('/courses/journey/progress', {
-        topicId,
-        progress: topicState,
-      });
+      setSaveNote('Сохраняем прогресс...');
+      const synced = await Promise.race<ProgressMap | null>([
+        apiPut<ProgressMap>('/courses/journey/progress', {
+          topicId,
+          progress: topicState,
+        }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
+      ]);
       if (synced && typeof synced === 'object') {
         setProgress(synced);
         localStorage.setItem(storageKey, JSON.stringify(synced));
+        setSaveNote('Прогресс сохранён');
+      } else {
+        setSaveNote('Теория открыта, прогресс сохранится при следующей синхронизации');
       }
     } catch {
+      setSaveNote('Теория открыта локально, но сервер пока не ответил');
     } finally {
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!saveNote) return;
+    const timer = window.setTimeout(() => setSaveNote(''), 2800);
+    return () => window.clearTimeout(timer);
+  }, [saveNote]);
 
   const openTheory = () => {
     if (!selectedTopic) return;
@@ -238,7 +326,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               <>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
                 <h1 className="text-2xl font-bold mb-4">{selectedTopic.title}</h1>
-                {isSaving && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Сохраняем прогресс...</p>}
+                {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{saveNote || 'Сохраняем прогресс...'}</p>}
 
                 <div className="mb-6 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30">
                   <div className="flex items-center justify-between mb-2">
@@ -248,12 +336,38 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                     </h3>
                     <button
                       onClick={openTheory}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700"
+                      disabled={topicProgress.theoryOpened}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-default"
                     >
-                      Открыть теорию
+                      {topicProgress.theoryOpened ? 'Теория открыта' : 'Открыть теорию'}
                     </button>
                   </div>
-                  <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
+                  {!topicProgress.theoryOpened && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg p-3">
+                        Нажмите кнопку, чтобы открыть полный разбор темы и разблокировать практику.
+                      </p>
+                    </div>
+                  )}
+                  {topicProgress.theoryOpened && theoryContent && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{theoryContent.intro}</p>
+                      <ul className="space-y-2">
+                        {theoryContent.bullets.map((item) => (
+                          <li key={item} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
+                        <pre className="text-sm whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
+                      </div>
+                      <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
+                        {theoryContent.hint}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
