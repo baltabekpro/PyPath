@@ -85,7 +85,7 @@ export const Achievements: React.FC = () => {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: 'PyPath Achievement',
+                    title: text.shareTitle || 'PyPath Achievement',
                     text: shareText,
                     url: shareUrl,
                 });
@@ -163,8 +163,8 @@ export const Achievements: React.FC = () => {
             {/* Trophy Grid */}
             {filteredList.length === 0 ? (
                 <div className="bg-white dark:bg-black/20 border border-white/10 rounded-2xl p-8 text-center">
-                    <p className="text-slate-900 dark:text-white font-bold mb-2">{localText.emptyTitle}</p>
-                    <p className="text-slate-600 dark:text-gray-400 text-sm">{localText.emptyDescription}</p>
+                    <p className="text-slate-900 dark:text-white font-bold mb-2">{text.emptyTitle || localText.emptyTitle}</p>
+                    <p className="text-slate-500 dark:text-gray-400 text-sm">{text.emptyDescription || localText.emptyDescription}</p>
                 </div>
             ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">

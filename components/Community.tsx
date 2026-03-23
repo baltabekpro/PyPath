@@ -15,8 +15,8 @@ export const Community: React.FC = () => {
     const topContributors = COMMUNITY_UI?.topContributors ?? [];
     const text = UI_TEXTS?.community ?? {};
     const localText = {
-        newTag: isKz ? 'ЖаңаЖазба' : 'НовыйПост',
-        shareTitle: isKz ? 'PyPath жазбасы' : 'PyPath Post',
+        newTag: isKz ? 'Жаңа жазба' : 'Новый пост',
+        shareTitle: isKz ? 'PyPath жазбасы' : 'PyPath посты',
     };
 
     useEffect(() => {
@@ -59,7 +59,7 @@ export const Community: React.FC = () => {
       try {
           const created = await apiPost<any>('/posts', {
               content: textValue,
-              tags: [localText.newTag]
+              tags: [text.newTag || localText.newTag]
           });
           setPosts((prev) => [created, ...prev]);
       } catch {
@@ -93,7 +93,7 @@ export const Community: React.FC = () => {
       try {
           if (navigator.share) {
               await navigator.share({
-                  title: localText.shareTitle,
+                  title: text.shareTitle || localText.shareTitle,
                   text: shareText,
                   url: shareUrl,
               });

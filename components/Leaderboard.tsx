@@ -100,8 +100,8 @@ export const Leaderboard: React.FC = () => {
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-32">
           {displayedLeaders.length === 0 && (
               <div className="max-w-3xl mx-auto mb-8 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
-                  <p className="text-slate-900 dark:text-white font-bold mb-2">{localText.emptyTitle}</p>
-                  <p className="text-slate-500 dark:text-gray-400 text-sm">{localText.emptyDescription}</p>
+                  <p className="text-slate-900 dark:text-white font-bold mb-2">{text.emptyTitle || localText.emptyTitle}</p>
+                  <p className="text-slate-500 dark:text-gray-400 text-sm">{text.emptyDescription || localText.emptyDescription}</p>
               </div>
           )}
           
