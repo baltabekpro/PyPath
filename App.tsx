@@ -6,6 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { Editor } from './components/Editor';
 import { Courses } from './components/Courses';
 import { CourseJourney } from './components/CourseJourney';
+import { SimpleLearning } from './components/SimpleLearning';
 import { Profile } from './components/Profile';
 import { Settings } from './components/Settings';
 import { Leaderboard } from './components/Leaderboard';
@@ -144,6 +145,8 @@ const App: React.FC = () => {
     switch (currentView) {
       case View.DASHBOARD:
         return <Dashboard setView={handleViewChange} />;
+      case View.SIMPLE_LEARNING:
+        return <SimpleLearning setView={handleViewChange} />;
       case View.PRACTICE:
         return <Editor />;
       case View.AI_CHAT:
