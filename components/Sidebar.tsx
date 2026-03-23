@@ -101,10 +101,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isAdmin 
                  </button>
              ))}
 
-             {/* Floating FAB for Action (Arena/Play) */}
+             {/* Floating FAB for quick learning */}
              <div className="absolute -top-6 left-1/2 -translate-x-1/2">
                 <button 
-                    onClick={() => setView(View.PRACTICE)}
+                    onClick={() => setView(View.SIMPLE_LEARNING)}
                     className="size-16 bg-gradient-to-tr from-arcade-action to-red-500 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] border-4 border-white dark:border-[#0F172A] active:scale-95 transition-transform"
                 >
                     <Gamepad2 size={32} />

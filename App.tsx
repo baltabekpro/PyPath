@@ -3,7 +3,6 @@ import { View } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
-import { Editor } from './components/Editor';
 import { Courses } from './components/Courses';
 import { CourseJourney } from './components/CourseJourney';
 import { SimpleLearning } from './components/SimpleLearning';
@@ -147,8 +146,6 @@ const App: React.FC = () => {
         return <Dashboard setView={handleViewChange} />;
       case View.SIMPLE_LEARNING:
         return <SimpleLearning setView={handleViewChange} />;
-      case View.PRACTICE:
-        return <Editor />;
       case View.AI_CHAT:
         return <AIChatPage />;
       case View.COURSES:
@@ -221,7 +218,7 @@ const App: React.FC = () => {
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden w-full transition-all duration-300 relative">
         {/* Mobile Header Toggle for Immersive Views */}
-        {(currentView === View.PRACTICE || currentView === View.AI_CHAT) && (
+        {currentView === View.AI_CHAT && (
            <div className="md:hidden absolute top-4 left-4 z-20">
                <button 
                  onClick={() => setIsMobileMenuOpen(true)}
@@ -233,7 +230,7 @@ const App: React.FC = () => {
         )}
 
         {/* Main Header */}
-        {currentView !== View.PRACTICE && currentView !== View.AI_CHAT && (
+        {currentView !== View.AI_CHAT && (
             <Header 
               onMenuClick={() => setIsMobileMenuOpen(true)} 
               onProfileClick={() => handleViewChange(View.PROFILE)}
@@ -251,8 +248,8 @@ const App: React.FC = () => {
         )}
         
         <div className={`flex-1 ${
-            currentView !== View.PRACTICE && currentView !== View.AI_CHAT 
-            ? 'overflow-y-auto custom-scrollbar' 
+            currentView !== View.AI_CHAT
+            ? 'overflow-y-auto custom-scrollbar'
             : 'overflow-hidden'
         }`}>
           {renderView()}

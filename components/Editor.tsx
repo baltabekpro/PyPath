@@ -182,7 +182,7 @@ export const EditorComponent: React.FC = () => {
         runMissionError: isKz ? 'Тапсырманы орындау мүмкін болмады' : 'Не удалось выполнить миссию',
         reloginHint: isKz ? 'Кеңес: қайта кіріп, іске қосуды қайталаңыз.' : 'Подсказка: войдите в аккаунт заново и повторите запуск.',
         loadingMission: isKz ? 'Тапсырма жүктелуде...' : 'Загрузка миссии...',
-        arenaUnavailable: isKz ? 'Арена әзірге қолжетімсіз' : 'Арена пока недоступна',
+        practiceUnavailable: isKz ? 'Практика әзірге қолжетімсіз' : 'Практика пока недоступна',
         missionsEmpty: isKz ? 'Тапсырмалар тізімі бос. Тапсырмалар пайда болғанда, бірден тәжірибеге кірісе аласыз.' : 'Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.',
         lessonPlan: isKz ? 'Сабақ жоспары' : 'План урока',
         stepTheory: isKz ? '1-қадам: Теория' : 'Шаг 1: Теория',
@@ -651,7 +651,7 @@ export const EditorComponent: React.FC = () => {
         return (
             <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A] p-6">
                 <div className="max-w-lg w-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
-                    <p className="text-slate-900 dark:text-white font-bold mb-2">{lt.arenaUnavailable}</p>
+                    <p className="text-slate-900 dark:text-white font-bold mb-2">{lt.practiceUnavailable}</p>
                     <p className="text-slate-600 dark:text-slate-300 text-sm">{lt.missionsEmpty}</p>
                 </div>
             </div>

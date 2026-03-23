@@ -27,7 +27,6 @@ export let APP_LANGUAGE: AppLanguage = getInitialLanguage();
 const VIEW_LABELS_KZ: Record<string, string> = {
     DASHBOARD: 'Басты бет',
     COURSES: 'Курстар',
-    PRACTICE: 'Арена',
     AI_CHAT: 'Оракул',
     PROFILE: 'Профиль',
     LEADERBOARD: 'Рейтинг',
@@ -85,7 +84,7 @@ const KZ_TEXT_OVERRIDES = {
         statsTime: 'Код уақыты',
         hoursSuffix: 'с',
         blitzTitle: 'Жылдам бастау',
-        blitzStart: 'Аренаны ашу',
+        blitzStart: 'Оқуды ашу',
     },
     settings: {
         title: 'Баптаулар',
@@ -213,8 +212,40 @@ const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
     }
 };
 
+const normalizeLegacyUiData = (uiData: any) => {
+    if (!isObject(uiData)) return uiData;
+    const normalized = { ...uiData };
+
+    if (Array.isArray(normalized.sidebarNavItems)) {
+        normalized.sidebarNavItems = normalized.sidebarNavItems
+            .map((item: any) => {
+                if (!isObject(item)) return item;
+                if (String(item.view) !== 'PRACTICE') return item;
+                return {
+                    ...item,
+                    view: 'SIMPLE_LEARNING',
+                    label: APP_LANGUAGE === 'kz' ? 'Оқу' : 'Обучение',
+                };
+            })
+            .filter((item: any, index: number, list: any[]) => {
+                const view = String(item?.view || '');
+                return list.findIndex((candidate: any) => String(candidate?.view || '') === view) === index;
+            });
+    }
+
+    const dashboardText = normalized?.texts?.dashboard;
+    if (isObject(dashboardText)) {
+        const blitzStart = String(dashboardText.blitzStart || '');
+        if (/арена/i.test(blitzStart)) {
+            dashboardText.blitzStart = APP_LANGUAGE === 'kz' ? 'Оқуды ашу' : 'Открыть обучение';
+        }
+    }
+
+    return normalized;
+};
+
 const applyUiData = (uiData: any) => {
-    RAW_UI_DATA = { ...DEFAULT_UI_DATA, ...(uiData || {}) };
+    RAW_UI_DATA = { ...DEFAULT_UI_DATA, ...(normalizeLegacyUiData(uiData) || {}) };
     refreshLocalizedUi();
 };
 

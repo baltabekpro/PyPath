@@ -16,7 +16,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         streak: isKz ? 'Серия' : 'Серия',
         currentMission: isKz ? 'Ағымдағы миссия' : 'Текущая миссия',
         missionSoon: isKz ? 'Жаңа миссия жақында пайда болады' : 'Новая миссия скоро появится',
-        practiceArena: isKz ? 'Әзірге аренада жаттығыңыз' : 'Пока потренируйтесь на арене',
+        practiceNow: isKz ? 'Әзірге практиканы жалғастырыңыз' : 'Пока продолжайте практику',
         progress: isKz ? 'Прогресс' : 'Прогресс',
         start: isKz ? 'Бастау' : 'Старт',
         dailyQuests: isKz ? 'Күнделікті тапсырмалар' : 'Ежедневные задания',
@@ -39,7 +39,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         hoursSuffix: isKz ? 'с' : 'ч',
         blitzTitle: isKz ? 'Жылдам бастау' : 'Быстрый запуск',
         blitzSubtitle: isKz ? 'Деректер толық болмаса да практиканы бастаңыз.' : 'Начните практику даже при частично пустых данных.',
-        openArena: isKz ? 'Аренаны ашу' : 'Открыть арену',
+        openLearning: isKz ? 'Оқуды ашу' : 'Открыть обучение',
     };
     const [currentUser, setCurrentUser] = useState(CURRENT_USER);
     const [stats, setStats] = useState(STATS);
@@ -221,7 +221,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             
             {/* Current Mission (Big Card) */}
             <div 
-              onClick={() => setView(View.PRACTICE)}
+              onClick={() => setView(View.SIMPLE_LEARNING)}
               className="group relative overflow-hidden bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2rem] border-2 border-indigo-500/30 hover:border-arcade-action transition-all cursor-pointer shadow-xl hover:shadow-2xl hover:-translate-y-1"
             >
                 {/* Background Art */}
@@ -241,7 +241,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                              <span className="text-xs font-black uppercase tracking-wider">{text.currentMission || lt.currentMission}</span>
                          </div>
                          <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">{mission?.title ?? text.fallbackMissionTitle ?? lt.missionSoon}</h2>
-                         <p className="text-slate-700 dark:text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter ?? lt.practiceArena}</p>
+                         <p className="text-slate-700 dark:text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter ?? lt.practiceNow}</p>
                          
                          {/* Progress Bar styled as HP */}
                          <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10 relative">
@@ -256,7 +256,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                      </div>
 
                      <div className="hidden md:flex flex-col items-center gap-1">
-                        <button onClick={() => setView(View.PRACTICE)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
+                        <button onClick={() => setView(View.SIMPLE_LEARNING)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
                             <ChevronRight size={32} strokeWidth={3} />
                         </button>
                         <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start || lt.start}</span>
@@ -406,7 +406,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
             {/* Quick Play / Mini Games */}
             <div 
-                onClick={() => setView(View.PRACTICE)}
+                onClick={() => setView(View.SIMPLE_LEARNING)}
                 className="bg-gradient-to-b from-arcade-primary to-purple-800 rounded-3xl p-6 text-center text-white relative overflow-hidden shadow-neon-purple group cursor-pointer hover:scale-[1.02] transition-transform"
             >
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-20"></div>
@@ -416,8 +416,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle || lt.blitzTitle}</h3>
                 <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle || lt.blitzSubtitle}</p>
                 
-                <button onClick={() => setView(View.PRACTICE)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
-                    {text.blitzStart || lt.openArena}
+                <button onClick={() => setView(View.SIMPLE_LEARNING)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
+                    {text.blitzStart || lt.openLearning}
                 </button>
             </div>
         </div>

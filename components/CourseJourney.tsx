@@ -297,7 +297,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             {text.backToCourses}
           </button>
           <button
-            onClick={() => setView(View.PRACTICE)}
+            onClick={() => setView(View.SIMPLE_LEARNING)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
           >
             <PlayCircle size={18} />

@@ -3,7 +3,6 @@ export enum View {
   COURSES = 'COURSES',
   COURSE_JOURNEY = 'COURSE_JOURNEY',
   SIMPLE_LEARNING = 'SIMPLE_LEARNING', // Simplified learning interface
-  PRACTICE = 'PRACTICE', // Editor
   AI_CHAT = 'AI_CHAT', // Full screen chat
   PROFILE = 'PROFILE',
   LEADERBOARD = 'LEADERBOARD',
