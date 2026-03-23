@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
+import { AIChat } from './AIChat';
 import {
   GradeTab,
   JourneyTopic,
@@ -167,6 +168,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     openTheoryHint: isKz ? 'Тақырыптың толық талдауын ашып, практиканы бұғаттан шығару үшін батырманы басыңыз.' : 'Нажмите кнопку, чтобы открыть полный разбор темы и разблокировать практику.',
     unlockPracticeHint: isKz ? 'Алдымен теорияны ашыңыз, содан кейін практикалық тапсырмалар белсенді болады.' : 'Сначала откройте теорию, после этого практические задания станут активными.',
     practiceOrderHint: isKz ? 'Практика ретімен ашылады: алдымен 1-тапсырма, кейін 2 және ары қарай.' : 'Практика открывается по порядку: сначала 1 задание, затем 2 и далее.',
+    oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
   };
 
   const fallbackTopics = useMemo(() => getDefaultTopics(isKz), [isKz]);
@@ -185,7 +187,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     saved: text.saved,
     syncLater: text.syncLater,
     syncFail: text.syncFail,
-  });
+  }, isKz);
 
   const topics = topicsByGrade[grade] || [];
   const selectedTopic = useMemo(
@@ -414,6 +416,13 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                     </div>
                   </div>
                 )}
+
+                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10">
+                  <h3 className="font-semibold mb-3">{text.oracleChat}</h3>
+                  <div className="h-[360px] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
+                    <AIChat embedded />
+                  </div>
+                </div>
               </>
             )}
           </section>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from '../types';
 import { Gamepad2 } from 'lucide-react';
-import { SIDEBAR_NAV_ITEMS, UI_TEXTS, getIconComponent } from '../constants';
+import { APP_LANGUAGE, SIDEBAR_NAV_ITEMS, UI_TEXTS, getIconComponent } from '../constants';
 
 interface SidebarProps {
   currentView: View;
@@ -12,6 +12,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isAdmin = false }) => {
+  const isKz = APP_LANGUAGE === 'kz';
   const text = UI_TEXTS?.sidebar ?? {};
 
   const baseItems = (SIDEBAR_NAV_ITEMS || []).map((item: any) => ({
@@ -25,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isAdmin 
         ...baseItems,
         {
           view: View.ADMIN,
-          label: 'Админка',
+          label: isKz ? 'Әкімдік' : 'Админка',
           icon: 'ShieldAlert',
           mobile: false,
           Icon: getIconComponent('ShieldAlert'),
