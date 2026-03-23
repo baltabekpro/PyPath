@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
+from app.core.auth import get_password_hash
+from app.core.config import get_settings
 from app.core.database import SessionLocal
-from app.models.models import Course, Mission
+from app.models.models import Course, Mission, User
 
 
 DEFAULT_COURSES = [
@@ -55,7 +59,7 @@ DEFAULT_COURSES = [
         "difficulty": "Лёгкий",
         "stars": 0,
         "is_boss": False,
-        "locked": True,
+        "locked": False,
     },
     {
         "id": 5,
@@ -68,7 +72,7 @@ DEFAULT_COURSES = [
         "difficulty": "Лёгкий",
         "stars": 0,
         "is_boss": False,
-        "locked": True,
+        "locked": False,
     },
     {
         "id": 6,
@@ -81,7 +85,7 @@ DEFAULT_COURSES = [
         "difficulty": "Босс",
         "stars": 0,
         "is_boss": True,
-        "locked": True,
+        "locked": False,
     },
 ]
 
@@ -345,6 +349,63 @@ def ensure_default_missions() -> None:
                 existing.hints = mission_data["hints"]
             else:
                 db.add(Mission(**mission_data))
+
+        db.commit()
+    finally:
+        db.close()
+
+
+def ensure_admin_account() -> None:
+    settings = get_settings()
+    admin_username = (getattr(settings, "admin_username", "") or "admin_pypath").strip()
+    admin_email = (getattr(settings, "admin_email", "") or "admin@pypath.local").strip().lower()
+    admin_password = getattr(settings, "admin_password", "") or "Admin12345!"
+    admin_name = (getattr(settings, "admin_name", "") or "PyPath Admin").strip()
+
+    db = SessionLocal()
+    try:
+        admin_user = db.query(User).filter(User.username == admin_username).first()
+        if not admin_user and admin_email:
+            admin_user = db.query(User).filter(User.email == admin_email).first()
+
+        if admin_user:
+            current_settings = admin_user.settings if isinstance(admin_user.settings, dict) else {}
+            admin_user.settings = {
+                **current_settings,
+                "role": "admin",
+                "is_admin": True,
+            }
+            admin_user.full_name = admin_name
+            admin_user.name = admin_name
+            if admin_password:
+                admin_user.password = get_password_hash(admin_password)
+        else:
+            db.add(
+                User(
+                    id=f"u_admin_{uuid4().hex[:12]}",
+                    username=admin_username,
+                    email=admin_email,
+                    password=get_password_hash(admin_password),
+                    full_name=admin_name,
+                    name=admin_name,
+                    avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=PyPathAdmin",
+                    bio="Администратор PyPath",
+                    level="Admin",
+                    level_num=99,
+                    xp=99999,
+                    max_xp=100000,
+                    streak=0,
+                    rank=1,
+                    league="Admin",
+                    settings={
+                        "theme": "dark",
+                        "notifications": True,
+                        "sound": True,
+                        "role": "admin",
+                        "is_admin": True,
+                    },
+                )
+            )
 
         db.commit()
     finally:

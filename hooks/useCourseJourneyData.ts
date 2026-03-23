@@ -91,7 +91,19 @@ export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
       if (!mounted) return;
 
       if (topicsResult.status === 'fulfilled' && Array.isArray(topicsResult.value) && topicsResult.value.length > 0) {
-        setTopicsData(topicsResult.value);
+        const fallbackById = new Map(fallbackTopics.map((topic) => [topic.id, topic]));
+        const localizedTopics = topicsResult.value.map((topic) => {
+          const localized = fallbackById.get(topic.id);
+          if (!localized) return topic;
+          return {
+            ...topic,
+            section: localized.section,
+            title: localized.title,
+            theory: localized.theory,
+            practices: localized.practices,
+          };
+        });
+        setTopicsData(localizedTopics);
       } else {
         setTopicsData((prev) => (prev.length > 0 ? prev : fallbackTopics));
       }

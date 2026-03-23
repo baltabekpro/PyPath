@@ -10,7 +10,7 @@ from app.api.routes import router
 from app.api.auth_routes import router as auth_router
 from app.api.ai_routes import router as ai_router
 from app.core.config import get_settings
-from app.core.bootstrap import ensure_default_courses, ensure_default_missions
+from app.core.bootstrap import ensure_admin_account, ensure_default_courses, ensure_default_missions
 from app.core.errors import (
     http_exception_handler,
     unhandled_exception_handler,
@@ -134,6 +134,7 @@ def create_app() -> FastAPI:
             logging.getLogger(__name__).warning("GOOGLE_API_KEY is not configured. AI routes will return fallback responses.")
         ensure_default_courses()
         ensure_default_missions()
+        ensure_admin_account()
 
     return application
 
