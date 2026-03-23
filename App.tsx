@@ -145,7 +145,7 @@ const App: React.FC = () => {
       case View.DASHBOARD:
         return <Dashboard setView={handleViewChange} />;
       case View.SIMPLE_LEARNING:
-        return <SimpleLearning setView={handleViewChange} />;
+        return <CourseJourney setView={handleViewChange} />;
       case View.AI_CHAT:
         return <AIChatPage />;
       case View.COURSES:

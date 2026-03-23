@@ -1,25 +1,32 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle } from 'lucide-react';
 import { View } from '../types';
-import { apiGet, apiPut } from '../api';
 import { APP_LANGUAGE } from '../constants';
+import {
+  GradeTab,
+  JourneyTopic,
+  TopicProgress,
+  useCourseJourneyData,
+} from '../hooks/useCourseJourneyData';
 
 interface CourseJourneyProps {
   setView: (view: View) => void;
 }
 
-type GradeTab = 'pre' | '8' | '9';
-
-type Topic = {
-  id: string;
-  section: string;
-  title: string;
-  grade: GradeTab;
-  theory: string;
-  practices: string[];
+type TheoryContent = {
+  intro: string;
+  bullets: string[];
+  example: string;
+  hint: string;
 };
 
-const getDefaultTopics = (isKz: boolean): Topic[] => [
+type LearningPage = 'theory' | 'practice';
+
+const ACTIVE_GRADE_KEY = 'courseJourneyActiveGradeV1';
+const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
+const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
+
+const getDefaultTopics = (isKz: boolean): JourneyTopic[] => [
   {
     id: 'pre-variables',
     section: isKz ? '8/9 сыныпқа дайындық' : 'Подготовка к 8/9',
@@ -62,33 +69,17 @@ const getDefaultTopics = (isKz: boolean): Topic[] => [
   },
 ];
 
-const storageKey = 'courseJourneyProgressV1';
-
-type TopicProgress = {
-  theoryOpened: boolean;
-  completedPractices: number[];
+const getStoredGrade = (): GradeTab => {
+  const raw = localStorage.getItem(ACTIVE_GRADE_KEY);
+  return raw === 'pre' || raw === '8' || raw === '9' ? raw : '8';
 };
 
-type ProgressMap = Record<string, TopicProgress>;
-
-type TheoryContent = {
-  intro: string;
-  bullets: string[];
-  example: string;
-  hint: string;
+const getStoredPage = (): LearningPage => {
+  const raw = localStorage.getItem(ACTIVE_PAGE_KEY);
+  return raw === 'practice' ? 'practice' : 'theory';
 };
 
-const getInitialProgress = (): ProgressMap => {
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return {};
-    return JSON.parse(raw) as ProgressMap;
-  } catch {
-    return {};
-  }
-};
-
-const getTheoryContent = (topic: Topic, isKz: boolean): TheoryContent => {
+const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => {
   if (topic.id.includes('if')) {
     return {
       intro: isKz ? 'Шарт тексеру нәтижесіне байланысты бағдарламаға әрекеттердің бірін таңдауға мүмкіндік береді.' : 'Условие позволяет программе выбирать одно из действий в зависимости от результата проверки.',
@@ -156,153 +147,133 @@ const getTheoryContent = (topic: Topic, isKz: boolean): TheoryContent => {
 export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const isKz = APP_LANGUAGE === 'kz';
   const text = {
-    backToCourses: isKz ? 'Курстарға оралу' : 'Назад к курсам',
-    openEditor: isKz ? 'Редакторды ашу' : 'Открыть редактор',
+    backToCourses: isKz ? 'Бастыға оралу' : 'Вернуться на главную',
+    openPractice: isKz ? 'Практикаға өту' : 'Перейти к практике',
     fullCourse: isKz ? 'Толық курс' : 'Полный курс',
     preTab: isKz ? '8/9 дейін' : 'До 8/9',
     classLabel: isKz ? 'сынып' : 'класс',
     theoryAndPractices: isKz ? 'Теория + {count} практика' : 'Теория + {count} практик',
     completed: isKz ? 'Орындалды: {done}/{total}' : 'Выполнено: {done}/{total}',
     saving: isKz ? 'Прогресс сақталуда...' : 'Сохраняем прогресс...',
-    saved: isKz ? 'Прогресс сақталды' : 'Прогресс сохранён',
+    saved: isKz ? 'Прогресс сақталды' : 'Прогресс сохранен',
     syncLater: isKz ? 'Теория ашылды, прогресс кейін синхрондалады' : 'Теория открыта, прогресс сохранится при следующей синхронизации',
     syncFail: isKz ? 'Теория жергілікті ашылды, сервер уақытша жауап бермеді' : 'Теория открыта локально, но сервер пока не ответил',
     theory: isKz ? 'Теория' : 'Теория',
+    practicePage: isKz ? 'Практика' : 'Практика',
     openTheory: isKz ? 'Теорияны ашу' : 'Открыть теорию',
     theoryOpened: isKz ? 'Теория ашық' : 'Теория открыта',
     openTheoryHint: isKz ? 'Тақырыптың толық талдауын ашып, практиканы бұғаттан шығару үшін батырманы басыңыз.' : 'Нажмите кнопку, чтобы открыть полный разбор темы и разблокировать практику.',
-    practiceTitle: isKz ? 'Практика' : 'Практика',
     unlockPracticeHint: isKz ? 'Алдымен теорияны ашыңыз, содан кейін практикалық тапсырмалар белсенді болады.' : 'Сначала откройте теорию, после этого практические задания станут активными.',
     practiceOrderHint: isKz ? 'Практика ретімен ашылады: алдымен 1-тапсырма, кейін 2 және ары қарай.' : 'Практика открывается по порядку: сначала 1 задание, затем 2 и далее.',
   };
-  const [topicsData, setTopicsData] = useState<Topic[]>(() => getDefaultTopics(isKz));
-  const [grade, setGrade] = useState<GradeTab>('8');
-  const [selectedTopicId, setSelectedTopicId] = useState<string>('g8-if');
-  const [progress, setProgress] = useState<ProgressMap>(getInitialProgress);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveNote, setSaveNote] = useState('');
 
-  useEffect(() => {
-    const loadJourney = async () => {
-      try {
-        const data = await apiGet<Topic[]>('/courses/journey');
-        if (Array.isArray(data) && data.length > 0) {
-          setTopicsData(data);
-          const firstEight = data.find((item) => item.grade === '8') || data[0];
-          setGrade(firstEight.grade);
-          setSelectedTopicId(firstEight.id);
-        }
-        const progressData = await apiGet<ProgressMap>('/courses/journey/progress');
-        if (progressData && typeof progressData === 'object') {
-          setProgress(progressData);
-        }
-      } catch {
-      }
-    };
-    loadJourney();
-  }, [isKz]);
+  const fallbackTopics = useMemo(() => getDefaultTopics(isKz), [isKz]);
+  const [grade, setGrade] = useState<GradeTab>(getStoredGrade);
+  const [selectedTopicId, setSelectedTopicId] = useState<string>(() => localStorage.getItem(ACTIVE_TOPIC_KEY) || '');
+  const [activePage, setActivePage] = useState<LearningPage>(getStoredPage);
 
-  useEffect(() => {
-    setTopicsData((current) => (current.length > 0 ? current : getDefaultTopics(isKz)));
-  }, [isKz]);
+  const {
+    topicsByGrade,
+    progress,
+    isSaving,
+    saveNote,
+    upsertTopicProgress,
+  } = useCourseJourneyData(fallbackTopics, {
+    saving: text.saving,
+    saved: text.saved,
+    syncLater: text.syncLater,
+    syncFail: text.syncFail,
+  });
 
-  const topics = useMemo(() => topicsData.filter((topic) => topic.grade === grade), [topicsData, grade]);
+  const topics = topicsByGrade[grade] || [];
   const selectedTopic = useMemo(
     () => topics.find((topic) => topic.id === selectedTopicId) || topics[0],
     [topics, selectedTopicId],
   );
-  const theoryContent = useMemo(() => (selectedTopic ? getTheoryContent(selectedTopic, isKz) : null), [selectedTopic, isKz]);
-
-  const topicProgress = selectedTopic ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] } : { theoryOpened: false, completedPractices: [] };
-
-  const saveProgress = (next: ProgressMap) => {
-    setProgress(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-  };
-
-  const persistTopicProgress = async (topicId: string, topicState: TopicProgress) => {
-    try {
-      setIsSaving(true);
-      setSaveNote(text.saving);
-      const synced = await Promise.race<ProgressMap | null>([
-        apiPut<ProgressMap>('/courses/journey/progress', {
-          topicId,
-          progress: topicState,
-        }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
-      ]);
-      if (synced && typeof synced === 'object') {
-        setProgress(synced);
-        localStorage.setItem(storageKey, JSON.stringify(synced));
-        setSaveNote(text.saved);
-      } else {
-        setSaveNote(text.syncLater);
-      }
-    } catch {
-      setSaveNote(text.syncFail);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   useEffect(() => {
-    if (!saveNote) return;
-    const timer = window.setTimeout(() => setSaveNote(''), 2800);
-    return () => window.clearTimeout(timer);
-  }, [saveNote]);
+    if (!selectedTopic) return;
+    if (selectedTopicId !== selectedTopic.id) {
+      setSelectedTopicId(selectedTopic.id);
+    }
+  }, [selectedTopic, selectedTopicId]);
+
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_GRADE_KEY, grade);
+  }, [grade]);
+
+  useEffect(() => {
+    if (!selectedTopicId) return;
+    localStorage.setItem(ACTIVE_TOPIC_KEY, selectedTopicId);
+  }, [selectedTopicId]);
+
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_PAGE_KEY, activePage);
+  }, [activePage]);
+
+  const topicProgress: TopicProgress = selectedTopic
+    ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] }
+    : { theoryOpened: false, completedPractices: [] };
+
+  const theoryContent = useMemo(() => {
+    if (!selectedTopic) return null;
+    return getTheoryContent(selectedTopic, isKz);
+  }, [selectedTopic, isKz]);
 
   const openTheory = () => {
     if (!selectedTopic) return;
-    const next = {
-      ...progress,
-      [selectedTopic.id]: {
-        ...topicProgress,
-        theoryOpened: true,
-      },
-    };
-    saveProgress(next);
-    void persistTopicProgress(selectedTopic.id, next[selectedTopic.id]);
+    upsertTopicProgress(selectedTopic.id, (current) => ({
+      ...current,
+      theoryOpened: true,
+    }));
   };
 
   const togglePractice = (index: number) => {
     if (!selectedTopic || !topicProgress.theoryOpened) return;
+
     const has = topicProgress.completedPractices.includes(index);
     const previousDone = index === 0 || topicProgress.completedPractices.includes(index - 1);
     if (!has && !previousDone) return;
 
-    const nextCompleted = has
-      ? topicProgress.completedPractices.filter((item) => item < index)
-      : [...topicProgress.completedPractices, index].sort((a, b) => a - b);
+    upsertTopicProgress(selectedTopic.id, (current) => {
+      const currentCompleted = current.completedPractices || [];
+      const nextCompleted = has
+        ? currentCompleted.filter((item) => item < index)
+        : [...currentCompleted, index].sort((a, b) => a - b);
 
-    const next = {
-      ...progress,
-      [selectedTopic.id]: {
-        ...topicProgress,
+      return {
+        ...current,
         completedPractices: nextCompleted,
-      },
-    };
-    saveProgress(next);
-    void persistTopicProgress(selectedTopic.id, next[selectedTopic.id]);
+      };
+    });
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <button
-            onClick={() => setView(View.COURSES)}
+            onClick={() => setView(View.DASHBOARD)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft size={18} />
             {text.backToCourses}
           </button>
-          <button
-            onClick={() => setView(View.SIMPLE_LEARNING)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
-          >
-            <PlayCircle size={18} />
-            {text.openEditor}
-          </button>
+
+          <div className="inline-flex items-center p-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900">
+            <button
+              onClick={() => setActivePage('theory')}
+              className={`px-3 py-1.5 rounded-md text-sm font-semibold ${activePage === 'theory' ? 'bg-indigo-600 text-white' : 'text-slate-700 dark:text-slate-300'}`}
+            >
+              {text.theory}
+            </button>
+            <button
+              onClick={() => setActivePage('practice')}
+              className={`px-3 py-1.5 rounded-md text-sm font-semibold ${activePage === 'practice' ? 'bg-emerald-600 text-white' : 'text-slate-700 dark:text-slate-300'}`}
+            >
+              {text.practicePage}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -318,7 +289,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                   key={tab}
                   onClick={() => {
                     setGrade(tab);
-                    setSelectedTopicId(topicsData.find((t) => t.grade === tab)?.id || '');
+                    setSelectedTopicId((topicsByGrade[tab] || [])[0]?.id || '');
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${grade === tab ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
                 >
@@ -327,7 +298,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               ))}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
               {topics.map((topic) => {
                 const p = progress[topic.id] || { theoryOpened: false, completedPractices: [] };
                 const done = p.completedPractices.length;
@@ -351,81 +322,98 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             {selectedTopic && (
               <>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
-                <h1 className="text-2xl font-bold mb-4">{selectedTopic.title}</h1>
-                {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{saveNote || text.saving}</p>}
+                <h1 className="text-2xl font-bold mb-2">{selectedTopic.title}</h1>
+                {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{saveNote || text.saving}</p>}
 
-                <div className="mb-6 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold inline-flex items-center gap-2">
-                      <BookOpen size={18} className="text-indigo-600" />
-                      1. {text.theory}
-                    </h3>
-                    <button
-                      onClick={openTheory}
-                      disabled={topicProgress.theoryOpened}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-default"
-                    >
-                      {topicProgress.theoryOpened ? text.theoryOpened : text.openTheory}
-                    </button>
-                  </div>
-                  {!topicProgress.theoryOpened && (
-                    <div className="space-y-3">
-                      <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg p-3">
-                        {text.openTheoryHint}
-                      </p>
-                    </div>
-                  )}
-                  {topicProgress.theoryOpened && theoryContent && (
-                    <div className="space-y-4">
-                      <p className="text-sm text-slate-700 dark:text-slate-200">{theoryContent.intro}</p>
-                      <ul className="space-y-2">
-                        {theoryContent.bullets.map((item) => (
-                          <li key={item} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
-                        <pre className="text-sm whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
-                      </div>
-                      <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
-                        {theoryContent.hint}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">2. {text.practiceTitle} ({selectedTopic.practices.length})</h3>
-                  {!topicProgress.theoryOpened && (
-                    <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-                      {text.unlockPracticeHint}
-                    </p>
-                  )}
-                  {topicProgress.theoryOpened && (
-                    <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg p-3 mb-3">
-                      {text.practiceOrderHint}
-                    </p>
-                  )}
-                  <div className="space-y-2">
-                    {selectedTopic.practices.map((task, index) => {
-                      const done = topicProgress.completedPractices.includes(index);
-                      const unlocked = topicProgress.theoryOpened && (index === 0 || topicProgress.completedPractices.includes(index - 1) || done);
-                      return (
+                {activePage === 'theory' && (
+                  <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30">
+                    <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+                      <h3 className="font-semibold inline-flex items-center gap-2">
+                        <BookOpen size={18} className="text-indigo-600" />
+                        {text.theory}
+                      </h3>
+                      <div className="flex items-center gap-2">
                         <button
-                          key={`${selectedTopic.id}-${index}`}
-                          disabled={!unlocked}
-                          onClick={() => togglePractice(index)}
-                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                          onClick={openTheory}
+                          disabled={topicProgress.theoryOpened}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-default"
                         >
-                          <span className="text-sm">{index + 1}. {task}</span>
-                          {done && <CheckCircle2 size={18} className="text-emerald-600" />}
+                          {topicProgress.theoryOpened ? text.theoryOpened : text.openTheory}
                         </button>
-                      );
-                    })}
+                        <button
+                          onClick={() => setActivePage('practice')}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <PlayCircle size={16} />
+                            {text.openPractice}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {!topicProgress.theoryOpened && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg p-3">
+                          {text.openTheoryHint}
+                        </p>
+                      </div>
+                    )}
+
+                    {topicProgress.theoryOpened && theoryContent && (
+                      <div className="space-y-4">
+                        <p className="text-sm text-slate-700 dark:text-slate-200">{theoryContent.intro}</p>
+                        <ul className="space-y-2">
+                          {theoryContent.bullets.map((item) => (
+                            <li key={item} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
+                          <pre className="text-sm whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
+                        </div>
+                        <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
+                          {theoryContent.hint}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
+
+                {activePage === 'practice' && (
+                  <div>
+                    <h3 className="font-semibold mb-3">{text.practicePage} ({selectedTopic.practices.length})</h3>
+                    {!topicProgress.theoryOpened && (
+                      <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+                        {text.unlockPracticeHint}
+                      </p>
+                    )}
+                    {topicProgress.theoryOpened && (
+                      <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg p-3 mb-3">
+                        {text.practiceOrderHint}
+                      </p>
+                    )}
+                    <div className="space-y-2">
+                      {selectedTopic.practices.map((task, index) => {
+                        const done = topicProgress.completedPractices.includes(index);
+                        const unlocked = topicProgress.theoryOpened && (index === 0 || topicProgress.completedPractices.includes(index - 1) || done);
+                        return (
+                          <button
+                            key={`${selectedTopic.id}-${index}`}
+                            disabled={!unlocked}
+                            onClick={() => togglePractice(index)}
+                            className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                          >
+                            <span className="text-sm">{index + 1}. {task}</span>
+                            {done && <CheckCircle2 size={18} className="text-emerald-600" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </section>

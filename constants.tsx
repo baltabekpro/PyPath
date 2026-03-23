@@ -220,10 +220,11 @@ const normalizeLegacyUiData = (uiData: any) => {
         normalized.sidebarNavItems = normalized.sidebarNavItems
             .map((item: any) => {
                 if (!isObject(item)) return item;
-                if (String(item.view) !== 'PRACTICE') return item;
+                const currentView = String(item.view);
+                if (currentView !== 'PRACTICE' && currentView !== 'SIMPLE_LEARNING') return item;
                 return {
                     ...item,
-                    view: 'SIMPLE_LEARNING',
+                    view: 'COURSE_JOURNEY',
                     label: APP_LANGUAGE === 'kz' ? 'Оқу' : 'Обучение',
                 };
             })

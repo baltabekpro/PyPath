@@ -67,7 +67,7 @@ DEFAULT_UI_DATA = {
     "sidebarNavItems": [
         {"view": "DASHBOARD", "label": "Главная", "icon": "LayoutGrid", "mobile": True},
         {"view": "COURSES", "label": "Курсы", "icon": "Map", "mobile": True},
-        {"view": "SIMPLE_LEARNING", "label": "Обучение", "icon": "Code", "mobile": True},
+        {"view": "COURSE_JOURNEY", "label": "Обучение", "icon": "Code", "mobile": True},
         {"view": "AI_CHAT", "label": "Оракул", "icon": "Bot", "mobile": True},
         {"view": "PROFILE", "label": "Профиль", "icon": "User", "mobile": True},
         {"view": "LEADERBOARD", "label": "Рейтинг", "icon": "Trophy", "mobile": False},

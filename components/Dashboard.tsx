@@ -172,8 +172,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       </div>
 
       {/* NEW: Simple Learning Quick Access */}
-      <div
-        onClick={() => setView(View.SIMPLE_LEARNING)}
+            <div
+                onClick={() => setView(View.COURSE_JOURNEY)}
         className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-indigo-600 rounded-[2rem] border-2 border-emerald-400/30 hover:border-emerald-300 transition-all cursor-pointer shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 p-8"
       >
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
@@ -205,7 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
           <div className="flex items-center gap-3">
             <button
               className="px-8 py-4 rounded-2xl bg-white text-emerald-600 font-black text-lg hover:scale-110 active:scale-95 transition-all shadow-xl flex items-center gap-2"
-              onClick={() => setView(View.SIMPLE_LEARNING)}
+              onClick={() => setView(View.COURSE_JOURNEY)}
             >
               {isKz ? 'Бастау' : 'Начать'}
               <ChevronRight size={24} strokeWidth={3} />
@@ -221,7 +221,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             
             {/* Current Mission (Big Card) */}
             <div 
-              onClick={() => setView(View.SIMPLE_LEARNING)}
+              onClick={() => setView(View.COURSE_JOURNEY)}
               className="group relative overflow-hidden bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2rem] border-2 border-indigo-500/30 hover:border-arcade-action transition-all cursor-pointer shadow-xl hover:shadow-2xl hover:-translate-y-1"
             >
                 {/* Background Art */}
@@ -256,7 +256,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                      </div>
 
                      <div className="hidden md:flex flex-col items-center gap-1">
-                        <button onClick={() => setView(View.SIMPLE_LEARNING)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
+                        <button onClick={() => setView(View.COURSE_JOURNEY)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
                             <ChevronRight size={32} strokeWidth={3} />
                         </button>
                         <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start || lt.start}</span>
@@ -406,7 +406,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
             {/* Quick Play / Mini Games */}
             <div 
-                onClick={() => setView(View.SIMPLE_LEARNING)}
+                onClick={() => setView(View.COURSE_JOURNEY)}
                 className="bg-gradient-to-b from-arcade-primary to-purple-800 rounded-3xl p-6 text-center text-white relative overflow-hidden shadow-neon-purple group cursor-pointer hover:scale-[1.02] transition-transform"
             >
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-20"></div>
@@ -416,7 +416,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle || lt.blitzTitle}</h3>
                 <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle || lt.blitzSubtitle}</p>
                 
-                <button onClick={() => setView(View.SIMPLE_LEARNING)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
+                <button onClick={() => setView(View.COURSE_JOURNEY)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
                     {text.blitzStart || lt.openLearning}
                 </button>
             </div>
