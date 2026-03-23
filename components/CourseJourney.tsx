@@ -25,6 +25,8 @@ type LearningPage = 'theory' | 'practice';
 const ACTIVE_GRADE_KEY = 'courseJourneyActiveGradeV1';
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
+const PRACTICE_TOPIC_KEY = 'practicePrefillTopicIdV1';
+const PRACTICE_INDEX_KEY = 'practicePrefillIndexV1';
 
 const getDefaultTopics = (isKz: boolean): JourneyTopic[] => [
   {
@@ -228,24 +230,18 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     }));
   };
 
-  const togglePractice = (index: number) => {
+  const openPracticeInEditor = (practiceIndex: number) => {
     if (!selectedTopic || !topicProgress.theoryOpened) return;
 
-    const has = topicProgress.completedPractices.includes(index);
-    const previousDone = index === 0 || topicProgress.completedPractices.includes(index - 1);
-    if (!has && !previousDone) return;
+    const isUnlocked = practiceIndex === 0
+      || topicProgress.completedPractices.includes(practiceIndex - 1)
+      || topicProgress.completedPractices.includes(practiceIndex);
 
-    upsertTopicProgress(selectedTopic.id, (current) => {
-      const currentCompleted = current.completedPractices || [];
-      const nextCompleted = has
-        ? currentCompleted.filter((item) => item < index)
-        : [...currentCompleted, index].sort((a, b) => a - b);
+    if (!isUnlocked) return;
 
-      return {
-        ...current,
-        completedPractices: nextCompleted,
-      };
-    });
+    localStorage.setItem(PRACTICE_TOPIC_KEY, selectedTopic.id);
+    localStorage.setItem(PRACTICE_INDEX_KEY, String(practiceIndex));
+    setView(View.SIMPLE_LEARNING);
   };
 
   return (
@@ -341,8 +337,12 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                           {topicProgress.theoryOpened ? text.theoryOpened : text.openTheory}
                         </button>
                         <button
-                          onClick={() => setActivePage('practice')}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700"
+                          onClick={() => {
+                            const nextIndex = topicProgress.completedPractices.length;
+                            openPracticeInEditor(Math.min(nextIndex, Math.max(0, selectedTopic.practices.length - 1)));
+                          }}
+                          disabled={!topicProgress.theoryOpened}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           <span className="inline-flex items-center gap-1">
                             <PlayCircle size={16} />
@@ -403,7 +403,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                           <button
                             key={`${selectedTopic.id}-${index}`}
                             disabled={!unlocked}
-                            onClick={() => togglePractice(index)}
+                            onClick={() => openPracticeInEditor(index)}
                             className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                           >
                             <span className="text-sm">{index + 1}. {task}</span>

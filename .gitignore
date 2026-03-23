@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# SSH keys
+ssh-key-*
+id_rsa
+id_rsa.pub
+*.pem
+*.ppk

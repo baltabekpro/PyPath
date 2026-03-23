@@ -304,13 +304,23 @@ const getPracticeDetails = (topicId: string, practiceIndex: number, practiceName
   };
 };
 
-const storageKey = 'courseJourneyProgressV1';
+const storageKey = 'courseJourneyProgressV2';
+const storageKeyLegacy = 'courseJourneyProgressV1';
+const PRACTICE_TOPIC_KEY = 'practicePrefillTopicIdV1';
+const PRACTICE_INDEX_KEY = 'practicePrefillIndexV1';
 
 const getInitialProgress = (): ProgressMap => {
   try {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return {};
-    return JSON.parse(raw) as ProgressMap;
+    const rawCurrent = localStorage.getItem(storageKey);
+    if (rawCurrent) {
+      return JSON.parse(rawCurrent) as ProgressMap;
+    }
+
+    const rawLegacy = localStorage.getItem(storageKeyLegacy);
+    if (!rawLegacy) return {};
+    const migrated = JSON.parse(rawLegacy) as ProgressMap;
+    localStorage.setItem(storageKey, JSON.stringify(migrated));
+    return migrated;
   } catch {
     return {};
   }
@@ -418,20 +428,63 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const applyPracticePrefill = (allTopics: Topic[], sourceProgress: ProgressMap) => {
+    const topicId = localStorage.getItem(PRACTICE_TOPIC_KEY);
+    const indexRaw = localStorage.getItem(PRACTICE_INDEX_KEY);
+    if (!topicId || indexRaw === null) return;
+
+    const topic = allTopics.find((item) => item.id === topicId);
+    const parsedIndex = Number(indexRaw);
+    if (!topic || !Number.isInteger(parsedIndex) || parsedIndex < 0 || parsedIndex >= topic.practices.length) {
+      localStorage.removeItem(PRACTICE_TOPIC_KEY);
+      localStorage.removeItem(PRACTICE_INDEX_KEY);
+      return;
+    }
+
+    const topicState = sourceProgress[topic.id] || { theoryOpened: false, completedPractices: [] };
+    const unlocked = topicState.theoryOpened && (
+      parsedIndex === 0
+      || topicState.completedPractices.includes(parsedIndex - 1)
+      || topicState.completedPractices.includes(parsedIndex)
+    );
+    if (!unlocked) {
+      localStorage.removeItem(PRACTICE_TOPIC_KEY);
+      localStorage.removeItem(PRACTICE_INDEX_KEY);
+      return;
+    }
+
+    const details = getPracticeDetails(topic.id, parsedIndex, topic.practices[parsedIndex]);
+    setSelectedTopic(topic);
+    setSelectedPracticeIndex(parsedIndex);
+    setShowTheoryPanel(false);
+    setUserCode(details.starterCode);
+    setTestResults([]);
+    setIsSuccess(false);
+
+    localStorage.removeItem(PRACTICE_TOPIC_KEY);
+    localStorage.removeItem(PRACTICE_INDEX_KEY);
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
         // Load topics
         const topicsData = await apiGet<Topic[]>('/courses/journey');
-        if (Array.isArray(topicsData) && topicsData.length > 0) {
-          setTopics(topicsData);
+        const resolvedTopics = Array.isArray(topicsData) && topicsData.length > 0 ? topicsData : [];
+        if (resolvedTopics.length > 0) {
+          setTopics(resolvedTopics);
         }
 
         // Load progress
         const progressData = await apiGet<ProgressMap>('/courses/journey/progress');
+        const resolvedProgress = progressData && typeof progressData === 'object' ? progressData : {};
         if (progressData && typeof progressData === 'object') {
-          setProgress(progressData);
-          saveProgressLocal(progressData);
+          setProgress(resolvedProgress);
+          saveProgressLocal(resolvedProgress);
+        }
+
+        if (resolvedTopics.length > 0) {
+          applyPracticePrefill(resolvedTopics, resolvedProgress);
         }
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -443,12 +496,24 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     loadData();
   }, []);
 
-  const saveProgress = async (newProgress: ProgressMap) => {
+  const saveTopicProgress = async (topicId: string, topicState: TopicProgress) => {
+    const newProgress = {
+      ...progress,
+      [topicId]: topicState,
+    };
+
     setProgress(newProgress);
     saveProgressLocal(newProgress);
 
     try {
-      await apiPut('/courses/journey/progress', newProgress);
+      const serverProgress = await apiPut<ProgressMap>('/courses/journey/progress', {
+        topicId,
+        progress: topicState,
+      });
+      if (serverProgress && typeof serverProgress === 'object') {
+        setProgress(serverProgress);
+        saveProgressLocal(serverProgress);
+      }
     } catch (error) {
       console.error('Failed to save progress to server:', error);
     }
@@ -468,11 +533,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
 
     // Mark theory as opened
     if (!topicProgress.theoryOpened) {
-      const newProgress = {
-        ...progress,
-        [topic.id]: { ...topicProgress, theoryOpened: true },
-      };
-      saveProgress(newProgress);
+      void saveTopicProgress(topic.id, { ...topicProgress, theoryOpened: true });
     }
 
     setSelectedTopic(topic);
@@ -520,14 +581,10 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
       const topicProgress = progress[selectedTopic.id] || { theoryOpened: true, completedPractices: [] };
       const newCompletedPractices = [...new Set([...topicProgress.completedPractices, selectedPracticeIndex])];
 
-      const newProgress = {
-        ...progress,
-        [selectedTopic.id]: {
-          ...topicProgress,
-          completedPractices: newCompletedPractices,
-        },
-      };
-      saveProgress(newProgress);
+      void saveTopicProgress(selectedTopic.id, {
+        ...topicProgress,
+        completedPractices: newCompletedPractices,
+      });
     }
   };
 
