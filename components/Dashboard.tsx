@@ -174,7 +174,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       {/* NEW: Simple Learning Quick Access */}
             <div
                 onClick={() => setView(View.COURSE_JOURNEY)}
-        className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-indigo-600 rounded-[2rem] border-2 border-emerald-400/30 hover:border-emerald-300 transition-all cursor-pointer shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 p-8"
+                className="relative"
       >
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="absolute -right-20 -bottom-20 size-80 bg-white/20 blur-[100px] rounded-full"></div>
