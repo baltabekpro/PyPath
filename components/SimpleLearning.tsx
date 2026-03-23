@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Code, ChevronRight, Trophy, Lock, Play, X, AlertCircle, Check } from 'lucide-react';
+import { BookOpen, CheckCircle2, Code, ChevronRight, Trophy, Lock, Play, X, AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 
@@ -30,7 +30,7 @@ type Topic = {
     example: string;
   };
   practices: PracticeTask[];
-  theoryCompleted: boolean;
+  theoryViewed: boolean;
   completedPractices: string[];
   locked: boolean;
 };
@@ -45,8 +45,8 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     practice: isKz ? 'Практика' : 'Практика',
     completed: isKz ? 'Аяқталды' : 'Завершено',
     locked: isKz ? 'Жабық' : 'Заблокировано',
-    openTheory: isKz ? 'Теорияны оқу' : 'Читать теорию',
-    closeTheory: isKz ? 'Жабу' : 'Закрыть',
+    showTheory: isKz ? 'Теорияны көрсету' : 'Показать теорию',
+    hideTheory: isKz ? 'Теорияны жасыру' : 'Скрыть теорию',
     doPractice: isKz ? 'Практика жасау' : 'Делать практику',
     overall: isKz ? 'Жалпы прогресс' : 'Общий прогресс',
     runCode: isKz ? 'Кодты тексеру' : 'Проверить код',
@@ -56,9 +56,11 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     success: isKz ? 'Дұрыс! Келесі тапсырмаға өт' : 'Правильно! Переходи к следующему',
     error: isKz ? 'Дұрыс емес. Қайталап көр' : 'Неправильно. Попробуй ещё',
     nextTask: isKz ? 'Келесі' : 'Далее',
+    backToTopics: isKz ? 'Тақырыптарға оралу' : 'К темам',
     testPassed: isKz ? 'Тест өтті' : 'Тест пройден',
     testFailed: isKz ? 'Тест өтпеді' : 'Тест не прошёл',
     unlockPractice: isKz ? 'Алдымен теорияны оқы' : 'Сначала прочитай теорию',
+    theoryAlwaysAvailable: isKz ? 'Теория әрдайым қолжетімді' : 'Теория всегда доступна',
   };
 
   const [topics, setTopics] = useState<Topic[]>([
@@ -107,7 +109,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
           ],
         },
       ],
-      theoryCompleted: false,
+      theoryViewed: false,
       completedPractices: [],
       locked: false,
     },
@@ -136,14 +138,14 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
           ],
         },
       ],
-      theoryCompleted: false,
+      theoryViewed: false,
       completedPractices: [],
       locked: true,
     },
   ]);
 
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const [showTheory, setShowTheory] = useState(false);
+  const [showTheoryPanel, setShowTheoryPanel] = useState(true);
   const [selectedPractice, setSelectedPractice] = useState<PracticeTask | null>(null);
   const [userCode, setUserCode] = useState('');
   const [testResults, setTestResults] = useState<{ passed: boolean; message: string }[]>([]);
@@ -153,43 +155,43 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     const theoryWeight = 1;
     const practiceWeight = topic.practices.length;
     const totalWeight = theoryWeight + practiceWeight;
-    const completedWeight = (topic.theoryCompleted ? theoryWeight : 0) + topic.completedPractices.length;
+    const completedWeight = (topic.theoryViewed ? theoryWeight : 0) + topic.completedPractices.length;
     return sum + (completedWeight / totalWeight) * 100;
   }, 0) / topics.length;
 
-  const handleOpenTheory = (topic: Topic) => {
+  const handleSelectTopic = (topic: Topic) => {
+    if (topic.locked) return;
     setSelectedTopic(topic);
-    setShowTheory(true);
-  };
+    setSelectedPractice(null);
+    setShowTheoryPanel(true);
 
-  const handleCloseTheory = () => {
-    // Mark theory as completed
-    setTopics((prev) =>
-      prev.map((t) => (t.id === selectedTopic?.id ? { ...t, theoryCompleted: true, locked: false } : t))
-    );
-    // Unlock next topic
-    const currentIndex = topics.findIndex((t) => t.id === selectedTopic?.id);
-    if (currentIndex >= 0 && currentIndex < topics.length - 1) {
+    // Mark theory as viewed
+    if (!topic.theoryViewed) {
       setTopics((prev) =>
-        prev.map((t, i) => (i === currentIndex + 1 ? { ...t, locked: false } : t))
+        prev.map((t) => (t.id === topic.id ? { ...t, theoryViewed: true } : t))
       );
+
+      // Unlock next topic
+      const currentIndex = topics.findIndex((t) => t.id === topic.id);
+      if (currentIndex >= 0 && currentIndex < topics.length - 1) {
+        setTopics((prev) =>
+          prev.map((t, i) => (i === currentIndex + 1 ? { ...t, locked: false } : t))
+        );
+      }
     }
-    setShowTheory(false);
-    setSelectedTopic(null);
   };
 
-  const handleOpenPractice = (topic: Topic, practice: PracticeTask) => {
-    if (!topic.theoryCompleted) return;
-    setSelectedTopic(topic);
+  const handleSelectPractice = (practice: PracticeTask) => {
+    if (!selectedTopic?.theoryViewed) return;
     setSelectedPractice(practice);
     setUserCode(practice.starterCode);
     setTestResults([]);
     setIsSuccess(false);
   };
 
-  const handleClosePractice = () => {
-    setSelectedPractice(null);
+  const handleBackToTopics = () => {
     setSelectedTopic(null);
+    setSelectedPractice(null);
     setUserCode('');
     setTestResults([]);
     setIsSuccess(false);
@@ -198,14 +200,11 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
   const runTests = () => {
     if (!selectedPractice) return;
 
-    // Simple code validation
     const results = selectedPractice.tests.map((test) => {
-      // Check if variables are defined
       let passed = false;
       let message = test.description;
 
       try {
-        // For simple tests, check if code contains expected patterns
         if (test.expectedOutput === 'name,age') {
           passed = userCode.includes('name') && userCode.includes('age');
         } else if (test.expectedOutput === '8') {
@@ -230,7 +229,6 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     setIsSuccess(allPassed);
 
     if (allPassed && selectedTopic && selectedPractice) {
-      // Mark practice as completed
       setTopics((prev) =>
         prev.map((t) =>
           t.id === selectedTopic.id
@@ -249,280 +247,308 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     const currentIndex = selectedTopic.practices.findIndex((p) => p.id === selectedPractice.id);
     if (currentIndex < selectedTopic.practices.length - 1) {
       const nextPractice = selectedTopic.practices[currentIndex + 1];
-      setSelectedPractice(nextPractice);
-      setUserCode(nextPractice.starterCode);
+      handleSelectPractice(nextPractice);
+    } else {
+      setSelectedPractice(null);
+      setUserCode('');
       setTestResults([]);
       setIsSuccess(false);
-    } else {
-      handleClosePractice();
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#0c120e] dark:to-[#0a0f0b] text-slate-900 dark:text-slate-100">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-black mb-1">{text.title}</h1>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">{text.subtitle}</p>
+  // Render topics list
+  if (!selectedTopic) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#0c120e] dark:to-[#0a0f0b] text-slate-900 dark:text-slate-100">
+        {/* Header */}
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto px-4 py-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-black mb-1">{text.title}</h1>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">{text.subtitle}</p>
+              </div>
+              <Trophy className="text-yellow-500" size={40} />
             </div>
-            <Trophy className="text-yellow-500" size={40} />
-          </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="font-semibold">{text.overall}</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{Math.round(totalProgress)}%</span>
-            </div>
-            <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500 ease-out"
-                style={{ width: `${totalProgress}%` }}
-              />
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-semibold">{text.overall}</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{Math.round(totalProgress)}%</span>
+              </div>
+              <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500 ease-out"
+                  style={{ width: `${totalProgress}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Topics List */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="space-y-4">
+            {topics.map((topic, index) => {
+              const isCompleted = topic.theoryViewed && topic.completedPractices.length === topic.practices.length;
+              const topicProgress = topic.theoryViewed
+                ? ((1 + topic.completedPractices.length) / (1 + topic.practices.length)) * 100
+                : 0;
+
+              return (
+                <button
+                  key={topic.id}
+                  onClick={() => handleSelectTopic(topic)}
+                  disabled={topic.locked}
+                  className={`
+                    w-full relative bg-white dark:bg-slate-900 border-2 rounded-2xl p-6 transition-all text-left
+                    ${topic.locked
+                      ? 'border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed'
+                      : isCompleted
+                        ? 'border-emerald-400 dark:border-emerald-600 hover:shadow-lg'
+                        : 'border-slate-300 dark:border-white/20 hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-lg'
+                    }
+                  `}
+                >
+                  {/* Step Number */}
+                  <div className="absolute -top-3 -left-3 size-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black flex items-center justify-center text-lg shadow-lg">
+                    {index + 1}
+                  </div>
+
+                  {/* Lock Icon */}
+                  {topic.locked && (
+                    <div className="absolute top-4 right-4">
+                      <Lock className="text-slate-400" size={24} />
+                    </div>
+                  )}
+
+                  {/* Completed Badge */}
+                  {isCompleted && (
+                    <div className="absolute -top-3 -right-3 size-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                      <CheckCircle2 size={24} />
+                    </div>
+                  )}
+
+                  <div className="ml-4">
+                    <h3 className="text-xl font-bold mb-2">{topic.title}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{topic.description}</p>
+
+                    {/* Progress */}
+                    {!topic.locked && (
+                      <div className="space-y-3">
+                        {/* Theory & Practice indicators */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`size-5 rounded-full flex items-center justify-center ${topic.theoryViewed ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
+                              {topic.theoryViewed ? <Check size={12} /> : <BookOpen size={12} />}
+                            </div>
+                            <span className={`text-xs font-semibold ${topic.theoryViewed ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                              {text.theory}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Code size={14} className={topic.completedPractices.length > 0 ? 'text-emerald-600' : 'text-slate-400'} />
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                              {text.practice}: {topic.completedPractices.length}/{topic.practices.length}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Topic Progress Bar */}
+                        {topicProgress > 0 && (
+                          <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600"
+                              style={{ width: `${topicProgress}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render topic detail view (theory + practice)
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button
+            onClick={handleBackToTopics}
+            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          >
+            <ChevronRight size={20} className="rotate-180" />
+            <span className="font-semibold">{text.backToTopics}</span>
+          </button>
+          <h2 className="text-xl font-bold">{selectedTopic.title}</h2>
+          <div className="w-32"></div>
+        </div>
       </div>
 
-      {/* Topics List */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="space-y-4">
-          {topics.map((topic, index) => {
-            const isCompleted = topic.theoryCompleted && topic.completedPractices.length === topic.practices.length;
-            const topicProgress = topic.theoryCompleted
-              ? ((1 + topic.completedPractices.length) / (1 + topic.practices.length)) * 100
-              : 0;
-
-            return (
-              <div
-                key={topic.id}
-                className={`
-                  relative bg-white dark:bg-slate-900 border-2 rounded-2xl p-6 transition-all
-                  ${topic.locked
-                    ? 'border-slate-200 dark:border-white/10 opacity-60'
-                    : isCompleted
-                      ? 'border-emerald-400 dark:border-emerald-600'
-                      : 'border-slate-300 dark:border-white/20'
-                  }
-                `}
+      <div className="max-w-7xl mx-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-120px)]">
+          {/* Left sidebar - Theory & Practice list */}
+          <div className="lg:col-span-4 space-y-4 overflow-y-auto">
+            {/* Theory Section - Always visible */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setShowTheoryPanel(!showTheoryPanel)}
+                className="w-full flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors"
               >
-                {/* Step Number */}
-                <div className="absolute -top-3 -left-3 size-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black flex items-center justify-center text-lg shadow-lg">
-                  {index + 1}
+                <div className="flex items-center gap-2">
+                  <BookOpen size={20} className="text-indigo-600" />
+                  <span className="font-bold">{text.theory}</span>
+                </div>
+                {showTheoryPanel ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+
+              {showTheoryPanel && (
+                <div className="p-4 space-y-3">
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{selectedTopic.theory.intro}</p>
+
+                  <ul className="space-y-2">
+                    {selectedTopic.theory.points.map((point, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <span className="text-indigo-600 font-bold mt-0.5">•</span>
+                        <span className="text-slate-700 dark:text-slate-300">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="bg-slate-900 text-slate-100 p-3 rounded-lg">
+                    <pre className="text-xs whitespace-pre-wrap font-mono">{selectedTopic.theory.example}</pre>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Practice List */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Code size={20} className="text-emerald-600" />
+                <span className="font-bold">{text.practice}</span>
+                <span className="ml-auto text-xs font-bold text-slate-600 dark:text-slate-400">
+                  {selectedTopic.completedPractices.length}/{selectedTopic.practices.length}
+                </span>
+              </div>
+
+              {!selectedTopic.theoryViewed ? (
+                <p className="text-sm text-amber-600 dark:text-amber-400 italic">{text.unlockPractice}</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedTopic.practices.map((practice) => {
+                    const isDone = selectedTopic.completedPractices.includes(practice.id);
+                    const isActive = selectedPractice?.id === practice.id;
+                    return (
+                      <button
+                        key={practice.id}
+                        onClick={() => handleSelectPractice(practice)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
+                          isActive
+                            ? 'bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                            : isDone
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                              : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {isDone && <Check size={14} className="text-emerald-600" />}
+                        <span>{practice.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right panel - Code editor */}
+          <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden flex flex-col">
+            {selectedPractice ? (
+              <>
+                <div className="p-4 border-b border-slate-200 dark:border-white/10">
+                  <h3 className="font-bold text-lg mb-1">{selectedPractice.title}</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{selectedPractice.description}</p>
                 </div>
 
-                {/* Lock Icon */}
-                {topic.locked && (
-                  <div className="absolute top-4 right-4">
-                    <Lock className="text-slate-400" size={24} />
+                <div className="flex-1 flex flex-col p-4 space-y-4 overflow-y-auto">
+                  {/* Code Editor */}
+                  <div className="flex-1 min-h-[300px]">
+                    <label className="block text-sm font-semibold mb-2">{text.yourCode}</label>
+                    <textarea
+                      value={userCode}
+                      onChange={(e) => setUserCode(e.target.value)}
+                      className="w-full h-full min-h-[250px] p-4 bg-slate-900 text-slate-100 font-mono text-sm rounded-xl border border-slate-700 focus:border-indigo-500 focus:outline-none resize-none"
+                      spellCheck={false}
+                    />
                   </div>
-                )}
 
-                {/* Completed Badge */}
-                {isCompleted && (
-                  <div className="absolute -top-3 -right-3 size-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
-                    <CheckCircle2 size={24} />
-                  </div>
-                )}
+                  {/* Run Button */}
+                  <button
+                    onClick={runTests}
+                    className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 flex items-center justify-center gap-2"
+                  >
+                    <Play size={18} />
+                    {text.runCode}
+                  </button>
 
-                <div className="ml-4">
-                  <h3 className="text-xl font-bold mb-2">{topic.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{topic.description}</p>
-
-                  {/* Progress */}
-                  {!topic.locked && (
-                    <div className="space-y-3 mb-4">
-                      {/* Theory */}
-                      <div className="flex items-center gap-3">
-                        <div className={`size-6 rounded-full flex items-center justify-center ${topic.theoryCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
-                          {topic.theoryCompleted ? <CheckCircle2 size={16} /> : <BookOpen size={14} />}
+                  {/* Test Results */}
+                  {testResults.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">{text.result}:</h4>
+                      {testResults.map((result, i) => (
+                        <div
+                          key={i}
+                          className={`p-3 rounded-lg flex items-center gap-2 ${
+                            result.passed
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                          }`}
+                        >
+                          {result.passed ? <Check size={18} /> : <AlertCircle size={18} />}
+                          <span className="text-sm">{result.message}</span>
                         </div>
-                        <span className={`text-sm font-semibold ${topic.theoryCompleted ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                          {text.theory}
-                        </span>
-                        {!topic.theoryCompleted && (
-                          <button
-                            onClick={() => handleOpenTheory(topic)}
-                            className="ml-auto px-3 py-1 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700"
-                          >
-                            {text.openTheory}
-                          </button>
-                        )}
-                      </div>
+                      ))}
+                    </div>
+                  )}
 
-                      {/* Practice */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <div className={`size-6 rounded-full flex items-center justify-center ${topic.completedPractices.length > 0 ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
-                            <Code size={14} />
-                          </div>
-                          <span className={`text-sm font-semibold ${topic.completedPractices.length > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                            {text.practice}
-                          </span>
-                          <span className="ml-auto text-xs font-bold text-slate-600 dark:text-slate-400">
-                            {topic.completedPractices.length}/{topic.practices.length}
-                          </span>
-                        </div>
-
-                        {/* Practice List */}
-                        {topic.theoryCompleted && (
-                          <div className="ml-9 space-y-1">
-                            {topic.practices.map((practice) => {
-                              const isDone = topic.completedPractices.includes(practice.id);
-                              return (
-                                <button
-                                  key={practice.id}
-                                  onClick={() => handleOpenPractice(topic, practice)}
-                                  className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                                    isDone
-                                      ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                  }`}
-                                >
-                                  {isDone && <Check size={14} className="text-emerald-600" />}
-                                  <span>{practice.title}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {!topic.theoryCompleted && (
-                          <p className="ml-9 text-xs text-amber-600 dark:text-amber-400">{text.unlockPractice}</p>
-                        )}
-                      </div>
-
-                      {/* Topic Progress Bar */}
-                      {topicProgress > 0 && (
-                        <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600"
-                            style={{ width: `${topicProgress}%` }}
-                          />
-                        </div>
-                      )}
+                  {/* Success Message */}
+                  {isSuccess && (
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-500 rounded-xl p-4 text-center">
+                      <CheckCircle2 size={48} className="text-emerald-600 mx-auto mb-2" />
+                      <p className="text-emerald-700 dark:text-emerald-400 font-bold mb-3">{text.success}</p>
+                      <button
+                        onClick={handleNextPractice}
+                        className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700"
+                      >
+                        {text.nextTask}
+                      </button>
                     </div>
                   )}
                 </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-8 text-center">
+                <div>
+                  <Code size={64} className="text-slate-300 dark:text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-500 dark:text-slate-400 text-lg">
+                    {selectedTopic.theoryViewed ? text.doPractice : text.unlockPractice}
+                  </p>
+                </div>
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Theory Modal */}
-      {showTheory && selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">{selectedTopic.title}</h2>
-              <button onClick={handleCloseTheory} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-slate-700 dark:text-slate-300">{selectedTopic.theory.intro}</p>
-
-              <ul className="space-y-2">
-                {selectedTopic.theory.points.map((point, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-indigo-600 font-bold">•</span>
-                    <span className="text-slate-700 dark:text-slate-300">{point}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="bg-slate-900 text-slate-100 p-4 rounded-xl">
-                <pre className="text-sm whitespace-pre-wrap font-mono">{selectedTopic.theory.example}</pre>
-              </div>
-
-              <button
-                onClick={handleCloseTheory}
-                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700"
-              >
-                {text.closeTheory}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Practice Modal */}
-      {selectedPractice && selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-lg">{selectedPractice.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{selectedPractice.description}</p>
-              </div>
-              <button onClick={handleClosePractice} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Code Editor */}
-              <div>
-                <label className="block text-sm font-semibold mb-2">{text.yourCode}</label>
-                <textarea
-                  value={userCode}
-                  onChange={(e) => setUserCode(e.target.value)}
-                  className="w-full h-64 p-4 bg-slate-900 text-slate-100 font-mono text-sm rounded-xl border border-slate-700 focus:border-indigo-500 focus:outline-none resize-none"
-                  spellCheck={false}
-                />
-              </div>
-
-              {/* Run Button */}
-              <button
-                onClick={runTests}
-                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 flex items-center justify-center gap-2"
-              >
-                <Play size={18} />
-                {text.runCode}
-              </button>
-
-              {/* Test Results */}
-              {testResults.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">{text.result}:</h4>
-                  {testResults.map((result, i) => (
-                    <div
-                      key={i}
-                      className={`p-3 rounded-lg flex items-center gap-2 ${
-                        result.passed
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                          : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                      }`}
-                    >
-                      {result.passed ? <Check size={18} /> : <AlertCircle size={18} />}
-                      <span className="text-sm">{result.message}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Success Message */}
-              {isSuccess && (
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-500 rounded-xl p-4 text-center">
-                  <CheckCircle2 size={48} className="text-emerald-600 mx-auto mb-2" />
-                  <p className="text-emerald-700 dark:text-emerald-400 font-bold">{text.success}</p>
-                  <button
-                    onClick={handleNextPractice}
-                    className="mt-3 px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700"
-                  >
-                    {text.nextTask}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
