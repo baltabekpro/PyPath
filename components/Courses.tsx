@@ -8,6 +8,55 @@ interface CoursesProps {
   setView: (view: View) => void;
 }
 
+const localizeCourseMeta = (course: Course, isKz: boolean) => {
+    if (!isKz) {
+        return {
+            title: course.title,
+            description: course.description,
+            difficulty: course.difficulty,
+        };
+    }
+
+    const byId: Record<number, { title: string; description: string; difficulty: string }> = {
+        1: {
+            title: '1-тарау: Алғашқы қадамдар',
+            description: 'Python деген не, командаларды қалай іске қосу және мәтінді экранға шығару.',
+            difficulty: 'Өте жеңіл',
+        },
+        2: {
+            title: '2-тарау: Айнымалылар және сандар',
+            description: 'Сандарды айнымалыларда сақтап, қарапайым есептеулер жасаймыз.',
+            difficulty: 'Жеңіл',
+        },
+        3: {
+            title: '3-тарау: if шарттары',
+            description: 'Шарт тексеріп, дұрыс болғанда қажетті кодты орындаймыз.',
+            difficulty: 'Жеңіл',
+        },
+        4: {
+            title: '4-тарау: for циклдері',
+            description: 'Командаларды бірнеше рет қайталап, тізімдер бойынша өтеміз.',
+            difficulty: 'Жеңіл',
+        },
+        5: {
+            title: '5-тарау: Функциялар',
+            description: 'Кодты ықшам әрі түсінікті ету үшін өз функцияларымызды жазамыз.',
+            difficulty: 'Жеңіл',
+        },
+        6: {
+            title: 'БОСС: Мини-жоба',
+            description: 'Үйренген блоктардан мини-жоба құрастырыңыз: шығару, шарт, цикл және функция.',
+            difficulty: 'Босс',
+        },
+    };
+
+    return byId[course.id] || {
+        title: course.title,
+        description: course.description,
+        difficulty: course.difficulty,
+    };
+};
+
 export const Courses: React.FC<CoursesProps> = ({ setView }) => {
     const isKz = APP_LANGUAGE === 'kz';
     const lt = {
@@ -170,6 +219,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                {/* Nodes */}
                {courses.map((course, index) => {
+                   const localizedMeta = localizeCourseMeta(course, isKz);
                    const xPos = index % 4 === 1 ? '80%' : (index % 4 === 3 ? '20%' : '50%');
                    const yPos = index * 180 + 100;
                    const isLocked = course.locked;
@@ -218,7 +268,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                        {course.isBoss ? text.bossLabel : `${text.chapterPrefix} ${course.id}`}
                                    </span>
                                    <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[1px] text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                                       {course.title}
+                                       {localizedMeta.title}
                                    </span>
                                                                      {course.gradeBand && (
                                                                             <span className="text-[10px] text-emerald-700 dark:text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-wider mt-1 block">
@@ -253,7 +303,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{text.briefing}</p>
-                                <h2 className="text-xl font-display font-black text-slate-900 dark:text-white leading-tight">{selectedLevel.title}</h2>
+                                <h2 className="text-xl font-display font-black text-slate-900 dark:text-white leading-tight">{localizeCourseMeta(selectedLevel, isKz).title}</h2>
                                                                 {selectedLevel.section && (
                                                                     <p className="text-xs text-emerald-700 dark:text-emerald-400 dark:text-emerald-200 mt-1">{selectedLevel.section}</p>
                                                                 )}
@@ -264,7 +314,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                    {/* Body */}
                    <div className="p-6 space-y-6">
                        <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed border-l-2 border-arcade-action pl-4 italic">
-                           "{selectedLevel.description}"
+                           "{localizeCourseMeta(selectedLevel, isKz).description}"
                        </p>
 
                        {/* Rewards Grid */}
@@ -280,7 +330,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                <Zap size={20} className="text-arcade-success" />
                                <div>
                                    <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase">{text.difficulty}</p>
-                                   <p className="font-bold text-slate-900 dark:text-white">{selectedLevel.difficulty}</p>
+                                   <p className="font-bold text-slate-900 dark:text-white">{localizeCourseMeta(selectedLevel, isKz).difficulty}</p>
                                </div>
                            </div>
                        </div>

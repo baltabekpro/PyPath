@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, Code, ChevronRight, Trophy, Lock, Play, X, Aler
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { apiGet, apiPut } from '../api';
+import { AIChat } from './AIChat';
 
 interface SimpleLearningProps {
   setView: (view: View) => void;
@@ -416,6 +417,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     preTab: isKz ? '8/9 дейін' : 'До 8/9',
     class8: isKz ? '8 сынып' : '8 класс',
     class9: isKz ? '9 сынып' : '9 класс',
+    oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
   };
 
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -900,11 +902,22 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                       </button>
                     </div>
                   )}
+
+                  {/* Oracle Chat */}
+                  <div className="border-t border-slate-200 dark:border-white/10 pt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{text.oracleChat}</span>
+                    </div>
+                    <div className="h-[360px] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
+                      <AIChat embedded />
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
-                <div>
+                <div className="w-full max-w-xl">
+                  <div className="mb-8">
                   <Code size={64} className="text-slate-300 dark:text-slate-700 mx-auto mb-4" />
                   <p className="text-slate-500 dark:text-slate-400 text-lg font-semibold mb-2">
                     {text.selectTask}
@@ -912,6 +925,14 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   <p className="text-slate-400 dark:text-slate-500 text-sm">
                     {isKz ? '← Солдағы тізімнен тапсырма таңда' : '← Выбери задание из списка слева'}
                   </p>
+                  </div>
+
+                  <div className="text-left">
+                    <div className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">{text.oracleChat}</div>
+                    <div className="h-[360px] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
+                      <AIChat embedded />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
