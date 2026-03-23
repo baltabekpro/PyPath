@@ -2,39 +2,385 @@ import React, { useEffect, useState } from 'react';
 import { BookOpen, CheckCircle2, Code, ChevronRight, Trophy, Lock, Play, X, AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
+import { apiGet, apiPut } from '../api';
 
 interface SimpleLearningProps {
   setView: (view: View) => void;
 }
 
-type PracticeTask = {
+// API Types (from CourseJourney)
+type Topic = {
   id: string;
+  section: string;
   title: string;
+  grade: 'pre' | '8' | '9';
+  theory: string;
+  practices: string[];
+};
+
+type TopicProgress = {
+  theoryOpened: boolean;
+  completedPractices: number[];
+};
+
+type ProgressMap = Record<string, TopicProgress>;
+
+// Extended types for practice details
+type PracticeDetails = {
   description: string;
   starterCode: string;
-  solution: string;
   hints: string[];
   tests: {
-    input?: string;
-    expectedOutput: string;
     description: string;
     checkFunction: (code: string) => boolean;
   }[];
 };
 
-type Topic = {
-  id: string;
-  title: string;
-  description: string;
-  theory: {
-    intro: string;
-    points: string[];
-    example: string;
+// Practice details mapping (topicId -> practiceIndex -> details)
+const getPracticeDetails = (topicId: string, practiceIndex: number, practiceName: string): PracticeDetails => {
+  const isKz = APP_LANGUAGE === 'kz';
+
+  // Variables topic
+  if (topicId.includes('variable') || topicId === 'pre-variables') {
+    const practices: PracticeDetails[] = [
+      {
+        description: isKz ? 'name және age айнымалыларын жаса. name - жолдық түр, age - сан түрі.' : 'Создай переменные name и age. name должна быть строкой, age - числом.',
+        starterCode: '# Кодты мұнда жаз\n',
+        hints: [
+          isKz ? 'Жолдар қос немесе жалғыз тырнақшада: "жол"' : 'Строки в кавычках: "строка"',
+          isKz ? 'Сандарға тырнақша керек емес: age = 14' : 'Числа без кавычек: age = 14',
+        ],
+        tests: [
+          {
+            description: isKz ? 'name айнымалысы бар' : 'Переменная name существует',
+            checkFunction: (code) => /name\s*=\s*["'][^"']+["']/.test(code),
+          },
+          {
+            description: isKz ? 'age айнымалысы бар' : 'Переменная age существует',
+            checkFunction: (code) => /age\s*=\s*\d+/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'a=5, b=3 жасап, олардың қосындысын result-қа сақта' : 'Создай a=5, b=3 и сохрани их сумму в result',
+        starterCode: 'a = 5\nb = 3\n# result = ...\n',
+        hints: [
+          isKz ? 'Қосу үшін + операторын қолдан' : 'Для сложения используй +',
+          isKz ? 'result = a + b' : 'result = a + b',
+        ],
+        tests: [
+          {
+            description: isKz ? 'result айнымалысы анықталған' : 'Переменная result определена',
+            checkFunction: (code) => /result\s*=/.test(code),
+          },
+          {
+            description: isKz ? 'a + b қосындысын қолданады' : 'Использует сложение a + b',
+            checkFunction: (code) => /result\s*=\s*a\s*\+\s*b/.test(code) || /result\s*=\s*8/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'first="Hello" және second="World" біріктіріп result-қа сақта' : 'Объедини first="Hello" и second="World" в result',
+        starterCode: 'first = "Hello"\nsecond = "World"\n# result = ...\n',
+        hints: [
+          isKz ? 'Жолдарды + арқылы біріктіруге болады' : 'Строки объединяются через +',
+          isKz ? 'Аралық: first + " " + second' : 'С пробелом: first + " " + second',
+        ],
+        tests: [
+          {
+            description: isKz ? 'result айнымалысы бар' : 'Переменная result определена',
+            checkFunction: (code) => /result\s*=/.test(code),
+          },
+          {
+            description: isKz ? 'first және second біріктірілген' : 'Объединены first и second',
+            checkFunction: (code) => /result\s*=\s*first.*second/.test(code) || /Hello.*World/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'x = 42 жаса, оның түрін int-тен str-ге түрлендір' : 'Создай x = 42, преобразуй его из int в str',
+        starterCode: 'x = 42\n# x_str = ...\n',
+        hints: [
+          isKz ? 'str() функциясын қолдан' : 'Используй функцию str()',
+          isKz ? 'x_str = str(x)' : 'x_str = str(x)',
+        ],
+        tests: [
+          {
+            description: isKz ? 'x_str айнымалысы бар' : 'Переменная x_str существует',
+            checkFunction: (code) => /x_str\s*=/.test(code),
+          },
+          {
+            description: isKz ? 'str() функциясын қолданады' : 'Использует функцию str()',
+            checkFunction: (code) => /x_str\s*=\s*str\(x\)/.test(code) || /str\(42\)/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'x = 42 жаса және оның түрін my_type-қа сақта' : 'Создай x = 42 и сохрани его тип в my_type',
+        starterCode: 'x = 42\n# my_type = type(...)\n',
+        hints: [
+          isKz ? 'type() функциясы айнымалының түрін қайтарады' : 'Функция type() возвращает тип',
+          isKz ? 'my_type = type(x)' : 'my_type = type(x)',
+        ],
+        tests: [
+          {
+            description: isKz ? 'x = 42 анықталған' : 'x = 42 определена',
+            checkFunction: (code) => /x\s*=\s*42/.test(code),
+          },
+          {
+            description: isKz ? 'type() қолданады' : 'Использует type()',
+            checkFunction: (code) => /my_type\s*=\s*type\(x\)/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'a және b сұрап, олардың қосындысын шығар' : 'Спроси a и b, выведи их сумму',
+        starterCode: '# Мини-калькулятор\n',
+        hints: [
+          isKz ? 'input() арқылы енгізу' : 'Ввод через input()',
+          isKz ? 'int() арқылы санға түрлендір' : 'Преобразуй в число через int()',
+        ],
+        tests: [
+          {
+            description: isKz ? 'input() қолданады' : 'Использует input()',
+            checkFunction: (code) => /input\(/.test(code),
+          },
+          {
+            description: isKz ? 'Қосындыны шығарады' : 'Выводит сумму',
+            checkFunction: (code) => /print\(/.test(code) && /\+/.test(code),
+          },
+        ],
+      },
+    ];
+    return practices[practiceIndex] || practices[0];
+  }
+
+  // Conditions topic
+  if (topicId.includes('if') || topicId === 'g8-if') {
+    const practices: PracticeDetails[] = [
+      {
+        description: isKz ? 'age = 20 жаса. age >= 18 болса "Adult", әйтпесе "Child"' : 'Создай age = 20. Если age >= 18 выведи "Adult", иначе "Child"',
+        starterCode: 'age = 20\n# if ...\n',
+        hints: [
+          isKz ? 'if шартынан кейін : қой' : 'После if поставь :',
+          isKz ? 'print() 4 бос орынмен шегіндіру керек' : 'print() с отступом 4 пробела',
+        ],
+        tests: [
+          {
+            description: isKz ? 'if шарты бар' : 'Есть условие if',
+            checkFunction: (code) => /if\s+age\s*>=\s*18/.test(code),
+          },
+          {
+            description: isKz ? 'else блогы бар' : 'Есть блок else',
+            checkFunction: (code) => /else\s*:/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'num = 7 жаса. num % 2 == 0 болса "Even", әйтпесе "Odd"' : 'Создай num = 7. Если num % 2 == 0 выведи "Even", иначе "Odd"',
+        starterCode: 'num = 7\n# if ...\n',
+        hints: [
+          isKz ? '% - бөлгеннен қалдық' : '% - остаток от деления',
+          isKz ? 'Жұп: num % 2 == 0' : 'Четное: num % 2 == 0',
+        ],
+        tests: [
+          {
+            description: isKz ? '% 2 == 0 тексеруі бар' : 'Есть проверка % 2 == 0',
+            checkFunction: (code) => /num\s*%\s*2\s*==\s*0/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'a және b сұрап, қайсысы үлкен екенін шығар' : 'Спроси a и b, выведи какое больше',
+        starterCode: '# Қайсысы үлкен?\n',
+        hints: [
+          isKz ? 'a > b, a < b, a == b' : 'a > b, a < b, a == b',
+        ],
+        tests: [
+          {
+            description: isKz ? 'input() қолданады' : 'Использует input()',
+            checkFunction: (code) => /input\(/.test(code),
+          },
+          {
+            description: isKz ? 'if салыстыруы бар' : 'Есть сравнение if',
+            checkFunction: (code) => /if.*[><]=?/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'score (0-100) сұрап, бағаны шығар: 90+ A, 80+ B, 70+ C, 60+ D, <60 F' : 'Спроси score (0-100), выведи оценку: 90+ A, 80+ B, 70+ C, 60+ D, <60 F',
+        starterCode: '# Баллдар бойынша баға\n',
+        hints: [
+          isKz ? 'Бірнеше if-elif қолдан' : 'Используй несколько if-elif',
+        ],
+        tests: [
+          {
+            description: isKz ? 'if/elif қолданады' : 'Использует if/elif',
+            checkFunction: (code) => /if.*elif/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'age және height сұрап, екеуі де жеткілікті болса "OK"' : 'Спроси age и height, если оба достаточны выведи "OK"',
+        starterCode: '# Біліктілік тексеру\n',
+        hints: [
+          isKz ? 'and операторын қолдан' : 'Используй оператор and',
+          isKz ? 'if age >= 14 and height >= 140:' : 'if age >= 14 and height >= 140:',
+        ],
+        tests: [
+          {
+            description: isKz ? 'and қолданады' : 'Использует and',
+            checkFunction: (code) => /and/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? 'Кіру құпия сөзін тексер (password == "secret")' : 'Проверь пароль для входа (password == "secret")',
+        starterCode: '# Құпия сөзді тексеру\n',
+        hints: [
+          isKz ? '== арқылы салыстыр' : 'Сравни через ==',
+        ],
+        tests: [
+          {
+            description: isKz ? '== салыстыруы бар' : 'Есть сравнение ==',
+            checkFunction: (code) => /==/.test(code),
+          },
+        ],
+      },
+    ];
+    return practices[practiceIndex] || practices[0];
+  }
+
+  // Loops topic
+  if (topicId.includes('loop') || topicId === 'g8-loops') {
+    const practices: PracticeDetails[] = [
+      {
+        description: isKz ? 'range(1,10) қолданып, 1-ден 9-ға дейін шығар' : 'Используй range(1,10), выведи числа от 1 до 9',
+        starterCode: '# for циклі\n',
+        hints: [
+          isKz ? 'for i in range(1, 10):' : 'for i in range(1, 10):',
+        ],
+        tests: [
+          {
+            description: isKz ? 'for range қолданады' : 'Использует for range',
+            checkFunction: (code) => /for.*in\s+range/.test(code),
+          },
+        ],
+      },
+      {
+        description: isKz ? '1-ден 10-ға дейін сандардың қосындысын шығар' : 'Выведи сумму чисел от 1 до 10',
+        starterCode: 'total = 0\n# for циклін қосыңыз\n',
+        hints: [
+          isKz ? 'total += i' : 'total += i',
+        ],
+        tests: [
+          {
+            description: isKz ? 'for циклі бар' : 'Есть цикл for',
+            checkFunction: (code) => /for/.test(code),
+          },
+          {
+            description: isKz ? 'total қолданады' : 'Использует total',
+            checkFunction: (code) => /total\s*\+?=/.test(code),
+          },
+        ],
+      },
+    ];
+    return practices[practiceIndex] || practices[0];
+  }
+
+  // Default generic practice
+  return {
+    description: isKz
+      ? `${practiceName}: ${topicId}-тақырыбы бойынша практика`
+      : `${practiceName}: практика по теме ${topicId}`,
+    starterCode: '# Кодты мұнда жаз\n',
+    hints: [isKz ? 'Теорияны оқы және мысалдарды қарастыр' : 'Прочитай теорию и изучи примеры'],
+    tests: [
+      {
+        description: isKz ? 'Код жазылған' : 'Код написан',
+        checkFunction: (code) => code.trim().length > 10,
+      },
+    ],
   };
-  practices: PracticeTask[];
-  theoryViewed: boolean;
-  completedPractices: string[];
-  locked: boolean;
+};
+
+const storageKey = 'courseJourneyProgressV1';
+
+const getInitialProgress = (): ProgressMap => {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return {};
+    return JSON.parse(raw) as ProgressMap;
+  } catch {
+    return {};
+  }
+};
+
+const saveProgressLocal = (progress: ProgressMap) => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(progress));
+  } catch (e) {
+    console.error('Failed to save progress locally:', e);
+  }
+};
+
+const getTheoryContent = (topic: Topic) => {
+  const isKz = APP_LANGUAGE === 'kz';
+
+  if (topic.id.includes('variable') || topic.id === 'pre-variables') {
+    return {
+      intro: isKz
+        ? 'Айнымалы - бұл деректерді сақтайтын қорап. Python тілінде төрт негізгі түр бар.'
+        : 'Переменная - это коробка для хранения данных. В Python есть 4 основных типа.',
+      points: [
+        isKz ? 'int - бүтін сандар: 42, -5, 0' : 'int - целые числа: 42, -5, 0',
+        isKz ? 'str - жолдар: "Сәлем", \'Python\'' : 'str - строки: "Привет", \'Python\'',
+        isKz ? 'float - ондық: 3.14, -0.5' : 'float - дробные: 3.14, -0.5',
+        isKz ? 'bool - логикалық: True, False' : 'bool - логические: True, False',
+      ],
+      example: isKz
+        ? 'name = "Алия"\nage = 14\nprint(name, age)\n\na = 5\nb = 3\nresult = a + b\nprint(result)'
+        : 'name = "Аня"\nage = 14\nprint(name, age)\n\na = 5\nb = 3\nresult = a + b\nprint(result)',
+    };
+  }
+
+  if (topic.id.includes('if') || topic.id === 'g8-if') {
+    return {
+      intro: isKz
+        ? 'if шарты бағдарламаға әртүрлі жағдайларда әртүрлі әрекеттер жасауға мүмкіндік береді.'
+        : 'Условие if позволяет программе делать разные действия в разных ситуациях.',
+      points: [
+        isKz ? 'if age >= 14: - шарт тексеру' : 'if age >= 14: - проверка условия',
+        isKz ? 'else: - шарт жалған болса' : 'else: - если условие ложно',
+        isKz ? 'elif: - қосымша шарт' : 'elif: - дополнительное условие',
+        isKz ? 'Салыстыру: ==, !=, >, <, >=, <=' : 'Сравнения: ==, !=, >, <, >=, <=',
+      ],
+      example: 'age = 15\nif age >= 18:\n    print("Adult")\nelif age >= 14:\n    print("Teen")\nelse:\n    print("Child")',
+    };
+  }
+
+  if (topic.id.includes('loop') || topic.id === 'g8-loops') {
+    return {
+      intro: isKz
+        ? 'Циклдер әрекеттерді қайталайды: for коллекция бойынша, while шарт ақиқат болғанша.'
+        : 'Циклы повторяют действия: for по коллекции, while пока условие истинно.',
+      points: [
+        isKz ? 'for i in range(10): - 0-ден 9-ға циклi' : 'for i in range(10): - цикл от 0 до 9',
+        isKz ? 'for item in list: - тізім бойынша' : 'for item in list: - по списку',
+        isKz ? 'while условие: - шарт ақиқат болғанша' : 'while условие: - пока условие истинно',
+      ],
+      example: 'for i in range(1, 6):\n    print(i)\n\ncount = 5\nwhile count > 0:\n    print(count)\n    count -= 1',
+    };
+  }
+
+  return {
+    intro: topic.theory || '',
+    points: [
+      isKz ? 'Мысалдарды қарастыр' : 'Разбери примеры',
+      isKz ? 'Практикаға өт' : 'Переходи к практике',
+    ],
+    example: isKz ? 'print("Жаттығу")' : 'print("Практика")',
+  };
 };
 
 export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
@@ -47,271 +393,120 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     practice: isKz ? 'Практика' : 'Практика',
     completed: isKz ? 'Аяқталды' : 'Завершено',
     locked: isKz ? 'Жабық' : 'Заблокировано',
-    showTheory: isKz ? 'Теорияны көрсету' : 'Показать теорию',
-    hideTheory: isKz ? 'Теорияны жасыру' : 'Скрыть теорию',
-    doPractice: isKz ? 'Практика жасау' : 'Делать практику',
     overall: isKz ? 'Жалпы прогресс' : 'Общий прогресс',
     runCode: isKz ? 'Кодты тексеру' : 'Проверить код',
-    taskTitle: isKz ? 'Тапсырма' : 'Задание',
     yourCode: isKz ? 'Сенің кодың' : 'Твой код',
     result: isKz ? 'Нәтиже' : 'Результат',
     success: isKz ? 'Дұрыс! Келесі тапсырмаға өт' : 'Правильно! Переходи к следующему',
-    error: isKz ? 'Дұрыс емес. Қайталап көр' : 'Неправильно. Попробуй ещё',
     nextTask: isKz ? 'Келесі' : 'Далее',
     backToTopics: isKz ? 'Тақырыптарға оралу' : 'К темам',
-    testPassed: isKz ? 'Тест өтті' : 'Тест пройден',
-    testFailed: isKz ? 'Тест өтпеді' : 'Тест не прошёл',
     selectTask: isKz ? 'Тапсырманы таңда' : 'Выбери задание',
     hints: isKz ? 'Кеңестер' : 'Подсказки',
+    loading: isKz ? 'Жүктелуде...' : 'Загрузка...',
+    preTab: isKz ? '8/9 дейін' : 'До 8/9',
+    class8: isKz ? '8 сынып' : '8 класс',
+    class9: isKz ? '9 сынып' : '9 класс',
   };
 
-  const [topics, setTopics] = useState<Topic[]>([
-    {
-      id: '1',
-      title: isKz ? 'Айнымалылар және дерек түрлері' : 'Переменные и типы данных',
-      description: isKz ? 'Python-да айнымалыларды қалай жасау және қолдану керектігін үйрен' : 'Научись создавать и использовать переменные в Python',
-      theory: {
-        intro: isKz ? 'Айнымалы - бұ деректерді сақтайтын қорап. Python тілінде төрт негізгі түр бар: int (сандар), str (жолдар), float (ондық сандар), bool (ақиқат/жалған).' : 'Переменная - это коробка для хранения данных. В Python есть 4 основных типа: int (числа), str (строки), float (дробные числа), bool (истина/ложь).',
-        points: [
-          isKz ? 'Айнымалы жасау үшін: name = "Алия"' : 'Чтобы создать переменную: name = "Аня"',
-          isKz ? 'Түрін тексеру үшін: type(name)' : 'Чтобы проверить тип: type(name)',
-          isKz ? 'Сандарды қосу: a + b' : 'Сложить числа: a + b',
-          isKz ? 'Жолдарды біріктіру: first + second' : 'Объединить строки: first + second',
-        ],
-        example: isKz ? 'name = "Алия"\nage = 14\nprint(name, age)\n\n# Сандарды қосу\na = 5\nb = 3\nresult = a + b\nprint(result)  # 8' : 'name = "Аня"\nage = 14\nprint(name, age)\n\n# Сложение чисел\na = 5\nb = 3\nresult = a + b\nprint(result)  # 8',
-      },
-      practices: [
-        {
-          id: '1-1',
-          title: isKz ? '1. Екі айнымалы жаса' : '1. Создай две переменные',
-          description: isKz ? 'name және age айнымалыларын жаса. name - жолдық түр, age - сан түрі.' : 'Создай переменные name и age. name должна быть строкой, age - числом.',
-          starterCode: '# Кодты мұнда жаз\n',
-          solution: 'name = "Аня"\nage = 14',
-          hints: [
-            isKz ? 'Жолдар қос немесе жалғыз тырнақшада жазылады: "жол" немесе \'жол\'' : 'Строки пишутся в двойных или одинарных кавычках: "строка" или \'строка\'',
-            isKz ? 'Сандарға тырнақша керек емес: age = 14' : 'Числа пишутся без кавычек: age = 14',
-          ],
-          tests: [
-            {
-              expectedOutput: 'name exists',
-              description: isKz ? 'name айнымалысы бар' : 'Переменная name существует',
-              checkFunction: (code) => /name\s*=\s*["'][^"']+["']/.test(code),
-            },
-            {
-              expectedOutput: 'age exists',
-              description: isKz ? 'age айнымалысы бар' : 'Переменная age существует',
-              checkFunction: (code) => /age\s*=\s*\d+/.test(code),
-            },
-          ],
-        },
-        {
-          id: '1-2',
-          title: isKz ? '2. Сандарды қос' : '2. Сложи числа',
-          description: isKz ? 'a=5, b=3 жасап, олардың қосындысын result-қа сақта' : 'Создай a=5, b=3 и сохрани их сумму в result',
-          starterCode: 'a = 5\nb = 3\n# result = ...\n',
-          solution: 'a = 5\nb = 3\nresult = a + b',
-          hints: [
-            isKz ? 'Сандарды қосу үшін + операторын қолдан: result = a + b' : 'Для сложения используй оператор +: result = a + b',
-            isKz ? 'result айнымалысына a + b мәнін меншікте' : 'Присвой переменной result значение a + b',
-          ],
-          tests: [
-            {
-              expectedOutput: 'result defined',
-              description: isKz ? 'result айнымалысы анықталған' : 'Переменная result определена',
-              checkFunction: (code) => /result\s*=/.test(code),
-            },
-            {
-              expectedOutput: 'uses addition',
-              description: isKz ? 'a + b қосындысын қолданады' : 'Использует сложение a + b',
-              checkFunction: (code) => /result\s*=\s*a\s*\+\s*b/.test(code) || /result\s*=\s*5\s*\+\s*3/.test(code) || /result\s*=\s*8/.test(code),
-            },
-          ],
-        },
-        {
-          id: '1-3',
-          title: isKz ? '3. Жолдарды біріктір' : '3. Склей строки',
-          description: isKz ? 'first="Hello" және second="World" біріктіріп, result-қа сақта (аралықпен)' : 'Объедини first="Hello" и second="World", сохрани в result (с пробелом)',
-          starterCode: 'first = "Hello"\nsecond = "World"\n# result = ...\n',
-          solution: 'first = "Hello"\nsecond = "World"\nresult = first + " " + second',
-          hints: [
-            isKz ? 'Жолдарды + арқылы біріктіруге болады' : 'Строки можно объединять через +',
-            isKz ? 'Аралық қосу үшін: first + " " + second' : 'Чтобы добавить пробел: first + " " + second',
-          ],
-          tests: [
-            {
-              expectedOutput: 'result defined',
-              description: isKz ? 'result айнымалысы анықталған' : 'Переменная result определена',
-              checkFunction: (code) => /result\s*=/.test(code),
-            },
-            {
-              expectedOutput: 'concatenates strings',
-              description: isKz ? 'first және second-ты біріктіреді' : 'Объединяет first и second',
-              checkFunction: (code) => /result\s*=\s*first\s*\+\s*["']\s["']\s*\+\s*second/.test(code) || /result\s*=\s*first\s*\+\s*second/.test(code),
-            },
-          ],
-        },
-        {
-          id: '1-4',
-          title: isKz ? '4. type() функциясын қолдан' : '4. Используй функцию type()',
-          description: isKz ? 'x = 42 жаса және оның түрін my_type-қа сақта' : 'Создай x = 42 и сохрани его тип в my_type',
-          starterCode: 'x = 42\n# my_type = type(...)\n',
-          solution: 'x = 42\nmy_type = type(x)',
-          hints: [
-            isKz ? 'type() функциясы айнымалының түрін қайтарады' : 'Функция type() возвращает тип переменной',
-            isKz ? 'Қолданыңыз: my_type = type(x)' : 'Используй: my_type = type(x)',
-          ],
-          tests: [
-            {
-              expectedOutput: 'x defined',
-              description: isKz ? 'x = 42 анықталған' : 'x = 42 определена',
-              checkFunction: (code) => /x\s*=\s*42/.test(code),
-            },
-            {
-              expectedOutput: 'my_type uses type()',
-              description: isKz ? 'my_type type() қолданады' : 'my_type использует type()',
-              checkFunction: (code) => /my_type\s*=\s*type\(x\)/.test(code),
-            },
-          ],
-        },
-      ],
-      theoryViewed: false,
-      completedPractices: [],
-      locked: false,
-    },
-    {
-      id: '2',
-      title: isKz ? 'Шарттар: if / else' : 'Условия: if / else',
-      description: isKz ? 'Бағдарлама шешім қабылдауға үйрет' : 'Научи программу принимать решения',
-      theory: {
-        intro: isKz ? 'if шарты бағдарламаға әртүрлі жағдайларда әртүрлі әрекеттер жасауға мүмкіндік береді.' : 'Условие if позволяет программе делать разные действия в разных ситуациях.',
-        points: [
-          isKz ? 'if age >= 14: - шарт тексеру' : 'if age >= 14: - проверка условия',
-          isKz ? 'else: - шарт жалған болса' : 'else: - если условие ложно',
-          isKz ? 'Салыстыру: ==, !=, >, <, >=, <=' : 'Сравнения: ==, !=, >, <, >=, <=',
-          isKz ? 'Шарттан кейін : қойып, келесі жолды шегіндіру керек' : 'После условия ставь : и делай отступ в следующей строке',
-        ],
-        example: 'age = 15\nif age >= 14:\n    print("OK")\nelse:\n    print("NO")\n\n# Әртүрлі салыстырулар\nif age == 15:\n    print("15 жас")\nelif age > 15:\n    print("15-тен көп")\nelse:\n    print("15-тен аз")',
-      },
-      practices: [
-        {
-          id: '2-1',
-          title: isKz ? '1. Жасты тексер' : '1. Проверь возраст',
-          description: isKz ? 'age = 20 жаса. Егер age >= 18 болса "Adult", әйтпесе "Child" шығар' : 'Создай age = 20. Если age >= 18 выведи "Adult", иначе "Child"',
-          starterCode: 'age = 20\n# if ...\n',
-          solution: 'age = 20\nif age >= 18:\n    print("Adult")\nelse:\n    print("Child")',
-          hints: [
-            isKz ? 'if шартынан кейін : қой' : 'После if поставь :',
-            isKz ? 'print() 4 бос орынмен шегіндіру керек' : 'print() должен быть с отступом 4 пробела',
-          ],
-          tests: [
-            {
-              expectedOutput: 'has if',
-              description: isKz ? 'if шарты бар' : 'Есть условие if',
-              checkFunction: (code) => /if\s+age\s*>=\s*18/.test(code),
-            },
-            {
-              expectedOutput: 'has else',
-              description: isKz ? 'else блогы бар' : 'Есть блок else',
-              checkFunction: (code) => /else\s*:/.test(code),
-            },
-            {
-              expectedOutput: 'prints Adult',
-              description: isKz ? 'Adult шығарады' : 'Выводит Adult',
-              checkFunction: (code) => /print\s*\(\s*["']Adult["']\s*\)/.test(code),
-            },
-          ],
-        },
-        {
-          id: '2-2',
-          title: isKz ? '2. Жұп/тақ тексер' : '2. Проверь четность',
-          description: isKz ? 'num = 7 жаса. Егер num % 2 == 0 болса "Even", әйтпесе "Odd"' : 'Создай num = 7. Если num % 2 == 0 выведи "Even", иначе "Odd"',
-          starterCode: 'num = 7\n# if ...\n',
-          solution: 'num = 7\nif num % 2 == 0:\n    print("Even")\nelse:\n    print("Odd")',
-          hints: [
-            isKz ? '% оператор - бөліндіні қалдығы (мысалы, 7 % 2 = 1)' : 'Оператор % - остаток от деления (например, 7 % 2 = 1)',
-            isKz ? 'Жұп сан: num % 2 == 0' : 'Четное число: num % 2 == 0',
-          ],
-          tests: [
-            {
-              expectedOutput: 'has modulo check',
-              description: isKz ? '% 2 == 0 тексеруі бар' : 'Есть проверка % 2 == 0',
-              checkFunction: (code) => /num\s*%\s*2\s*==\s*0/.test(code),
-            },
-            {
-              expectedOutput: 'prints Even/Odd',
-              description: isKz ? 'Even және Odd шығарады' : 'Выводит Even и Odd',
-              checkFunction: (code) => /print\s*\(\s*["']Even["']\s*\)/.test(code) && /print\s*\(\s*["']Odd["']\s*\)/.test(code),
-            },
-          ],
-        },
-      ],
-      theoryViewed: false,
-      completedPractices: [],
-      locked: true,
-    },
-  ]);
-
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [progress, setProgress] = useState<ProgressMap>(getInitialProgress);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [showTheoryPanel, setShowTheoryPanel] = useState(true);
-  const [selectedPractice, setSelectedPractice] = useState<PracticeTask | null>(null);
+  const [selectedPracticeIndex, setSelectedPracticeIndex] = useState<number | null>(null);
   const [userCode, setUserCode] = useState('');
   const [testResults, setTestResults] = useState<{ passed: boolean; message: string }[]>([]);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load topics
+        const topicsData = await apiGet<Topic[]>('/courses/journey');
+        if (Array.isArray(topicsData) && topicsData.length > 0) {
+          setTopics(topicsData);
+        }
+
+        // Load progress
+        const progressData = await apiGet<ProgressMap>('/courses/journey/progress');
+        if (progressData && typeof progressData === 'object') {
+          setProgress(progressData);
+          saveProgressLocal(progressData);
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const saveProgress = async (newProgress: ProgressMap) => {
+    setProgress(newProgress);
+    saveProgressLocal(newProgress);
+
+    try {
+      await apiPut('/courses/journey/progress', newProgress);
+    } catch (error) {
+      console.error('Failed to save progress to server:', error);
+    }
+  };
 
   const totalProgress = topics.reduce((sum, topic) => {
     const theoryWeight = 1;
     const practiceWeight = topic.practices.length;
     const totalWeight = theoryWeight + practiceWeight;
-    const completedWeight = (topic.theoryViewed ? theoryWeight : 0) + topic.completedPractices.length;
+    const topicProgress = progress[topic.id] || { theoryOpened: false, completedPractices: [] };
+    const completedWeight = (topicProgress.theoryOpened ? theoryWeight : 0) + topicProgress.completedPractices.length;
     return sum + (completedWeight / totalWeight) * 100;
-  }, 0) / topics.length;
+  }, 0) / (topics.length || 1);
 
   const handleSelectTopic = (topic: Topic) => {
-    if (topic.locked) return;
+    const topicProgress = progress[topic.id] || { theoryOpened: false, completedPractices: [] };
 
-    // Mark theory as viewed immediately
-    const updatedTopics = topics.map((t) => {
-      if (t.id === topic.id) {
-        return { ...t, theoryViewed: true };
-      }
-      return t;
-    });
-    setTopics(updatedTopics);
-
-    // Find updated topic
-    const updatedTopic = updatedTopics.find((t) => t.id === topic.id);
-    setSelectedTopic(updatedTopic || topic);
-    setSelectedPractice(null);
-    setShowTheoryPanel(true);
-
-    // Unlock next topic
-    const currentIndex = topics.findIndex((t) => t.id === topic.id);
-    if (currentIndex >= 0 && currentIndex < topics.length - 1) {
-      setTopics((prev) =>
-        prev.map((t, i) => (i === currentIndex + 1 ? { ...t, locked: false } : t))
-      );
+    // Mark theory as opened
+    if (!topicProgress.theoryOpened) {
+      const newProgress = {
+        ...progress,
+        [topic.id]: { ...topicProgress, theoryOpened: true },
+      };
+      saveProgress(newProgress);
     }
+
+    setSelectedTopic(topic);
+    setSelectedPracticeIndex(null);
+    setShowTheoryPanel(true);
   };
 
-  const handleSelectPractice = (practice: PracticeTask) => {
-    setSelectedPractice(practice);
-    setUserCode(practice.starterCode);
+  const handleSelectPractice = (practiceIndex: number) => {
+    if (!selectedTopic) return;
+
+    const practiceName = selectedTopic.practices[practiceIndex];
+    const details = getPracticeDetails(selectedTopic.id, practiceIndex, practiceName);
+
+    setSelectedPracticeIndex(practiceIndex);
+    setUserCode(details.starterCode);
     setTestResults([]);
     setIsSuccess(false);
   };
 
   const handleBackToTopics = () => {
     setSelectedTopic(null);
-    setSelectedPractice(null);
+    setSelectedPracticeIndex(null);
     setUserCode('');
     setTestResults([]);
     setIsSuccess(false);
   };
 
   const runTests = () => {
-    if (!selectedPractice) return;
+    if (!selectedTopic || selectedPracticeIndex === null) return;
 
-    const results = selectedPractice.tests.map((test) => {
+    const practiceName = selectedTopic.practices[selectedPracticeIndex];
+    const details = getPracticeDetails(selectedTopic.id, selectedPracticeIndex, practiceName);
+
+    const results = details.tests.map((test) => {
       const passed = test.checkFunction(userCode);
       return { passed, message: test.description };
     });
@@ -321,33 +516,43 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     const allPassed = results.every((r) => r.passed);
     setIsSuccess(allPassed);
 
-    if (allPassed && selectedTopic && selectedPractice) {
-      setTopics((prev) =>
-        prev.map((t) =>
-          t.id === selectedTopic.id
-            ? {
-                ...t,
-                completedPractices: [...new Set([...t.completedPractices, selectedPractice.id])],
-              }
-            : t
-        )
-      );
+    if (allPassed) {
+      const topicProgress = progress[selectedTopic.id] || { theoryOpened: true, completedPractices: [] };
+      const newCompletedPractices = [...new Set([...topicProgress.completedPractices, selectedPracticeIndex])];
+
+      const newProgress = {
+        ...progress,
+        [selectedTopic.id]: {
+          ...topicProgress,
+          completedPractices: newCompletedPractices,
+        },
+      };
+      saveProgress(newProgress);
     }
   };
 
   const handleNextPractice = () => {
-    if (!selectedTopic || !selectedPractice) return;
-    const currentIndex = selectedTopic.practices.findIndex((p) => p.id === selectedPractice.id);
-    if (currentIndex < selectedTopic.practices.length - 1) {
-      const nextPractice = selectedTopic.practices[currentIndex + 1];
-      handleSelectPractice(nextPractice);
+    if (!selectedTopic || selectedPracticeIndex === null) return;
+    if (selectedPracticeIndex < selectedTopic.practices.length - 1) {
+      handleSelectPractice(selectedPracticeIndex + 1);
     } else {
-      setSelectedPractice(null);
+      setSelectedPracticeIndex(null);
       setUserCode('');
       setTestResults([]);
       setIsSuccess(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#0c120e] dark:to-[#0a0f0b] flex items-center justify-center">
+        <div className="text-center">
+          <div className="size-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">{text.loading}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Render topics list
   if (!selectedTopic) {
@@ -384,23 +589,21 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="space-y-4">
             {topics.map((topic, index) => {
-              const isCompleted = topic.theoryViewed && topic.completedPractices.length === topic.practices.length;
-              const topicProgress = topic.theoryViewed
-                ? ((1 + topic.completedPractices.length) / (1 + topic.practices.length)) * 100
+              const topicProgress = progress[topic.id] || { theoryOpened: false, completedPractices: [] };
+              const isCompleted = topicProgress.theoryOpened && topicProgress.completedPractices.length === topic.practices.length;
+              const progressPercent = topicProgress.theoryOpened
+                ? ((1 + topicProgress.completedPractices.length) / (1 + topic.practices.length)) * 100
                 : 0;
 
               return (
                 <button
                   key={topic.id}
                   onClick={() => handleSelectTopic(topic)}
-                  disabled={topic.locked}
                   className={`
                     w-full relative bg-white dark:bg-slate-900 border-2 rounded-2xl p-6 transition-all text-left
-                    ${topic.locked
-                      ? 'border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed'
-                      : isCompleted
-                        ? 'border-emerald-400 dark:border-emerald-600 hover:shadow-lg'
-                        : 'border-slate-300 dark:border-white/20 hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-lg'
+                    ${isCompleted
+                      ? 'border-emerald-400 dark:border-emerald-600 hover:shadow-lg'
+                      : 'border-slate-300 dark:border-white/20 hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-lg'
                     }
                   `}
                 >
@@ -408,13 +611,6 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   <div className="absolute -top-3 -left-3 size-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black flex items-center justify-center text-lg shadow-lg">
                     {index + 1}
                   </div>
-
-                  {/* Lock Icon */}
-                  {topic.locked && (
-                    <div className="absolute top-4 right-4">
-                      <Lock className="text-slate-400" size={24} />
-                    </div>
-                  )}
 
                   {/* Completed Badge */}
                   {isCompleted && (
@@ -424,42 +620,39 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   )}
 
                   <div className="ml-4">
+                    <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">{topic.section}</div>
                     <h3 className="text-xl font-bold mb-2">{topic.title}</h3>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{topic.description}</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{topic.theory}</p>
 
                     {/* Progress */}
-                    {!topic.locked && (
-                      <div className="space-y-3">
-                        {/* Theory & Practice indicators */}
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <div className={`size-5 rounded-full flex items-center justify-center ${topic.theoryViewed ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
-                              {topic.theoryViewed ? <Check size={12} /> : <BookOpen size={12} />}
-                            </div>
-                            <span className={`text-xs font-semibold ${topic.theoryViewed ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                              {text.theory}
-                            </span>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`size-5 rounded-full flex items-center justify-center ${topicProgress.theoryOpened ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
+                            {topicProgress.theoryOpened ? <Check size={12} /> : <BookOpen size={12} />}
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            <Code size={14} className={topic.completedPractices.length > 0 ? 'text-emerald-600' : 'text-slate-400'} />
-                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                              {text.practice}: {topic.completedPractices.length}/{topic.practices.length}
-                            </span>
-                          </div>
+                          <span className={`text-xs font-semibold ${topicProgress.theoryOpened ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                            {text.theory}
+                          </span>
                         </div>
 
-                        {/* Topic Progress Bar */}
-                        {topicProgress > 0 && (
-                          <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600"
-                              style={{ width: `${topicProgress}%` }}
-                            />
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Code size={14} className={topicProgress.completedPractices.length > 0 ? 'text-emerald-600' : 'text-slate-400'} />
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                            {text.practice}: {topicProgress.completedPractices.length}/{topic.practices.length}
+                          </span>
+                        </div>
                       </div>
-                    )}
+
+                      {progressPercent > 0 && (
+                        <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </button>
               );
@@ -470,7 +663,14 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     );
   }
 
-  // Render topic detail view (theory + practice)
+  // Render topic detail view
+  const topicProgress = progress[selectedTopic.id] || { theoryOpened: true, completedPractices: [] };
+  const theoryContent = getTheoryContent(selectedTopic);
+  const selectedPracticeDetails =
+    selectedPracticeIndex !== null
+      ? getPracticeDetails(selectedTopic.id, selectedPracticeIndex, selectedTopic.practices[selectedPracticeIndex])
+      : null;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100">
       {/* Header */}
@@ -483,16 +683,19 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
             <ChevronRight size={20} className="rotate-180" />
             <span className="font-semibold">{text.backToTopics}</span>
           </button>
-          <h2 className="text-xl font-bold">{selectedTopic.title}</h2>
+          <div className="text-center">
+            <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{selectedTopic.section}</div>
+            <h2 className="text-xl font-bold">{selectedTopic.title}</h2>
+          </div>
           <div className="w-32"></div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-120px)]">
-          {/* Left sidebar - Theory & Practice list */}
+          {/* Left sidebar */}
           <div className="lg:col-span-4 space-y-4 overflow-y-auto">
-            {/* Theory Section - Always visible */}
+            {/* Theory */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
               <button
                 onClick={() => setShowTheoryPanel(!showTheoryPanel)}
@@ -507,10 +710,10 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
 
               {showTheoryPanel && (
                 <div className="p-4 space-y-3">
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{selectedTopic.theory.intro}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{theoryContent.intro}</p>
 
                   <ul className="space-y-2">
-                    {selectedTopic.theory.points.map((point, i) => (
+                    {theoryContent.points.map((point, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
                         <span className="text-indigo-600 font-bold mt-0.5">•</span>
                         <span className="text-slate-700 dark:text-slate-300">{point}</span>
@@ -519,7 +722,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   </ul>
 
                   <div className="bg-slate-900 text-slate-100 p-3 rounded-lg">
-                    <pre className="text-xs whitespace-pre-wrap font-mono">{selectedTopic.theory.example}</pre>
+                    <pre className="text-xs whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
                   </div>
                 </div>
               )}
@@ -531,18 +734,18 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                 <Code size={20} className="text-emerald-600" />
                 <span className="font-bold">{text.practice}</span>
                 <span className="ml-auto text-xs font-bold text-slate-600 dark:text-slate-400">
-                  {selectedTopic.completedPractices.length}/{selectedTopic.practices.length}
+                  {topicProgress.completedPractices.length}/{selectedTopic.practices.length}
                 </span>
               </div>
 
               <div className="space-y-2">
-                {selectedTopic.practices.map((practice) => {
-                  const isDone = selectedTopic.completedPractices.includes(practice.id);
-                  const isActive = selectedPractice?.id === practice.id;
+                {selectedTopic.practices.map((practiceName, index) => {
+                  const isDone = topicProgress.completedPractices.includes(index);
+                  const isActive = selectedPracticeIndex === index;
                   return (
                     <button
-                      key={practice.id}
-                      onClick={() => handleSelectPractice(practice)}
+                      key={index}
+                      onClick={() => handleSelectPractice(index)}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
                         isActive
                           ? 'bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-500'
@@ -552,7 +755,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                       }`}
                     >
                       {isDone && <Check size={14} className="text-emerald-600" />}
-                      <span>{practice.title}</span>
+                      <span>{practiceName}</span>
                     </button>
                   );
                 })}
@@ -562,11 +765,11 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
 
           {/* Right panel - Code editor */}
           <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden flex flex-col">
-            {selectedPractice ? (
+            {selectedPracticeDetails ? (
               <>
                 <div className="p-4 border-b border-slate-200 dark:border-white/10">
-                  <h3 className="font-bold text-lg mb-1">{selectedPractice.title}</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{selectedPractice.description}</p>
+                  <h3 className="font-bold text-lg mb-1">{selectedTopic.practices[selectedPracticeIndex!]}</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{selectedPracticeDetails.description}</p>
                 </div>
 
                 <div className="flex-1 flex flex-col p-4 space-y-4 overflow-y-auto">
@@ -578,18 +781,18 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                       onChange={(e) => setUserCode(e.target.value)}
                       className="w-full h-full min-h-[250px] p-4 bg-slate-900 text-slate-100 font-mono text-sm rounded-xl border border-slate-700 focus:border-indigo-500 focus:outline-none resize-none"
                       spellCheck={false}
-                      placeholder="# Кодыңды мұнда жаз..."
+                      placeholder="# Кодты мұнда жаз..."
                     />
                   </div>
 
                   {/* Hints */}
-                  {selectedPractice.hints.length > 0 && (
+                  {selectedPracticeDetails.hints.length > 0 && (
                     <details className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                       <summary className="cursor-pointer font-semibold text-sm text-amber-800 dark:text-amber-300">
                         💡 {text.hints}
                       </summary>
                       <ul className="mt-2 space-y-1">
-                        {selectedPractice.hints.map((hint, i) => (
+                        {selectedPracticeDetails.hints.map((hint, i) => (
                           <li key={i} className="text-xs text-amber-700 dark:text-amber-400">
                             {i + 1}. {hint}
                           </li>
