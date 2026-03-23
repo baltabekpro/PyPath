@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle, X } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { AIChat } from './AIChat';
@@ -175,6 +175,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const [grade, setGrade] = useState<GradeTab>(getStoredGrade);
   const [selectedTopicId, setSelectedTopicId] = useState<string>(() => localStorage.getItem(ACTIVE_TOPIC_KEY) || '');
   const [activePage, setActivePage] = useState<LearningPage>(getStoredPage);
+  const [isOracleOpen, setIsOracleOpen] = useState(false);
 
   const {
     topicsByGrade,
@@ -417,17 +418,40 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                   </div>
                 )}
 
-                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10">
-                  <h3 className="font-semibold mb-3">{text.oracleChat}</h3>
-                  <div className="h-[360px] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
-                    <AIChat embedded />
+                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <h3 className="font-semibold mb-1">{text.oracleChat}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {isKz ? 'Сұрақ қойсаңыз, Оракул бөлек терезеде ашылады.' : 'Если нужен совет, Оракул откроется в отдельном окне.'}
+                    </p>
                   </div>
+                  <button
+                    onClick={() => setIsOracleOpen(true)}
+                    className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-semibold hover:bg-cyan-700"
+                  >
+                    {isKz ? 'Оракулды ашу' : 'Открыть Оракул'}
+                  </button>
                 </div>
               </>
             )}
           </section>
         </div>
       </div>
+
+      {isOracleOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-4xl h-[82vh] rounded-3xl overflow-hidden border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-slate-900 shadow-2xl">
+            <button
+              onClick={() => setIsOracleOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label={isKz ? 'Оракулды жабу' : 'Закрыть Оракул'}
+            >
+              <X size={18} />
+            </button>
+            <AIChat embedded />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

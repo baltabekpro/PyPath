@@ -429,6 +429,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
   const [testResults, setTestResults] = useState<{ passed: boolean; message: string }[]>([]);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOracleOpen, setIsOracleOpen] = useState(false);
 
   const applyPracticePrefill = (allTopics: Topic[], sourceProgress: ProgressMap) => {
     const topicId = localStorage.getItem(PRACTICE_TOPIC_KEY);
@@ -904,13 +905,21 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   )}
 
                   {/* Oracle Chat */}
-                  <div className="border-t border-slate-200 dark:border-white/10 pt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{text.oracleChat}</span>
+                  <div className="border-t border-slate-200 dark:border-white/10 pt-4 flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{text.oracleChat}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {isKz ? 'Совет қажет болса, Оракул бөлек терезеде ашылады.' : 'Если нужен совет, Оракул откроется в отдельном окне.'}
+                      </p>
                     </div>
-                    <div className="h-[360px] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
-                      <AIChat embedded />
-                    </div>
+                    <button
+                      onClick={() => setIsOracleOpen(true)}
+                      className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-semibold hover:bg-cyan-700"
+                    >
+                      {isKz ? 'Оракулды ашу' : 'Открыть Оракул'}
+                    </button>
                   </div>
                 </div>
               </>
@@ -928,9 +937,19 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   </div>
 
                   <div className="text-left">
-                    <div className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">{text.oracleChat}</div>
-                    <div className="h-[360px] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
-                      <AIChat embedded />
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div>
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">{text.oracleChat}</div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {isKz ? 'Оракулды жеке попапта ашуға болады.' : 'Оракул можно открыть в отдельном попапе.'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setIsOracleOpen(true)}
+                        className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-semibold hover:bg-cyan-700"
+                      >
+                        {isKz ? 'Оракулды ашу' : 'Открыть Оракул'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -939,6 +958,21 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
           </div>
         </div>
       </div>
+
+      {isOracleOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-4xl h-[82vh] rounded-3xl overflow-hidden border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-slate-900 shadow-2xl">
+            <button
+              onClick={() => setIsOracleOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label={isKz ? 'Оракулды жабу' : 'Закрыть Оракул'}
+            >
+              <X size={18} />
+            </button>
+            <AIChat embedded />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
