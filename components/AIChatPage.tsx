@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Plus } from 'lucide-react';
-import { AI_CHAT_PAGE_DATA, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
+import { AI_CHAT_PAGE_DATA, APP_LANGUAGE, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 import { aiChat } from '../api';
 
 interface Message {
@@ -19,6 +19,13 @@ interface ChatSummary {
 }
 
 export const AIChatPage: React.FC = () => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const locale = isKz ? 'kk-KZ' : 'ru-RU';
+    const lt = {
+        fallbackError: isKz ? 'Кешіріңіз, қате орын алды. Қайтадан көріңіз!' : 'Извини, произошла ошибка. Попробуй еще раз!',
+        newChat: isKz ? 'Жаңа чат' : 'Новый чат',
+        noChats: isKz ? 'Чаттар әлі жоқ. Бастау үшін + басыңыз.' : 'Чатов пока нет. Нажмите + чтобы начать.',
+    };
   const [messages, setMessages] = useState<Message[]>([]);
     const [chats, setChats] = useState<ChatSummary[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -35,7 +42,7 @@ export const AIChatPage: React.FC = () => {
         code: chat.id === activeChatId ? 'ACTIVE' : 'CHAT',
         status: 'success' as const,
         msg: chat.title,
-        time: new Date(chat.updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date(chat.updatedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
         preview: chat.lastMessage,
     }));
 
@@ -127,7 +134,7 @@ export const AIChatPage: React.FC = () => {
       // Fallback to mock response
       const fallbackMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: responses.default || 'Извини, произошла ошибка. Попробуй еще раз!',
+                text: responses.default || lt.fallbackError,
         sender: 'ai',
         timestamp: new Date(),
         type: 'error'
@@ -143,7 +150,7 @@ export const AIChatPage: React.FC = () => {
         const now = new Date().toISOString();
         const newChat: ChatSummary = {
             id: newChatId,
-            title: 'Новый чат',
+            title: lt.newChat,
             updatedAt: now,
             lastMessage: '',
         };
@@ -196,7 +203,7 @@ export const AIChatPage: React.FC = () => {
               <button
                 onClick={handleNewChat}
                 className="shrink-0 ml-2 p-2 rounded bg-indigo-100 dark:bg-cyan-900/20 hover:bg-indigo-200 dark:hover:bg-cyan-500/20 border border-indigo-300 dark:border-cyan-500/30 text-indigo-700 dark:text-cyan-300"
-                title="Новый чат"
+                                title={lt.newChat}
               >
                 <Plus size={14} />
               </button>
@@ -221,7 +228,7 @@ export const AIChatPage: React.FC = () => {
                   </button>
               ))}
               {chatHistoryLogs.length === 0 ? (
-                <div className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400">Чатов пока нет. Нажмите + чтобы начать.</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400">{lt.noChats}</div>
               ) : null}
           </div>
 

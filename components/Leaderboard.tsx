@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Crown, ChevronUp, ChevronDown, Minus, Globe, Shield, Zap, Gem, Medal, Sword } from 'lucide-react';
-import { CURRENT_USER, UI_TEXTS } from '../constants';
+import { APP_LANGUAGE, CURRENT_USER, UI_TEXTS } from '../constants';
 import { apiGet } from '../api';
 
 const formatXP = (num: number) => {
@@ -30,10 +30,17 @@ const getTierColor = (tier: string) => {
 }
 
 export const Leaderboard: React.FC = () => {
+    const isKz = APP_LANGUAGE === 'kz';
     const scope: 'global' = 'global';
     const period: 'all' = 'all';
     const [leaders, setLeaders] = useState<any[]>([]);
     const text = UI_TEXTS?.leaderboard ?? {};
+    const localText = {
+        world: isKz ? 'Әлем' : 'Мир',
+        all: isKz ? 'Барлығы' : 'Все',
+        emptyTitle: isKz ? 'Рейтинг әзірге бос' : 'Рейтинг пока пуст',
+        emptyDescription: isKz ? 'Ойыншылар нәтижелері пайда болғанда, лидерлер кестесі осында көрсетіледі.' : 'Как только появятся результаты игроков, таблица лидеров отобразится здесь.',
+    };
 
   useEffect(() => {
       const loadLeaderboard = async () => {
@@ -75,7 +82,7 @@ export const Leaderboard: React.FC = () => {
               {/* Filters */}
               <div className="flex bg-white dark:bg-[#1E293B] p-1 rounded-xl border border-slate-200 dark:border-white/10">
                                     <div className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 bg-arcade-primary text-white shadow-lg">
-                                        <Globe size={16} /> {text?.scopes?.global || 'Мир'}
+                                        <Globe size={16} /> {text?.scopes?.global || localText.world}
                                     </div>
               </div>
           </div>
@@ -83,7 +90,7 @@ export const Leaderboard: React.FC = () => {
           <div className="flex justify-center mb-6">
                <div className="flex gap-1 bg-slate-100 dark:bg-black/40 p-1 rounded-full border border-slate-200 dark:border-white/10 backdrop-blur-md">
                                      <div className="px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-slate-900 shadow-neon-white">
-                                         {text?.periods?.all || 'Все'}
+                                         {text?.periods?.all || localText.all}
                                      </div>
                </div>
           </div>
@@ -93,8 +100,8 @@ export const Leaderboard: React.FC = () => {
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-32">
           {displayedLeaders.length === 0 && (
               <div className="max-w-3xl mx-auto mb-8 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
-                  <p className="text-slate-900 dark:text-white font-bold mb-2">Рейтинг пока пуст</p>
-                  <p className="text-slate-500 dark:text-gray-400 text-sm">Как только появятся результаты игроков, таблица лидеров отобразится здесь.</p>
+                  <p className="text-slate-900 dark:text-white font-bold mb-2">{localText.emptyTitle}</p>
+                  <p className="text-slate-500 dark:text-gray-400 text-sm">{localText.emptyDescription}</p>
               </div>
           )}
           

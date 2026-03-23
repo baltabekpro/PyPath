@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Flame, Bot, ChevronRight, Zap, Target, Play, Award, Sparkles, Clock, Swords } from 'lucide-react';
-import { COURSES, CURRENT_USER, DASHBOARD_UI, MISSIONS, STATS, UI_TEXTS, getIconComponent } from '../constants';
+import { APP_LANGUAGE, COURSES, CURRENT_USER, DASHBOARD_UI, MISSIONS, STATS, UI_TEXTS, getIconComponent } from '../constants';
 import { View } from '../types';
 import { apiGet } from '../api';
 
@@ -9,6 +9,38 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const lt = {
+        hello: isKz ? 'Сәлем' : 'Привет',
+        zoneTitle: isKz ? 'Сенің оқу аймағың' : 'Твоя учебная зона',
+        streak: isKz ? 'Серия' : 'Серия',
+        currentMission: isKz ? 'Ағымдағы миссия' : 'Текущая миссия',
+        missionSoon: isKz ? 'Жаңа миссия жақында пайда болады' : 'Новая миссия скоро появится',
+        practiceArena: isKz ? 'Әзірге аренада жаттығыңыз' : 'Пока потренируйтесь на арене',
+        progress: isKz ? 'Прогресс' : 'Прогресс',
+        start: isKz ? 'Бастау' : 'Старт',
+        dailyQuests: isKz ? 'Күнделікті тапсырмалар' : 'Ежедневные задания',
+        fullCourseProgress: isKz ? 'Толық курс прогресі' : 'Прогресс полного курса',
+        openCourse: isKz ? 'Курсты ашу' : 'Открыть курс',
+        gradePre: isKz ? '8/9 дейін' : 'До 8/9',
+        grade8: isKz ? '8 сынып' : '8 класс',
+        grade9: isKz ? '9 сынып' : '9 класс',
+        practicesWord: isKz ? 'практика' : 'практик',
+        preTitle: isKz ? '8/9 сыныпқа дейін' : 'До 8/9 класса',
+        preDesc: isKz ? '8/9 сынып тақырыптарына дейін түсіну керек база.' : 'База, которую нужно понять до тем 8/9 классов.',
+        pythonInterestingTitle: isKz ? 'Python-ның қызықты тақырыптары' : 'Интересные темы Python',
+        pythonInterestingDesc: isKz ? 'Мотивация үшін практикалық бағыттар.' : 'Практические направления для мотивации.',
+        dataSitesTitle: isKz ? 'Практикаға арналған дерек сайттары' : 'Сайты с данными для практики',
+        dataSitesDesc: isKz ? 'Жобалар үшін шынайы датасеттерді қолданыңыз.' : 'Используйте реальные датасеты для проектов.',
+        details: isKz ? 'Толығырақ' : 'Детали',
+        totalXp: isKz ? 'Жалпы XP' : 'Общий XP',
+        solved: isKz ? 'Шешілген есептер' : 'Решено задач',
+        codingTime: isKz ? 'Код уақыты' : 'Время кодинга',
+        hoursSuffix: isKz ? 'с' : 'ч',
+        blitzTitle: isKz ? 'Жылдам бастау' : 'Быстрый запуск',
+        blitzSubtitle: isKz ? 'Деректер толық болмаса да практиканы бастаңыз.' : 'Начните практику даже при частично пустых данных.',
+        openArena: isKz ? 'Аренаны ашу' : 'Открыть арену',
+    };
     const [currentUser, setCurrentUser] = useState(CURRENT_USER);
     const [stats, setStats] = useState(STATS);
     const [missions, setMissions] = useState(MISSIONS);
@@ -59,13 +91,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const progressPercent = activeCourse?.progress ?? 0;
     const text = UI_TEXTS?.dashboard ?? {};
     const visibleDailyQuests = dailyQuests;
-        const preTopics = [
+        const preTopics = isKz ? [
+            'Алгоритмдік ойлау',
+            'Блок-сызбалар және логика',
+            'Айнымалылар және енгізу/шығару',
+            'Алғашқы шарттар мен циклдер',
+        ] : [
             'Алгоритмическое мышление',
             'Блок-схемы и логика',
             'Переменные и ввод/вывод',
             'Первые условия и циклы',
         ];
-        const pythonInteresting = [
+        const pythonInteresting = isKz ? [
+            'Python ойындарда (pygame)',
+            'Python деректер талдауында',
+            'Боттар және автоматтандыру',
+            'Графиктерді визуализациялау',
+        ] : [
             'Python в играх (pygame)',
             'Python для анализа данных',
             'Боты и автоматизация',
@@ -108,9 +150,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl rounded-tl-none inline-block mb-3 border border-slate-200 dark:border-white/5">
-                          <p className="text-sm md:text-base text-slate-900 dark:text-white font-medium">{text.greeting?.replace('{name}', currentUser.name) || `Привет, ${currentUser.name}`}</p>
+                          <p className="text-sm md:text-base text-slate-900 dark:text-white font-medium">{text.greeting?.replace('{name}', currentUser.name) || `${lt.hello}, ${currentUser.name}`}</p>
                  </div>
-                      <h1 className="text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white leading-none">{text.baseTitle || 'Твоя учебная зона'}</h1>
+                      <h1 className="text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white leading-none">{text.baseTitle || lt.zoneTitle}</h1>
              </div>
         </div>
 
@@ -124,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
              </div>
              <div>
                  <p className="text-2xl font-black text-slate-900 dark:text-white leading-none">{currentUser.streak}</p>
-                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{text.streakLabel || 'Серия'}</p>
+                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{text.streakLabel || lt.streak}</p>
              </div>
         </div>
       </div>
@@ -153,10 +195,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                      <div className="flex-1 text-center md:text-left">
                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-arcade-action/20 text-arcade-action rounded-full border border-arcade-action/20 mb-3">
                              <Swords size={14} />
-                             <span className="text-xs font-black uppercase tracking-wider">{text.currentMission || 'Текущая миссия'}</span>
+                             <span className="text-xs font-black uppercase tracking-wider">{text.currentMission || lt.currentMission}</span>
                          </div>
-                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">{mission?.title ?? text.fallbackMissionTitle ?? 'Новая миссия скоро появится'}</h2>
-                         <p className="text-slate-700 dark:text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter ?? 'Пока потренируйтесь на арене'}</p>
+                         <h2 className="text-3xl font-display font-black text-white mb-2 group-hover:text-arcade-action transition-colors">{mission?.title ?? text.fallbackMissionTitle ?? lt.missionSoon}</h2>
+                         <p className="text-slate-700 dark:text-gray-300 mb-6 font-medium">{mission?.chapter ?? text.fallbackMissionChapter ?? lt.practiceArena}</p>
                          
                          {/* Progress Bar styled as HP */}
                          <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10 relative">
@@ -165,7 +207,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                              <div className="absolute top-0 left-0 w-full h-[50%] bg-white/10 rounded-full"></div>
                          </div>
                          <div className="flex justify-between mt-2 text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">
-                             <span>{text.progress || 'Прогресс'}</span>
+                             <span>{text.progress || lt.progress}</span>
                              <span className="text-white">{progressPercent}%</span>
                          </div>
                      </div>
@@ -174,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         <button onClick={() => setView(View.PRACTICE)} className="size-16 rounded-full bg-white text-arcade-action flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all">
                             <ChevronRight size={32} strokeWidth={3} />
                         </button>
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start || 'Старт'}</span>
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-black/40 px-2 py-1 rounded-lg">{text.start || lt.start}</span>
                      </div>
                 </div>
             </div>
@@ -183,7 +225,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div>
                 <h3 className="text-xl font-display font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                     <Target className="text-arcade-danger" />
-                    {text.dailyQuests || 'Ежедневные задания'}
+                    {text.dailyQuests || lt.dailyQuests}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {visibleDailyQuests.map((quest: any, i: number) => {
@@ -210,28 +252,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-3 gap-3">
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white">Прогресс полного курса</h3>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white">{lt.fullCourseProgress}</h3>
                                 <button
                                     onClick={() => setView(View.COURSE_JOURNEY)}
                                     className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700"
                                 >
-                                    Открыть курс
+                                    {lt.openCourse}
                                 </button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0c120e]">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">До 8/9</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summaryPre.completed}/{summaryPre.total} практик</p>
+                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{lt.gradePre}</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summaryPre.completed}/{summaryPre.total} {lt.practicesWord}</p>
                                     <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{summaryPre.percent}%</p>
                                 </div>
                                 <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0c120e]">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">8 класс</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summary8.completed}/{summary8.total} практик</p>
+                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{lt.grade8}</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summary8.completed}/{summary8.total} {lt.practicesWord}</p>
                                     <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{summary8.percent}%</p>
                                 </div>
                                 <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0c120e]">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">9 класс</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summary9.completed}/{summary9.total} практик</p>
+                                    <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{lt.grade9}</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{summary9.completed}/{summary9.total} {lt.practicesWord}</p>
                                     <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{summary9.percent}%</p>
                                 </div>
                             </div>
@@ -240,8 +282,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         {/* Pre 8/9 + Python Topics */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">До 8/9 класса</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">База, которую нужно понять до тем 8/9 классов.</p>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{lt.preTitle}</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.preDesc}</p>
                                 <div className="space-y-2">
                                     {preTopics.map((topic) => (
                                         <div key={topic} className="text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-200">
@@ -252,8 +294,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                             </div>
 
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">Интересные темы Python</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">Практические направления для мотивации.</p>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{lt.pythonInterestingTitle}</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.pythonInterestingDesc}</p>
                                 <div className="space-y-2">
                                     {pythonInteresting.map((topic) => (
                                         <div key={topic} className="text-sm px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-900 dark:text-emerald-300">
@@ -265,8 +307,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         </div>
 
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-                            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Сайты с данными для практики</h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">Используйте реальные датасеты для проектов.</p>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">{lt.dataSitesTitle}</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.dataSitesDesc}</p>
                             <div className="flex flex-wrap gap-2">
                                 {datasetSites.map((site) => (
                                     <a
@@ -291,30 +333,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div className="bg-white dark:bg-arcade-card border border-slate-200 dark:border-white/5 rounded-3xl p-6 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-display font-black text-slate-900 dark:text-white">{text.stats}</h3>
-                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">{text.details || 'Детали'}</button>
+                    <button onClick={() => setView(View.PROFILE)} className="text-xs font-bold text-arcade-primary hover:underline">{text.details || lt.details}</button>
                 </div>
                 
                 <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg"><Zap size={18} /></div>
-                            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsTotalXp || 'Общий XP'}</span>
+                            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsTotalXp || lt.totalXp}</span>
                         </div>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">{(stats.totalXp ?? 0).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-danger/20 text-arcade-danger rounded-lg"><Target size={18} /></div>
-                            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsSolved || 'Решено задач'}</span>
+                            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsSolved || lt.solved}</span>
                         </div>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">{stats.problemsSolved ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-arcade-mentor/20 text-arcade-mentor rounded-lg"><Clock size={18} /></div>
-                            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsTime || 'Время кодинга'}</span>
+                            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">{text.statsTime || lt.codingTime}</span>
                         </div>
-                        <span className="font-mono font-bold text-slate-900 dark:text-white">{stats.codingHours ?? 0}{text.hoursSuffix || 'ч'}</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white">{stats.codingHours ?? 0}{text.hoursSuffix || lt.hoursSuffix}</span>
                     </div>
                 </div>
             </div>
@@ -328,11 +370,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 <Sparkles className="absolute top-4 left-4 text-white/40 animate-pulse" />
                 <Sparkles className="absolute bottom-4 right-4 text-white/40 animate-pulse delay-700" />
                 
-                <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle || 'Быстрый запуск'}</h3>
-                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle || 'Начните практику даже при частично пустых данных.'}</p>
+                <h3 className="text-2xl font-display font-black mb-2 relative z-10">{text.blitzTitle || lt.blitzTitle}</h3>
+                <p className="text-purple-200 text-sm mb-6 relative z-10 font-medium">{text.blitzSubtitle || lt.blitzSubtitle}</p>
                 
                 <button onClick={() => setView(View.PRACTICE)} className="w-full py-3 bg-white text-arcade-primary rounded-xl font-black uppercase tracking-wider shadow-lg hover:bg-gray-100 transition-colors relative z-10">
-                    {text.blitzStart || 'Открыть арену'}
+                    {text.blitzStart || lt.openArena}
                 </button>
             </div>
         </div>

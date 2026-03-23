@@ -4,10 +4,11 @@ import { AIChat } from './AIChat';
 import MonacoEditor from '@monaco-editor/react';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
-import { EDITOR_UI, UI_TEXTS } from '../constants';
+import { APP_LANGUAGE, EDITOR_UI, UI_TEXTS } from '../constants';
 import { apiGet, missionApi, type MissionData, type MissionFile } from '../api';
 
 const THEORY_HINT_PREFIX = '__THEORY__:';
+const IS_KZ = APP_LANGUAGE === 'kz';
 
 // --- Types ---
 interface FileNode {
@@ -35,7 +36,7 @@ const extractCourseIdFromChapter = (chapter?: string | null): number | null => {
 };
 
 const buildTheoryFromMission = (details: MissionData, baseTheory?: string) => {
-    const title = details.chapter || 'Задание';
+    const title = details.chapter || (IS_KZ ? 'Тапсырма' : 'Задание');
     const description = (details.description || '').trim();
     const objectives = (details.objectives || []).map((item: any) => String(item?.text || '')).filter(Boolean);
     const textBase = `${description} ${objectives.join(' ')}`.toLowerCase();
@@ -44,59 +45,59 @@ const buildTheoryFromMission = (details: MissionData, baseTheory?: string) => {
         return baseTheory.trim();
     }
 
-    if (textBase.includes('цикл') || textBase.includes('for') || textBase.includes('ports')) {
+    if (textBase.includes('цикл') || textBase.includes('for') || textBase.includes('ports') || textBase.includes('айналым') || textBase.includes('порт')) {
         return [
-            `${title}: как написать цикл for`,
+            IS_KZ ? `${title}: for циклін қалай жазу керек` : `${title}: как написать цикл for`,
             '',
-            '1) Сначала создайте список:',
+            IS_KZ ? '1) Алдымен тізім жасаңыз:' : '1) Сначала создайте список:',
             "ports = [22, 80, 443]",
             '',
-            '2) Затем пройдитесь по списку циклом:',
+            IS_KZ ? '2) Содан кейін тізім бойынша циклмен өтіңіз:' : '2) Затем пройдитесь по списку циклом:',
             'for port in ports:',
-            "    print('Проверяем порт', port)",
+            IS_KZ ? "    print('Портты тексереміз', port)" : "    print('Проверяем порт', port)",
             '',
-            'Важно: после строки с for нужен отступ в 4 пробела.',
+            IS_KZ ? 'Маңызды: for жолынан кейін 4 бос орын шегініс болуы керек.' : 'Важно: после строки с for нужен отступ в 4 пробела.',
         ].join('\n');
     }
 
-    if (textBase.includes('if') || textBase.includes('услов')) {
+    if (textBase.includes('if') || textBase.includes('услов') || textBase.includes('шарт')) {
         return [
-            `${title}: как написать условие if`,
+            IS_KZ ? `${title}: if шартын қалай жазу керек` : `${title}: как написать условие if`,
             '',
             'age = 11',
             'if age >= 10:',
-            "    print('Можно')",
+            IS_KZ ? "    print('Болады')" : "    print('Можно')",
             'else:',
-            "    print('Пока рано')",
+            IS_KZ ? "    print('Әзірге ерте')" : "    print('Пока рано')",
             '',
-            'Сначала пишем условие, потом делаем отступ и действие.',
+            IS_KZ ? 'Алдымен шартты жазыңыз, кейін шегініс жасап әрекетті көрсетіңіз.' : 'Сначала пишем условие, потом делаем отступ и действие.',
         ].join('\n');
     }
 
-    if (textBase.includes('функц') || textBase.includes('def')) {
+    if (textBase.includes('функц') || textBase.includes('def') || textBase.includes('функция')) {
         return [
-            `${title}: как создать функцию`,
+            IS_KZ ? `${title}: функцияны қалай құру керек` : `${title}: как создать функцию`,
             '',
             'def hello(name):',
-            "    print('Привет,', name)",
+            IS_KZ ? "    print('Сәлем,', name)" : "    print('Привет,', name)",
             '',
-            "hello('Миша')",
+            IS_KZ ? "hello('Айдана')" : "hello('Миша')",
             '',
-            'Функция создаётся через def, а потом её нужно вызвать.',
+            IS_KZ ? 'Функция def арқылы жасалады, содан кейін оны шақыру керек.' : 'Функция создаётся через def, а потом её нужно вызвать.',
         ].join('\n');
     }
 
     return [
-        `${title}: мини-шпаргалка`,
+        IS_KZ ? `${title}: шағын шпаргалка` : `${title}: мини-шпаргалка`,
         '',
-        '1) Выведите текст:',
-        "print('Привет, мир!')",
+        IS_KZ ? '1) Мәтінді шығарыңыз:' : '1) Выведите текст:',
+        IS_KZ ? "print('Сәлем, әлем!')" : "print('Привет, мир!')",
         '',
-        '2) Сохраните значение в переменную:',
-        'name = "Аня"',
+        IS_KZ ? '2) Мәнді айнымалыға сақтаңыз:' : '2) Сохраните значение в переменную:',
+        IS_KZ ? 'name = "Алия"' : 'name = "Аня"',
         'print(name)',
         '',
-        'Пишите код по шагам и запускайте после каждого небольшого изменения.',
+        IS_KZ ? 'Кодты қадаммен жазыңыз және әр кіші өзгерістен кейін іске қосыңыз.' : 'Пишите код по шагам и запускайте после каждого небольшого изменения.',
     ].join('\n');
 };
 
@@ -106,24 +107,34 @@ const toKidFriendlyHint = (hint: string) => {
 
     if (!normalized) return '';
 
-    if (lower.includes('for port in ports') || (lower.includes('цикл') && lower.includes('ports'))) {
-        return 'Как сделать цикл: сначала список, потом for.\nports = [22, 80, 443]\nfor port in ports:\n    print(port)';
+    if (lower.includes('for port in ports') || ((lower.includes('цикл') || lower.includes('айналым')) && lower.includes('ports'))) {
+        return IS_KZ
+            ? 'Циклді қалай жасау керек: алдымен тізім, сосын for.\nports = [22, 80, 443]\nfor port in ports:\n    print(port)'
+            : 'Как сделать цикл: сначала список, потом for.\nports = [22, 80, 443]\nfor port in ports:\n    print(port)';
     }
 
     if (lower.includes('print') && lower.includes('порт')) {
-        return 'Внутри цикла добавьте вывод через print.\nfor port in ports:\n    print("Проверяем порт", port)';
+        return IS_KZ
+            ? 'Цикл ішінде print арқылы шығару қосыңыз.\nfor port in ports:\n    print("Портты тексереміз", port)'
+            : 'Внутри цикла добавьте вывод через print.\nfor port in ports:\n    print("Проверяем порт", port)';
     }
 
     if (lower.includes('access granted') || (lower.includes('верните') && lower.includes('функц'))) {
-        return 'Если нужно вернуть текст из функции:\ndef check():\n    return "ACCESS GRANTED"\n\nprint(check())';
+        return IS_KZ
+            ? 'Егер функциядан мәтін қайтару керек болса:\ndef check():\n    return "ACCESS GRANTED"\n\nprint(check())'
+            : 'Если нужно вернуть текст из функции:\ndef check():\n    return "ACCESS GRANTED"\n\nprint(check())';
     }
 
-    if (lower.includes('if') || lower.includes('услов')) {
-        return 'Шаблон условия:\nif условие:\n    действие\nelse:\n    другое_действие';
+    if (lower.includes('if') || lower.includes('услов') || lower.includes('шарт')) {
+        return IS_KZ
+            ? 'Шарт шаблоны:\nif шарт:\n    әрекет\nelse:\n    басқа_әрекет'
+            : 'Шаблон условия:\nif условие:\n    действие\nelse:\n    другое_действие';
     }
 
-    if (lower.includes('отступ')) {
-        return 'После if/for/def всегда делайте отступ 4 пробела в следующей строке.';
+    if (lower.includes('отступ') || lower.includes('шегініс')) {
+        return IS_KZ
+            ? 'if/for/def кейін келесі жолда әрдайым 4 бос орын шегініс жасаңыз.'
+            : 'После if/for/def всегда делайте отступ 4 пробела в следующей строке.';
     }
 
     return normalized;
@@ -137,30 +148,52 @@ const buildKidFriendlyCommonErrors = (details: MissionData, hintTexts: string[])
 
     const textBase = `${details.description || ''} ${(details.objectives || []).map((item: any) => item?.text || '').join(' ')}`.toLowerCase();
 
-    if (textBase.includes('цикл') || textBase.includes('for')) {
+    if (textBase.includes('цикл') || textBase.includes('for') || textBase.includes('айналым')) {
         return [
-            'Проверьте, что цикл написан с двоеточием: for i in range(3):',
-            'Проверьте отступ внутри цикла (4 пробела).',
-            'Проверьте, что print находится внутри цикла, а не снаружи.',
+            IS_KZ ? 'Цикл қос нүктемен жазылғанын тексеріңіз: for i in range(3):' : 'Проверьте, что цикл написан с двоеточием: for i in range(3):',
+            IS_KZ ? 'Цикл ішіндегі шегіністі тексеріңіз (4 бос орын).' : 'Проверьте отступ внутри цикла (4 пробела).',
+            IS_KZ ? 'print циклдің ішінде екенін тексеріңіз, сыртында емес.' : 'Проверьте, что print находится внутри цикла, а не снаружи.',
         ];
     }
 
-    if (textBase.includes('if') || textBase.includes('услов')) {
+    if (textBase.includes('if') || textBase.includes('услов') || textBase.includes('шарт')) {
         return [
-            'После if обязательно ставьте двоеточие: if x > 0:',
-            'Сравнение пишется через ==, а не через =.',
-            'Проверьте отступы в блоках if/else.',
+            IS_KZ ? 'if кейін міндетті түрде қос нүкте қойыңыз: if x > 0:' : 'После if обязательно ставьте двоеточие: if x > 0:',
+            IS_KZ ? 'Салыстыру == арқылы жазылады, = арқылы емес.' : 'Сравнение пишется через ==, а не через =.',
+            IS_KZ ? 'if/else блоктарындағы шегіністерді тексеріңіз.' : 'Проверьте отступы в блоках if/else.',
         ];
     }
 
     return [
-        'Пишите код маленькими шагами и запускайте после каждого шага.',
-        'Проверьте имена переменных: одна буква ошибки ломает программу.',
-        'Сверьте вывод в консоли с формулировкой задания.',
+        IS_KZ ? 'Кодты шағын қадамдармен жазыңыз және әр қадамнан кейін іске қосыңыз.' : 'Пишите код маленькими шагами и запускайте после каждого шага.',
+        IS_KZ ? 'Айнымалы атауларын тексеріңіз: бір қате әріп бағдарламаны бұзады.' : 'Проверьте имена переменных: одна буква ошибки ломает программу.',
+        IS_KZ ? 'Консольдегі нәтижені тапсырма шартымен салыстырыңыз.' : 'Сверьте вывод в консоли с формулировкой задания.',
     ];
 };
 
 export const EditorComponent: React.FC = () => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const lt = {
+        seasonCompleted: isKz ? 'Маусым аяқталды! Келесі маусым қолжетімді.' : 'Сезон завершён! Доступен следующий сезон.',
+        hintCheckOutput: isKz ? 'Кеңес: шарт пен күтілетін нәтижені тексеріңіз.' : 'Hint: Проверь условие и ожидаемый вывод.',
+        cooldown: isKz ? 'Күту: қайталап көру' : 'Cooldown: повторите через',
+        sec: isKz ? 'сек.' : 'сек.',
+        failedAttempts: isKz ? 'Қатарынан сәтсіз талпыныстар' : 'Неудачных попыток подряд',
+        runMissionError: isKz ? 'Тапсырманы орындау мүмкін болмады' : 'Не удалось выполнить миссию',
+        reloginHint: isKz ? 'Кеңес: қайта кіріп, іске қосуды қайталаңыз.' : 'Подсказка: войдите в аккаунт заново и повторите запуск.',
+        loadingMission: isKz ? 'Тапсырма жүктелуде...' : 'Загрузка миссии...',
+        arenaUnavailable: isKz ? 'Арена әзірге қолжетімсіз' : 'Арена пока недоступна',
+        missionsEmpty: isKz ? 'Тапсырмалар тізімі бос. Тапсырмалар пайда болғанда, бірден тәжірибеге кірісе аласыз.' : 'Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.',
+        lessonPlan: isKz ? 'Сабақ жоспары' : 'План урока',
+        stepTheory: isKz ? '1-қадам: Теория' : 'Шаг 1: Теория',
+        stepPractice: isKz ? '2-қадам: Тәжірибе' : 'Шаг 2: Практика',
+        theoryHint: isKz ? 'Алдымен теория мен кеңестерді оқыңыз. Содан кейін «2-қадам: Тәжірибе» басыңыз.' : 'Сначала прочитайте теорию и подсказки. Потом нажмите «Шаг 2: Практика».',
+        practiceHint: isKz ? 'Енді код жазып, «Іске қосу» түймесін басуға болады.' : 'Теперь можно писать код и нажимать «Запуск».',
+        proceedToPractice: isKz ? 'Оқыдым, тәжірибеге өту' : 'Я прочитал(а), перейти к практике',
+        saveInProgress: isKz ? 'Сақталуда...' : 'Saving...',
+        save: isKz ? 'Сақтау' : 'Save',
+        theoryFirst: isKz ? 'Алдымен теория' : 'Сначала теория',
+    };
     const [mission, setMission] = useState<MissionData | null>(null);
     const [missionList, setMissionList] = useState<MissionData[]>([]);
     const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
@@ -213,18 +246,18 @@ export const EditorComponent: React.FC = () => {
       const kidFriendlyErrors = buildKidFriendlyCommonErrors(details, hintTexts);
 
       return {
-          theoryTitle: `Теория: ${details.chapter || 'Задание'}`,
-          theoryContent: generatedTheory || learningData.content || textLearning.content || 'Материал загружается',
-          expectedOutput: String(outputTest?.value || learningData.expectedOutput || textLearning.expectedOutput || 'Смотрите условие задания'),
+          theoryTitle: `${IS_KZ ? 'Теория' : 'Теория'}: ${details.chapter || (IS_KZ ? 'Тапсырма' : 'Задание')}`,
+          theoryContent: generatedTheory || learningData.content || textLearning.content || (IS_KZ ? 'Материал жүктелуде' : 'Материал загружается'),
+          expectedOutput: String(outputTest?.value || learningData.expectedOutput || textLearning.expectedOutput || (IS_KZ ? 'Тапсырма шартын қараңыз' : 'Смотрите условие задания')),
           commonErrors: kidFriendlyErrors.length
               ? kidFriendlyErrors
               : (learningData.commonErrors || textLearning.commonErrors || [
-                    'Проверьте отступы',
-                    'Проверьте имена переменных',
+                    IS_KZ ? 'Шегіністерді тексеріңіз' : 'Проверьте отступы',
+                    IS_KZ ? 'Айнымалы атауларын тексеріңіз' : 'Проверьте имена переменных',
                 ]),
           miniCheck: objectiveTexts.length
-              ? `Проверьте перед запуском: ${objectiveTexts.slice(0, 3).join('; ')}`
-              : (learningData.miniCheck || textLearning.miniCheck || 'Запустите код и сверяйте вывод с условием'),
+              ? `${IS_KZ ? 'Іске қоспас бұрын тексеріңіз' : 'Проверьте перед запуском'}: ${objectiveTexts.slice(0, 3).join('; ')}`
+              : (learningData.miniCheck || textLearning.miniCheck || (IS_KZ ? 'Кодты іске қосып, нәтижені шартпен салыстырыңыз' : 'Запустите код и сверяйте вывод с условием')),
       };
   };
 
@@ -568,7 +601,7 @@ export const EditorComponent: React.FC = () => {
        if (result.success) {
            term.writeln(`\x1b[1;32m> ${result.message} (+${result.xpEarned} XP)\x1b[0m`);
               if (result.courseProgress?.nextSeasonUnlocked) {
-                  term.writeln('\x1b[1;36m> Сезон завершён! Доступен следующий сезон.\x1b[0m');
+                  term.writeln(`\x1b[1;36m> ${lt.seasonCompleted}\x1b[0m`);
               }
            setBotEmotion('happy');
            if (!result.analysis) setBotMessage(botMessages.success || textBot.success);
@@ -576,22 +609,22 @@ export const EditorComponent: React.FC = () => {
            setTimeout(() => setShowSuccess(false), 3000);
        } else {
            term.writeln('\x1b[31m[ERROR] Mission check failed.\x1b[0m');
-           term.writeln(result.message || 'Hint: Проверь условие и ожидаемый вывод.');
+           term.writeln(result.message || lt.hintCheckOutput);
               if (result.attemptMeta?.cooldownActive) {
-                  term.writeln(`\x1b[33mCooldown: повторите через ${result.attemptMeta.retryAfterSeconds ?? 0} сек.\x1b[0m`);
+                  term.writeln(`\x1b[33m${lt.cooldown} ${result.attemptMeta.retryAfterSeconds ?? 0} ${lt.sec}\x1b[0m`);
               } else if (typeof result.attemptMeta?.consecutiveFailures === 'number') {
-                  term.writeln(`\x1b[33mНеудачных попыток подряд: ${result.attemptMeta.consecutiveFailures}\x1b[0m`);
+                  term.writeln(`\x1b[33m${lt.failedAttempts}: ${result.attemptMeta.consecutiveFailures}\x1b[0m`);
               }
            setBotEmotion('alert');
            if (!result.analysis) setBotMessage(result.message || botMessages.error || textBot.error);
        }
        term.write('$ ');
      } catch (error: any) {
-         const errorMessage = String(error?.message || 'Не удалось выполнить миссию');
-         term.writeln('\x1b[31m[ERROR] Не удалось выполнить миссию\x1b[0m');
+         const errorMessage = String(error?.message || lt.runMissionError);
+         term.writeln(`\x1b[31m[ERROR] ${lt.runMissionError}\x1b[0m`);
          term.writeln(`\x1b[31m${errorMessage}\x1b[0m`);
          if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('authentication required')) {
-             term.writeln('\x1b[33mПодсказка: войдите в аккаунт заново и повторите запуск.\x1b[0m');
+             term.writeln(`\x1b[33m${lt.reloginHint}\x1b[0m`);
          }
        term.write('$ ');
        setBotEmotion('alert');
@@ -608,7 +641,7 @@ export const EditorComponent: React.FC = () => {
     <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A]">
         <div className="text-center">
           <div className="inline-block size-12 border-4 border-arcade-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-300 text-sm">Загрузка миссии...</p>
+          <p className="text-slate-600 dark:text-slate-300 text-sm">{lt.loadingMission}</p>
         </div>
       </div>
     );
@@ -618,8 +651,8 @@ export const EditorComponent: React.FC = () => {
         return (
             <div className="flex h-full items-center justify-center bg-slate-100 dark:bg-[#0F172A] p-6">
                 <div className="max-w-lg w-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 text-center">
-                    <p className="text-slate-900 dark:text-white font-bold mb-2">Арена пока недоступна</p>
-                    <p className="text-slate-600 dark:text-slate-300 text-sm">Список миссий пуст. Как только задания появятся, вы сможете сразу начать практику.</p>
+                    <p className="text-slate-900 dark:text-white font-bold mb-2">{lt.arenaUnavailable}</p>
+                    <p className="text-slate-600 dark:text-slate-300 text-sm">{lt.missionsEmpty}</p>
                 </div>
             </div>
         );
@@ -663,25 +696,25 @@ export const EditorComponent: React.FC = () => {
                 </div>
 
                 <div className="bg-slate-50 dark:bg-[#1E293B] rounded-xl p-4 border border-slate-200 dark:border-white/10">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-300 mb-2">План урока</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-300 mb-2">{lt.lessonPlan}</p>
                     <div className="flex items-center gap-2 mb-3">
                         <button
                             onClick={() => setLearningStep('theory')}
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'theory' ? 'bg-arcade-primary text-white' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-slate-200 dark:border-transparent'}`}
                         >
-                            Шаг 1: Теория
+                            {lt.stepTheory}
                         </button>
                         <button
                             onClick={() => setLearningStep('practice')}
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold ${learningStep === 'practice' ? 'bg-arcade-success text-[#0F172A]' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-slate-200 dark:border-transparent'}`}
                         >
-                            Шаг 2: Практика
+                            {lt.stepPractice}
                         </button>
                     </div>
                     <p className="text-xs text-slate-700 dark:text-gray-300">
                         {learningStep === 'theory'
-                            ? 'Сначала прочитайте теорию и подсказки. Потом нажмите «Шаг 2: Практика».'
-                            : 'Теперь можно писать код и нажимать «Запуск».'}
+                            ? lt.theoryHint
+                            : lt.practiceHint}
                     </p>
                 </div>
 
@@ -760,7 +793,7 @@ export const EditorComponent: React.FC = () => {
                             onClick={() => setLearningStep('practice')}
                             className="mt-2 w-full py-2 bg-arcade-success/20 hover:bg-arcade-success/35 text-arcade-success text-xs font-bold rounded-lg transition-colors border border-arcade-success/30"
                         >
-                            Я прочитал(а), перейти к практике
+                            {lt.proceedToPractice}
                         </button>
                     )}
                 </div>
@@ -810,7 +843,7 @@ export const EditorComponent: React.FC = () => {
                     disabled={isSavingCode || isRunning}
                     className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-800 dark:text-gray-200 text-xs font-bold uppercase flex items-center gap-1.5 disabled:opacity-50"
                 >
-                    <Save size={14} /> {isSavingCode ? 'Saving...' : 'Save'}
+                    <Save size={14} /> {isSavingCode ? lt.saveInProgress : lt.save}
                 </button>
                 <button 
                     onClick={runCode}
@@ -818,7 +851,7 @@ export const EditorComponent: React.FC = () => {
                     className="bg-arcade-action text-white px-4 py-1.5 rounded-lg font-black uppercase text-xs flex items-center gap-2 shadow-neon-orange hover:scale-105 transition-transform disabled:opacity-60"
                 >
                     {isRunning ? <Sparkles size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-                    <span>{learningStep === 'practice' ? text.run : 'Сначала теория'}</span>
+                    <span>{learningStep === 'practice' ? text.run : lt.theoryFirst}</span>
                 </button>
                 <button
                     onClick={() => switchMission(activeMissionIndex + 1)}

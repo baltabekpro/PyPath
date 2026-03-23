@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Mail, User, Eye, EyeOff, Sparkles, Terminal } from 'lucide-react';
+import { APP_LANGUAGE } from '../constants';
 import { apiGet, apiPost } from '../api';
 
 interface AuthPageProps {
@@ -7,6 +8,28 @@ interface AuthPageProps {
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const text = {
+        subtitle: isKz ? 'Білімге жолды бірге ашайық' : 'Взломай путь к знаниям',
+        loginTab: isKz ? 'Кіру' : 'Вход',
+        registerTab: isKz ? 'Тіркелу' : 'Регистрация',
+        loginError: isKz ? 'Кіру қатесі. Логин мен парольді тексеріңіз.' : 'Ошибка входа. Проверьте логин и пароль.',
+        passwordMinError: isKz ? 'Пароль кемінде 6 таңбадан тұруы керек' : 'Пароль должен быть не менее 6 символов',
+        registerError: isKz ? 'Тіркелу қатесі. Мүмкін, қолданушы бұрыннан бар.' : 'Ошибка регистрации. Возможно, пользователь уже существует.',
+        username: isKz ? 'Логин' : 'Логин',
+        usernamePlaceholder: isKz ? 'Логин енгізіңіз' : 'Введите логин',
+        password: isKz ? 'Пароль' : 'Пароль',
+        passwordPlaceholder: isKz ? 'Пароль енгізіңіз' : 'Введите пароль',
+        loading: isKz ? 'Жүктелуде...' : 'Загрузка...',
+        signIn: isKz ? 'Кіру' : 'Войти',
+        usernameCreatePlaceholder: isKz ? 'Логин ойлап табыңыз' : 'Придумайте логин',
+        fullName: isKz ? 'Толық аты-жөні' : 'Полное имя',
+        fullNamePlaceholder: isKz ? 'Иван Иванов' : 'Иван Иванов',
+        passwordMinPlaceholder: isKz ? 'Кемінде 6 таңба' : 'Минимум 6 символов',
+        creating: isKz ? 'Жасалуда...' : 'Создание...',
+        createAccount: isKz ? 'Аккаунт ашу' : 'Создать аккаунт',
+        footer: isKz ? 'Мыңдаған әзірлеушілерге қосылыңыз' : 'Присоединяйся к тысячам разработчиков',
+    };
     const [isLogin, setIsLogin] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -38,7 +61,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             
             onAuthSuccess(response.access_token, userData);
         } catch (err: any) {
-            setError(err.message || 'Ошибка входа. Проверьте логин и пароль.');
+            setError(err.message || text.loginError);
         } finally {
             setLoading(false);
         }
@@ -50,7 +73,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         setLoading(true);
 
         if (registerData.password.length < 6) {
-            setError('Пароль должен быть не менее 6 символов');
+            setError(text.passwordMinError);
             setLoading(false);
             return;
         }
@@ -64,7 +87,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             
             onAuthSuccess(response.access_token, userData);
         } catch (err: any) {
-            setError(err.message || 'Ошибка регистрации. Возможно, пользователь уже существует.');
+            setError(err.message || text.registerError);
         } finally {
             setLoading(false);
         }
@@ -85,7 +108,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                         <Terminal size={40} className="text-white" strokeWidth={2.5} />
                     </div>
                     <h1 className="text-4xl font-display font-black text-white mb-2">PyPath</h1>
-                    <p className="text-slate-600 dark:text-gray-400 font-medium">Взломай путь к знаниям</p>
+                    <p className="text-slate-600 dark:text-gray-400 font-medium">{text.subtitle}</p>
                 </div>
 
                 {/* Auth Card */}
@@ -100,7 +123,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                     : 'text-slate-600 dark:text-gray-400 hover:text-white'
                             }`}
                         >
-                            Вход
+                            {text.loginTab}
                         </button>
                         <button
                             onClick={() => setIsLogin(false)}
@@ -110,7 +133,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                     : 'text-slate-600 dark:text-gray-400 hover:text-white'
                             }`}
                         >
-                            Регистрация
+                            {text.registerTab}
                         </button>
                     </div>
 
@@ -125,7 +148,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     {isLogin ? (
                         <form onSubmit={handleLogin} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Логин</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">{text.username}</label>
                                 <div className="relative">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
@@ -133,14 +156,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                         value={loginData.username}
                                         onChange={(e) => setLoginData({...loginData, username: e.target.value})}
                                         className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-arcade-primary focus:outline-none transition-colors"
-                                        placeholder="Введите логин"
+                                        placeholder={text.usernamePlaceholder}
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Пароль</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">{text.password}</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
@@ -148,7 +171,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                         value={loginData.password}
                                         onChange={(e) => setLoginData({...loginData, password: e.target.value})}
                                         className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-arcade-primary focus:outline-none transition-colors"
-                                        placeholder="Введите пароль"
+                                        placeholder={text.passwordPlaceholder}
                                         required
                                     />
                                     <button
@@ -166,10 +189,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                 disabled={loading}
                                 className="w-full py-4 bg-gradient-to-r from-arcade-primary to-purple-600 text-white font-black text-lg rounded-xl hover:scale-[1.02] active:scale-95 transition-transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {loading ? 'Загрузка...' : (
+                                {loading ? text.loading : (
                                     <>
                                         <Sparkles size={20} />
-                                        Войти
+                                        {text.signIn}
                                     </>
                                 )}
                             </button>
@@ -178,7 +201,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                         /* Register Form */
                         <form onSubmit={handleRegister} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Логин</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">{text.username}</label>
                                 <div className="relative">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
@@ -186,7 +209,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                         value={registerData.username}
                                         onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
                                         className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-arcade-action focus:outline-none transition-colors"
-                                        placeholder="Придумайте логин"
+                                        placeholder={text.usernameCreatePlaceholder}
                                         required
                                     />
                                 </div>
@@ -208,7 +231,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Полное имя</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">{text.fullName}</label>
                                 <div className="relative">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
@@ -216,14 +239,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                         value={registerData.fullName}
                                         onChange={(e) => setRegisterData({...registerData, fullName: e.target.value})}
                                         className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-arcade-action focus:outline-none transition-colors"
-                                        placeholder="Иван Иванов"
+                                        placeholder={text.fullNamePlaceholder}
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">Пароль</label>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">{text.password}</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" size={20} />
                                     <input
@@ -231,7 +254,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                         value={registerData.password}
                                         onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
                                         className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-arcade-action focus:outline-none transition-colors"
-                                        placeholder="Минимум 6 символов"
+                                        placeholder={text.passwordMinPlaceholder}
                                         required
                                     />
                                     <button
@@ -249,10 +272,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                                 disabled={loading}
                                 className="w-full py-4 bg-gradient-to-r from-arcade-action to-orange-600 text-white font-black text-lg rounded-xl hover:scale-[1.02] active:scale-95 transition-transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {loading ? 'Создание...' : (
+                                {loading ? text.creating : (
                                     <>
                                         <Sparkles size={20} />
-                                        Создать аккаунт
+                                        {text.createAccount}
                                     </>
                                 )}
                             </button>
@@ -262,7 +285,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
                 {/* Footer Text */}
                 <p className="text-center text-slate-500 dark:text-gray-400 text-sm mt-6">
-                    Присоединяйся к тысячам разработчиков
+                    {text.footer}
                 </p>
             </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
-import { CURRENT_USER, SKILLS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
+import { APP_LANGUAGE, CURRENT_USER, SKILLS, STATS, PROFILE_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { Shield, Target, Flame, Medal, Edit3, Share2, Zap, Trophy, Plus } from 'lucide-react';
 import { View } from '../types';
 import { ActionToast } from './ActionToast';
@@ -40,12 +40,14 @@ const CountUp: React.FC<{ end: number, suffix?: string }> = ({ end, suffix = '' 
 };
 
 export const Profile: React.FC<ProfileProps> = ({ setView }) => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const locale = isKz ? 'kk-KZ' : 'ru-RU';
   const [loadRadar, setLoadRadar] = useState(false);
         const [actionMessage, setActionMessage] = useState('');
         const [currentUser, setCurrentUser] = useState(CURRENT_USER);
         const [stats, setStats] = useState(STATS);
         const [skills, setSkills] = useState(SKILLS);
-    const [lastUpdatedLabel, setLastUpdatedLabel] = useState('Обновлено только что');
+        const [lastUpdatedLabel, setLastUpdatedLabel] = useState(isKz ? 'Жаңа ғана жаңартылды' : 'Обновлено только что');
     const [activity, setActivity] = useState<any[]>([]);
     const [chartBundle, setChartBundle] = useState<{ lineByTasks: any[]; topicProgress: any[]; updatedAt?: string | null } | null>(null);
 
@@ -64,14 +66,14 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             setSkills(skillsData);
                     setActivity(activityData || []);
                     setChartBundle(chartData || null);
-            setLastUpdatedLabel(new Date().toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
+            setLastUpdatedLabel(new Date().toLocaleString(locale, { hour: '2-digit', minute: '2-digit' }));
         } catch (error) {
             console.error('Failed to load profile data:', error);
-            setLastUpdatedLabel('Обновлено локально');
+            setLastUpdatedLabel(isKz ? 'Жергілікті дерек жаңартылды' : 'Обновлено локально');
         }
     };
     loadProfileData();
-  }, []);
+  }, [isKz, locale]);
     const showcaseTrophies = PROFILE_UI?.showcaseTrophies ?? [];
     const text = UI_TEXTS?.profile ?? {};
         const battleStatText = text.battleStats ?? {};
@@ -87,14 +89,14 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   }, []);
 
   const battleStats = [
-        { label: battleStatText.streak, value: currentUser.streak, suffix: 'дн', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+      { label: battleStatText.streak, value: currentUser.streak, suffix: isKz ? 'к' : 'дн', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
         { label: battleStatText.quests, value: stats.problemsSolved, suffix: '', icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
         { label: battleStatText.leagueRank, value: currentUser.rank, suffix: '#', icon: Medal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
         { label: battleStatText.accuracy, value: stats.accuracy, suffix: '%', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
   ];
 
   const normalizedSkills = (skills || []).map((item: any, index: number) => ({
-      subject: String(item?.subject || item?.skill || `Навык ${index + 1}`),
+      subject: String(item?.subject || item?.skill || `${isKz ? 'Дағды' : 'Навык'} ${index + 1}`),
       score: Number(item?.score || item?.value || 0),
       fullMark: Number(item?.fullMark || 100),
   }));
@@ -105,7 +107,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
   })));
 
   const topicProgressData = (chartBundle?.topicProgress?.length ? chartBundle.topicProgress : normalizedSkills.map((item: any) => ({
-      topic: String(item?.subject || 'Тема'),
+      topic: String(item?.subject || (isKz ? 'Тақырып' : 'Тема')),
       progress: Number(item?.score || 0),
   })));
 

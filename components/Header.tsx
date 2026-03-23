@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, Menu, LogOut } from 'lucide-react';
-import { CURRENT_USER, UI_TEXTS } from '../constants';
+import { CURRENT_USER, UI_TEXTS, type AppLanguage } from '../constants';
 import { apiGet } from '../api';
 
 interface HeaderProps {
@@ -8,9 +8,11 @@ interface HeaderProps {
     onProfileClick?: () => void;
     onNotificationsClick?: () => void;
   onLogout?: () => void;
+  language: AppLanguage;
+  onLanguageChange: (language: AppLanguage) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick, onLogout, language, onLanguageChange }) => {
   const [currentUser, setCurrentUser] = useState(CURRENT_USER);
   const maxXp = currentUser.maxXp || 1000;
   const xpPercent = Math.min(100, Math.max(0, Math.round((currentUser.xp / maxXp) * 100)));
@@ -60,6 +62,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
       {/* Actions */}
       <div className="flex items-center gap-3 md:gap-6">
         <div className="flex gap-3">
+          <div className="hidden sm:flex items-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-arcade-card p-1">
+            <button
+              onClick={() => onLanguageChange('ru')}
+              className={`px-2.5 py-1.5 text-xs font-black rounded-lg transition-colors ${language === 'ru' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+            >
+              {text.langRu || 'RU'}
+            </button>
+            <button
+              onClick={() => onLanguageChange('kz')}
+              className={`px-2.5 py-1.5 text-xs font-black rounded-lg transition-colors ${language === 'kz' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+            >
+              {text.langKz || 'KZ'}
+            </button>
+          </div>
+
           {/* Notification Button */}
           <button 
             onClick={onNotificationsClick}
@@ -72,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
           {/* Logout Button */}
           <button
             onClick={onLogout}
-            title="Выйти"
+            title={text.logout || 'Выйти'}
             className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-white dark:bg-arcade-card border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-500/20 transition-all active:scale-95 shadow-sm"
           >
             <LogOut size={20} strokeWidth={2.5} />

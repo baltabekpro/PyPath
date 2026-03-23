@@ -1,6 +1,5 @@
 import { Course, User } from './types';
-import { Terminal, Database, Cpu, Globe, Code2, LineChart, Gamepad2, Rocket, Ghost, Zap, Skull, Lock, Box, Layers, ShieldAlert, Key, Flame, Bug, Gift, LockKeyhole, Target, Sword, Crown, AlertCircle, Search, Sparkles, LayoutGrid, Map, Code, Bot, User as UserIcon, Trophy, Bell, CreditCard, Shield } from 'lucide-react';
-import React from 'react';
+import { Terminal, Database, Cpu, Code2, Gamepad2, Rocket, Ghost, Zap, Skull, Box, Layers, ShieldAlert, Key, Flame, Bug, Gift, LockKeyhole, Target, Sword, Crown, AlertCircle, Search, Sparkles, LayoutGrid, Map, Code, Bot, User as UserIcon, Trophy, Bell, CreditCard, Shield } from 'lucide-react';
 import { apiGet } from './api';
 
 let isInitialized = false;
@@ -10,6 +9,100 @@ const DEFAULT_UI_DATA = {
     sidebarNavItems: [],
     texts: {},
     editor: {},
+};
+
+export type AppLanguage = 'ru' | 'kz';
+const LANGUAGE_STORAGE_KEY = 'app-language';
+
+const isLanguage = (value: string | null): value is AppLanguage => value === 'ru' || value === 'kz';
+
+const getInitialLanguage = (): AppLanguage => {
+    if (typeof window === 'undefined') return 'ru';
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return isLanguage(stored) ? stored : 'ru';
+};
+
+export let APP_LANGUAGE: AppLanguage = getInitialLanguage();
+
+const VIEW_LABELS_KZ: Record<string, string> = {
+    DASHBOARD: 'Басты бет',
+    COURSES: 'Курстар',
+    PRACTICE: 'Арена',
+    AI_CHAT: 'Оракул',
+    PROFILE: 'Профиль',
+    LEADERBOARD: 'Рейтинг',
+    ACHIEVEMENTS: 'Жетістіктер',
+    SETTINGS: 'Баптаулар',
+    ADMIN: 'Әкімдік',
+};
+
+const KZ_TEXT_OVERRIDES = {
+    sidebar: {
+        logoLine1: 'Py',
+        logoLine2: 'Path',
+    },
+    header: {
+        xpLabel: 'XP',
+        logout: 'Шығу',
+        langRu: 'RU',
+        langKz: 'KZ',
+    },
+    app: {
+        notificationsTitle: 'Хабарламалар',
+        markAllRead: 'Барлығын оқылған деп белгілеу',
+        notificationsNew: 'Жаңа',
+        notificationsHistory: 'Тарих',
+        notificationsEmpty: 'Жаңа хабарлама жоқ',
+        loggedOut: 'Аккаунттан шықтыңыз',
+        noAdminAccess: 'Әкім панеліне кіруге құқық жеткіліксіз',
+        loadingData: 'Деректер жүктелуде...',
+        loadingAdmin: 'Әкім панелі жүктелуде...',
+        welcomePrefix: 'Қош келдіңіз',
+        langChangedRu: 'Орыс тілі қосылды',
+        langChangedKz: 'Қазақ тілі қосылды',
+    },
+    courses: {
+        backToLobby: 'Артқа',
+        mapTitle: 'Курстар картасы',
+        season: 'Оқу маусымы',
+        currentLevel: 'Ағымдағы деңгей',
+        bossLabel: 'БОСС',
+        chapterPrefix: 'Тарау',
+        briefing: 'Брифинг',
+        difficulty: 'Қиындық',
+        acceptMission: 'Миссияны бастау',
+    },
+    dashboard: {
+        baseTitle: 'Сіздің оқу аймағыңыз',
+        streakLabel: 'Серия',
+        currentMission: 'Ағымдағы миссия',
+        progress: 'Прогресс',
+        start: 'Бастау',
+        dailyQuests: 'Күнделікті тапсырмалар',
+        details: 'Толығырақ',
+        statsTotalXp: 'Жалпы XP',
+        statsSolved: 'Шешілген есептер',
+        statsTime: 'Код уақыты',
+        hoursSuffix: 'с',
+        blitzTitle: 'Жылдам бастау',
+        blitzStart: 'Аренаны ашу',
+    },
+    settings: {
+        title: 'Баптаулар',
+        save: 'Сақтау',
+        saving: 'Сақталуда...',
+        saved: 'Сақталды',
+        chooseAvatar: 'Аватарды таңдаңыз',
+        nickname: 'Никнейм',
+        about: 'Өзіңіз туралы',
+        charsLeft: 'Қалған таңба',
+        notificationsTitle: 'Хабарлама баптаулары',
+    },
+    profile: {
+        edit: 'Өңдеу',
+        defaultBio: 'Python әлеміндегі жаңа саяхатшы',
+        toastShared: 'Профиль сілтемесі бөлісілді',
+    },
 };
 
 // API-first app state (no frontend mock dataset)
@@ -53,17 +146,45 @@ export let AI_CHAT_DATA = UI_DATA?.aiChat ?? {};
 export let AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
 export let EDITOR_UI = UI_DATA?.editor ?? {};
 export let UI_TEXTS = UI_DATA?.texts ?? {};
+let RAW_UI_DATA: any = DEFAULT_UI_DATA;
 
-const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
-    try {
-        return await apiGet<T>(path);
-    } catch {
-        return null;
+const isObject = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const deepMerge = <T extends Record<string, any>>(base: T, override: Record<string, any>): T => {
+    const output: Record<string, any> = { ...base };
+    for (const [key, value] of Object.entries(override)) {
+        const current = output[key];
+        if (isObject(current) && isObject(value)) {
+            output[key] = deepMerge(current, value);
+        } else {
+            output[key] = value;
+        }
     }
+    return output as T;
 };
 
-const applyUiData = (uiData: any) => {
-    UI_DATA = { ...DEFAULT_UI_DATA, ...(uiData || {}) };
+const localizeTexts = (texts: any) => {
+    const base = isObject(texts) ? texts : {};
+    return APP_LANGUAGE === 'kz' ? deepMerge(base, KZ_TEXT_OVERRIDES) : base;
+};
+
+const localizeSidebarNavItems = (items: any[]) => {
+    if (!Array.isArray(items)) return [];
+    if (APP_LANGUAGE !== 'kz') return items;
+    return items.map((item: any) => {
+        const translatedLabel = VIEW_LABELS_KZ[String(item?.view || '')];
+        if (!translatedLabel) return item;
+        return { ...item, label: translatedLabel };
+    });
+};
+
+const refreshLocalizedUi = () => {
+    const source = { ...DEFAULT_UI_DATA, ...(RAW_UI_DATA || {}) };
+    UI_DATA = {
+        ...source,
+        sidebarNavItems: localizeSidebarNavItems(source?.sidebarNavItems ?? []),
+        texts: localizeTexts(source?.texts),
+    };
     SIDEBAR_NAV_ITEMS = UI_DATA?.sidebarNavItems ?? [];
     SETTINGS_UI = UI_DATA?.settings ?? {};
     PROFILE_UI = UI_DATA?.profile ?? {};
@@ -74,6 +195,27 @@ const applyUiData = (uiData: any) => {
     AI_CHAT_PAGE_DATA = UI_DATA?.aiChatPage ?? {};
     EDITOR_UI = UI_DATA?.editor ?? {};
     UI_TEXTS = UI_DATA?.texts ?? {};
+};
+
+export const setAppLanguage = (language: AppLanguage) => {
+    APP_LANGUAGE = language;
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    }
+    refreshLocalizedUi();
+};
+
+const safeFetchJson = async <T,>(path: string): Promise<T | null> => {
+    try {
+        return await apiGet<T>(path);
+    } catch {
+        return null;
+    }
+};
+
+const applyUiData = (uiData: any) => {
+    RAW_UI_DATA = { ...DEFAULT_UI_DATA, ...(uiData || {}) };
+    refreshLocalizedUi();
 };
 
 export const initializeAppData = async (): Promise<void> => {

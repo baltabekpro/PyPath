@@ -13,7 +13,7 @@ import { Achievements } from './components/Achievements';
 import { AIChatPage } from './components/AIChatPage';
 import { AuthPage } from './components/AuthPage';
 import { Menu, Bell } from 'lucide-react';
-import { UI_TEXTS, initializeAppData, CURRENT_USER } from './constants';
+import { UI_TEXTS, initializeAppData, CURRENT_USER, APP_LANGUAGE, setAppLanguage, type AppLanguage } from './constants';
 import { ActionToast } from './components/ActionToast';
 import { apiGet, notificationsApi, type NotificationItem } from './api';
 
@@ -34,6 +34,7 @@ const App: React.FC = () => {
     const stored = localStorage.getItem('theme');
     return stored === 'dark' ? 'dark' : 'light';
   });
+  const [language, setLanguage] = useState<AppLanguage>(APP_LANGUAGE);
   const role = String(currentUser?.settings?.role ?? currentUser?.role ?? '').toLowerCase();
   const isAdmin = role === 'admin' || Boolean(currentUser?.settings?.is_admin);
 
@@ -93,17 +94,27 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleAuthSuccess = (token: string, user: any) => {
+  const handleAuthSuccess = (_token: string, user: any) => {
     setCurrentUser(user);
     setIsAuthenticated(true);
-    showToast(`Добро пожаловать, ${user.name}!`, 'success');
+    const welcomePrefix = UI_TEXTS?.app?.welcomePrefix || (language === 'kz' ? 'Қош келдіңіз' : 'Добро пожаловать');
+    showToast(`${welcomePrefix}, ${user.name}!`, 'success');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsAuthenticated(false);
     setCurrentUser(CURRENT_USER);
-    showToast('Вы вышли из аккаунта', 'info');
+    showToast(UI_TEXTS?.app?.loggedOut || (language === 'kz' ? 'Аккаунттан шықтыңыз' : 'Вы вышли из аккаунта'), 'info');
+  };
+
+  const handleLanguageChange = (nextLanguage: AppLanguage) => {
+    if (nextLanguage === language) return;
+    setAppLanguage(nextLanguage);
+    setLanguage(nextLanguage);
+    const changedMessage = UI_TEXTS?.app?.[nextLanguage === 'kz' ? 'langChangedKz' : 'langChangedRu']
+      || (nextLanguage === 'kz' ? 'Қазақ тілі қосылды' : 'Русский язык включен');
+    showToast(changedMessage, 'success');
   };
 
   const showToast = (message: string, tone: 'success' | 'info' | 'warning' = 'info') => {
@@ -114,7 +125,7 @@ const App: React.FC = () => {
 
   const handleViewChange = (view: View) => {
     if (view === View.ADMIN && !isAdmin) {
-      showToast('Недостаточно прав для админки', 'warning');
+      showToast(UI_TEXTS?.app?.noAdminAccess || (language === 'kz' ? 'Әкім панеліне кіруге құқық жеткіліксіз' : 'Недостаточно прав для админки'), 'warning');
       return;
     }
     setCurrentView(view);
@@ -156,7 +167,7 @@ const App: React.FC = () => {
               <div className="min-h-[40vh] flex items-center justify-center">
                 <div className="text-center">
                   <div className="size-8 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Загружаем админку...</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{UI_TEXTS?.app?.loadingAdmin || (language === 'kz' ? 'Әкім панелі жүктелуде...' : 'Загружаем админку...')}</p>
                 </div>
               </div>
             }
@@ -174,7 +185,7 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-slate-100 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="size-10 border-2 border-py-accent border-t-py-green rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-slate-500 dark:text-slate-300">Загружаем данные...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300">{UI_TEXTS?.app?.loadingData || (language === 'kz' ? 'Деректер жүктелуде...' : 'Загружаем данные...')}</p>
         </div>
       </div>
     );
@@ -224,6 +235,8 @@ const App: React.FC = () => {
               onMenuClick={() => setIsMobileMenuOpen(true)} 
               onProfileClick={() => handleViewChange(View.PROFILE)}
               onLogout={handleLogout}
+              language={language}
+              onLanguageChange={handleLanguageChange}
               onNotificationsClick={() => {
                 const next = !showNotifications;
                 setShowNotifications(next);
@@ -254,7 +267,7 @@ const App: React.FC = () => {
                   {appText.notificationsTitle}
                 </h3>
                 <div className="space-y-2 mb-3">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Новые</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">{appText.notificationsNew || (language === 'kz' ? 'Жаңа' : 'Новые')}</p>
                   <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
                     {appNotifications.filter((n) => !n.read).map((item) => (
                       <div key={item.id} className="bg-slate-50 dark:bg-black/20 p-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors">
@@ -263,12 +276,12 @@ const App: React.FC = () => {
                       </div>
                     ))}
                     {appNotifications.filter((n) => !n.read).length === 0 && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Нет новых уведомлений</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{appText.notificationsEmpty || (language === 'kz' ? 'Жаңа хабарлама жоқ' : 'Нет новых уведомлений')}</p>
                     )}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">История</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">{appText.notificationsHistory || (language === 'kz' ? 'Тарих' : 'История')}</p>
                   <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
                     {appNotifications.filter((n) => n.read).map((item) => (
                       <div key={item.id} className="bg-slate-50 dark:bg-black/10 p-3 rounded-xl border border-slate-200 dark:border-white/10 opacity-80">

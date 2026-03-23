@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Zap, Bot, ChevronRight, AlertCircle } from 'lucide-react';
-import { AI_CHAT_DATA, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
+import { AI_CHAT_DATA, APP_LANGUAGE, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 import { aiChat } from '../api';
 
 interface Message {
@@ -15,6 +15,12 @@ interface AIChatProps {
 }
 
 export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const lt = {
+        fallbackError: isKz ? 'Кешіріңіз, қате орын алды. Қайтадан көріңіз!' : 'Извини, произошла ошибка. Попробуй еще раз!',
+        bugWord: isKz ? 'қате' : 'ошибк',
+        hintWord: isKz ? 'кеңес' : 'подсказк',
+    };
     const [isOpen, setIsOpen] = useState(embedded);
   const [oracleState, setOracleState] = useState<'idle' | 'analyzing' | 'alert'>('idle');
   const [energy, setEnergy] = useState(5);
@@ -93,11 +99,11 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
       let msgType: 'text' | 'hint' | 'error' = 'text';
       const lower = text.toLowerCase();
       
-      if (lower.includes('ошибк') || lower.includes('не так') || lower.includes('bug')) {
+            if (lower.includes(lt.bugWord) || lower.includes('не так') || lower.includes('bug')) {
         msgType = 'error';
         setOracleState('alert');
         setTimeout(() => setOracleState('idle'), 5000);
-      } else if (lower.includes('подсказк') || lower.includes('hint')) {
+            } else if (lower.includes(lt.hintWord) || lower.includes('hint')) {
         msgType = 'hint';
         if (energy > 0) {
           setEnergy(e => e - 1);
@@ -121,7 +127,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
       // Fallback to mock response on error
       const fallbackMsg: Message = { 
         id: (Date.now() + 1).toString(), 
-        text: responses.default || 'Извини, произошла ошибка. Попробуй еще раз!', 
+                text: responses.default || lt.fallbackError,
         sender: 'ai',
         type: 'error'
       };

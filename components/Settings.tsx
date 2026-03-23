@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
-import { CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
+import { APP_LANGUAGE, CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
 import { apiPut, authApi, notificationsApi } from '../api';
 
 type SettingsTab = 'profile' | 'appearance' | 'notifications';
 
-const DEFAULT_SETTINGS_TABS = [
-    { id: 'profile', label: 'Профиль', icon: 'User' },
-    { id: 'appearance', label: 'Оформление', icon: 'Sparkles' },
-    { id: 'notifications', label: 'Уведомления', icon: 'Bell' },
-];
-
-const DEFAULT_NOTIFICATION_OPTIONS = [
-    { label: 'Push уведомления', enabled: true },
-    { label: 'Email уведомления', enabled: false },
-    { label: 'Напоминания о практике', enabled: true },
-];
-
 const REMOVED_NOTIFICATION_LABELS = new Set(['Достижения друзей', 'Ответы ментора']);
 
-const normalizeNotificationOptions = (options: any[] | undefined | null) => {
+const getDefaultSettingsTabs = (isKz: boolean) => [
+    { id: 'profile', label: isKz ? 'Профиль' : 'Профиль', icon: 'User' },
+    { id: 'appearance', label: isKz ? 'Безендіру' : 'Оформление', icon: 'Sparkles' },
+    { id: 'notifications', label: isKz ? 'Хабарламалар' : 'Уведомления', icon: 'Bell' },
+];
+
+const getDefaultNotificationOptions = (isKz: boolean) => [
+    { label: isKz ? 'Push хабарламалар' : 'Push уведомления', enabled: true },
+    { label: isKz ? 'Email хабарламалар' : 'Email уведомления', enabled: false },
+    { label: isKz ? 'Практика еске салғыштары' : 'Напоминания о практике', enabled: true },
+];
+
+const normalizeNotificationOptions = (options: any[] | undefined | null, fallback: any[]) => {
     const list = Array.isArray(options) ? options : [];
     const normalized = list
         .filter((item: any) => item && typeof item.label === 'string' && !REMOVED_NOTIFICATION_LABELS.has(item.label))
@@ -29,18 +29,43 @@ const normalizeNotificationOptions = (options: any[] | undefined | null) => {
             enabled: Boolean(item.enabled),
         }));
 
-    return normalized.length > 0 ? normalized : DEFAULT_NOTIFICATION_OPTIONS;
+    return normalized.length > 0 ? normalized : fallback;
 };
 
 const DEFAULT_PRESET_AVATARS = ['PyPath', 'CodeNinja', 'ByteMage', 'DebugHero', 'NeonFox'];
 
 export const Settings: React.FC = () => {
+    const isKz = APP_LANGUAGE === 'kz';
     const inputClass = 'w-full bg-white dark:bg-[#0b1220] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-arcade-primary outline-none transition-colors shadow-inner';
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+    const defaultSettingsTabs = getDefaultSettingsTabs(isKz);
+    const defaultNotificationOptions = getDefaultNotificationOptions(isKz);
     const presetAvatars = SETTINGS_UI?.presetAvatars?.length ? SETTINGS_UI.presetAvatars : DEFAULT_PRESET_AVATARS;
-    const tabs = SETTINGS_UI?.tabs?.length ? SETTINGS_UI.tabs : DEFAULT_SETTINGS_TABS;
-    const notificationOptions = normalizeNotificationOptions(SETTINGS_UI?.notificationOptions);
+    const tabs = SETTINGS_UI?.tabs?.length ? SETTINGS_UI.tabs : defaultSettingsTabs;
+    const notificationOptions = normalizeNotificationOptions(SETTINGS_UI?.notificationOptions, defaultNotificationOptions);
     const text = UI_TEXTS?.settings ?? {};
+    const localText = {
+        syncFailed: isKz ? 'Хабарламаларды синхрондау сәтсіз аяқталды' : 'Не удалось синхронизировать уведомления',
+        fillPasswordFields: isKz ? 'Пароль өрістерін толтырыңыз' : 'Заполните все поля пароля',
+        passwordMismatch: isKz ? 'Жаңа пароль мен растау сәйкес емес' : 'Новый пароль и подтверждение не совпадают',
+        passwordChanged: isKz ? 'Пароль сәтті өзгертілді' : 'Пароль успешно изменён',
+        passwordChangeFailed: isKz ? 'Парольді өзгерту мүмкін болмады' : 'Не удалось изменить пароль',
+        themeLightEnabled: isKz ? 'Ашық тақырып қосылды' : 'Светлая тема включена',
+        themeDarkEnabled: isKz ? 'Қараңғы тақырып қосылды' : 'Тёмная тема включена',
+        email: isKz ? 'Email' : 'Email',
+        changePassword: isKz ? 'Парольді өзгерту' : 'Изменить пароль',
+        currentPassword: isKz ? 'Ағымдағы пароль' : 'Текущий пароль',
+        newPassword: isKz ? 'Жаңа пароль' : 'Новый пароль',
+        confirmPassword: isKz ? 'Парольді растаңыз' : 'Подтвердите пароль',
+        changing: isKz ? 'Өзгертілуде...' : 'Изменение...',
+        change: isKz ? 'Өзгерту' : 'Сменить пароль',
+        appearanceTitle: isKz ? 'Интерфейс тақырыбы' : 'Тема интерфейса',
+        appearanceDescription: isKz ? 'Әдепкіде ашық дизайн қолданылады. Қараңғы режимге ауыса аласыз.' : 'По умолчанию используется светлый дизайн. Вы можете переключиться в тёмный режим.',
+        lightTheme: isKz ? 'Ашық тақырып' : 'Светлая тема',
+        lightThemeHint: isKz ? 'Теорияны оқу мен үйрену үшін ыңғайлы.' : 'Рекомендуется для обучения и чтения теории.',
+        darkTheme: isKz ? 'Қараңғы тақырып' : 'Тёмная тема',
+        darkThemeHint: isKz ? 'Кешкі режим және жоғары контраст үшін.' : 'Для вечернего режима и контрастного интерфейса.',
+    };
   
   // --- Profile State ---
   const [formData, setFormData] = useState({
@@ -63,7 +88,7 @@ export const Settings: React.FC = () => {
         if (savedNotifications) {
             try {
                 const parsed = JSON.parse(savedNotifications);
-                setNotificationState(normalizeNotificationOptions(parsed));
+                setNotificationState(normalizeNotificationOptions(parsed, defaultNotificationOptions));
             } catch {
             }
         }
@@ -81,7 +106,7 @@ export const Settings: React.FC = () => {
             try {
                 const result = await notificationsApi.getPreferences();
                 if (result?.preferences?.length) {
-                    const sanitized = normalizeNotificationOptions(result.preferences);
+                    const sanitized = normalizeNotificationOptions(result.preferences, defaultNotificationOptions);
                     setNotificationState(sanitized);
                     localStorage.setItem('notifications', JSON.stringify(sanitized));
                 }
@@ -140,7 +165,7 @@ export const Settings: React.FC = () => {
             try {
                 await notificationsApi.updatePreferences(next);
             } catch {
-                showAction('Не удалось синхронизировать уведомления');
+                showAction(localText.syncFailed);
             }
     };
 
@@ -154,11 +179,11 @@ export const Settings: React.FC = () => {
 
   const handleChangePassword = async () => {
       if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
-          showAction('Заполните все поля пароля');
+          showAction(localText.fillPasswordFields);
           return;
       }
       if (passwords.newPassword !== passwords.confirmPassword) {
-          showAction('Новый пароль и подтверждение не совпадают');
+          showAction(localText.passwordMismatch);
           return;
       }
 
@@ -166,9 +191,9 @@ export const Settings: React.FC = () => {
       try {
           await authApi.changePassword(passwords.currentPassword, passwords.newPassword, passwords.confirmPassword);
           setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-          showAction('Пароль успешно изменён');
+          showAction(localText.passwordChanged);
       } catch {
-          showAction('Не удалось изменить пароль');
+          showAction(localText.passwordChangeFailed);
       } finally {
           setIsChangingPassword(false);
       }
@@ -185,7 +210,7 @@ export const Settings: React.FC = () => {
       setThemeMode(mode);
       localStorage.setItem('theme', mode);
       window.dispatchEvent(new CustomEvent('app-theme-changed'));
-      showAction(mode === 'light' ? 'Светлая тема включена' : 'Тёмная тема включена');
+      showAction(mode === 'light' ? localText.themeLightEnabled : localText.themeDarkEnabled);
   };
 
   return (
@@ -293,7 +318,7 @@ export const Settings: React.FC = () => {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-600 dark:text-gray-400 uppercase flex items-center gap-2">
-                                    <Mail size={14} /> Email
+                                    <Mail size={14} /> {localText.email}
                                 </label>
                                 <input 
                                     name="email"
@@ -334,28 +359,28 @@ export const Settings: React.FC = () => {
                         {/* Password Change */}
                         <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
                             <h3 className="text-slate-900 dark:text-white font-bold flex items-center gap-2">
-                                <Lock size={16} /> Изменить пароль
+                                <Lock size={16} /> {localText.changePassword}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <input
                                     type="password"
                                     value={passwords.currentPassword}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, currentPassword: e.target.value }))}
-                                    placeholder="Текущий пароль"
+                                    placeholder={localText.currentPassword}
                                     className={inputClass}
                                 />
                                 <input
                                     type="password"
                                     value={passwords.newPassword}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, newPassword: e.target.value }))}
-                                    placeholder="Новый пароль"
+                                    placeholder={localText.newPassword}
                                     className={inputClass}
                                 />
                                 <input
                                     type="password"
                                     value={passwords.confirmPassword}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                                    placeholder="Подтвердите пароль"
+                                    placeholder={localText.confirmPassword}
                                     className={inputClass}
                                 />
                             </div>
@@ -365,7 +390,7 @@ export const Settings: React.FC = () => {
                                     disabled={isChangingPassword}
                                     className="px-5 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white disabled:opacity-60"
                                 >
-                                    {isChangingPassword ? 'Изменение...' : 'Сменить пароль'}
+                                    {isChangingPassword ? localText.changing : localText.change}
                                 </button>
                             </div>
                         </div>
@@ -375,22 +400,22 @@ export const Settings: React.FC = () => {
 
                             {activeTab === 'appearance' && (
                                 <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-white/10 rounded-2xl p-4 md:p-6 animate-fade-in space-y-4">
-                                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">Тема интерфейса</h3>
-                                    <p className="text-slate-600 dark:text-gray-400 text-sm">По умолчанию используется светлый дизайн. Вы можете переключиться в тёмный режим.</p>
+                                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">{localText.appearanceTitle}</h3>
+                                    <p className="text-slate-600 dark:text-gray-400 text-sm">{localText.appearanceDescription}</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <button
                                             onClick={() => setTheme('light')}
                                             className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'light' ? 'border-emerald-400 bg-emerald-500/10 text-slate-900 dark:text-white' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-black/30'}`}
                                         >
-                                            <p className="font-bold">Светлая тема</p>
-                                            <p className="text-xs opacity-80 mt-1">Рекомендуется для обучения и чтения теории.</p>
+                                            <p className="font-bold">{localText.lightTheme}</p>
+                                            <p className="text-xs opacity-80 mt-1">{localText.lightThemeHint}</p>
                                         </button>
                                         <button
                                             onClick={() => setTheme('dark')}
                                             className={`p-4 rounded-xl border text-left transition-colors ${themeMode === 'dark' ? 'border-purple-400 bg-purple-500/10 text-slate-900 dark:text-white' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-black/30'}`}
                                         >
-                                            <p className="font-bold">Тёмная тема</p>
-                                            <p className="text-xs opacity-80 mt-1">Для вечернего режима и контрастного интерфейса.</p>
+                                            <p className="font-bold">{localText.darkTheme}</p>
+                                            <p className="text-xs opacity-80 mt-1">{localText.darkThemeHint}</p>
                                         </button>
                                     </div>
                                 </div>

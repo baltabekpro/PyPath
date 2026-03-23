@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Sparkles, Share2, X } from 'lucide-react';
-import { UI_TEXTS, getIconComponent } from '../constants';
+import { APP_LANGUAGE, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
 import { apiGet } from '../api';
 
@@ -39,11 +39,16 @@ const RARITY_STYLES = {
 };
 
 export const Achievements: React.FC = () => {
+    const isKz = APP_LANGUAGE === 'kz';
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [filter, setFilter] = useState<Category>('all');
     const [shareStatus, setShareStatus] = useState('');
     const [achievements, setAchievements] = useState<any[]>([]);
     const text = UI_TEXTS?.achievements ?? {};
+    const localText = {
+        emptyTitle: isKz ? 'Жетістіктер әзірге қолжетімсіз' : 'Достижения пока недоступны',
+        emptyDescription: isKz ? 'Деректер пайда болғанда, барлық марапаттар осы жерде көрсетіледі.' : 'Когда данные появятся, все награды отобразятся здесь.',
+    };
     const rarity = text.rarity ?? {};
     const ranks = text.ranks ?? [];
     const stats = text.stats ?? {};
@@ -158,8 +163,8 @@ export const Achievements: React.FC = () => {
             {/* Trophy Grid */}
             {filteredList.length === 0 ? (
                 <div className="bg-white dark:bg-black/20 border border-white/10 rounded-2xl p-8 text-center">
-                    <p className="text-slate-900 dark:text-white font-bold mb-2">Достижения пока недоступны</p>
-                    <p className="text-slate-600 dark:text-gray-400 text-sm">Когда данные появятся, все награды отобразятся здесь.</p>
+                    <p className="text-slate-900 dark:text-white font-bold mb-2">{localText.emptyTitle}</p>
+                    <p className="text-slate-600 dark:text-gray-400 text-sm">{localText.emptyDescription}</p>
                 </div>
             ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">

@@ -1,9 +1,10 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { MessageSquare, Heart, Share2, MoreHorizontal, Image, Code, Hash, TrendingUp, Search, Filter } from 'lucide-react';
-import { COMMUNITY_UI, CURRENT_USER, UI_TEXTS } from '../constants';
+import { APP_LANGUAGE, COMMUNITY_UI, CURRENT_USER, UI_TEXTS } from '../constants';
 import { apiGet, apiPost } from '../api';
 
 export const Community: React.FC = () => {
+    const isKz = APP_LANGUAGE === 'kz';
     const [activeTab, setActiveTab] = useState<'popular' | 'fresh'>('popular');
     const [posts, setPosts] = useState<any[]>([]);
     const [draftPost, setDraftPost] = useState('');
@@ -13,6 +14,10 @@ export const Community: React.FC = () => {
     const topTags = COMMUNITY_UI?.topTags ?? [];
     const topContributors = COMMUNITY_UI?.topContributors ?? [];
     const text = UI_TEXTS?.community ?? {};
+    const localText = {
+        newTag: isKz ? 'ЖаңаЖазба' : 'НовыйПост',
+        shareTitle: isKz ? 'PyPath жазбасы' : 'PyPath Post',
+    };
 
     useEffect(() => {
         const loadPosts = async () => {
@@ -54,7 +59,7 @@ export const Community: React.FC = () => {
       try {
           const created = await apiPost<any>('/posts', {
               content: textValue,
-              tags: ['НовыйПост']
+              tags: [localText.newTag]
           });
           setPosts((prev) => [created, ...prev]);
       } catch {
@@ -88,7 +93,7 @@ export const Community: React.FC = () => {
       try {
           if (navigator.share) {
               await navigator.share({
-                  title: 'PyPath Post',
+                  title: localText.shareTitle,
                   text: shareText,
                   url: shareUrl,
               });

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { COURSES, UI_TEXTS, getIcon } from '../constants';
+import { APP_LANGUAGE, COURSES, UI_TEXTS, getIcon } from '../constants';
 import { Lock, Star, Play, ChevronLeft, Award, Zap, Skull, Map as MapIcon, X, EyeOff } from 'lucide-react';
 import { View, Course } from '../types';
 import { apiGet } from '../api';
@@ -9,6 +9,20 @@ interface CoursesProps {
 }
 
 export const Courses: React.FC<CoursesProps> = ({ setView }) => {
+    const isKz = APP_LANGUAGE === 'kz';
+    const lt = {
+        back: isKz ? 'Артқа' : 'Назад',
+        mapTitle: isKz ? 'Курстар картасы' : 'Карта курсов',
+        season: isKz ? 'Оқу маусымы' : 'Сезон обучения',
+        noCoursesTitle: isKz ? 'Курстар әлі жүктелмеді' : 'Курсы пока не загружены',
+        noCoursesDesc: isKz ? 'Экран құрылымы сақталды. /courses API интеграциясын тексеріңіз.' : 'Структура экрана сохранена. Проверьте интеграцию данных API /courses.',
+        returnHome: isKz ? 'Басты бетке оралу' : 'Вернуться на главную',
+        gradePre: isKz ? '8/9 дейін' : 'До 8/9',
+        gradeClass: isKz ? 'сынып' : 'класс',
+        progress: isKz ? 'Прогресс' : 'Прогресс',
+        lessons: isKz ? 'Сабақтар' : 'Уроки',
+        topicPractice: isKz ? 'Тақырып практикасы' : 'Практика темы',
+    };
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedLevel, setSelectedLevel] = useState<Course | null>(null);
   const [shakingId, setShakingId] = useState<number | null>(null);
@@ -111,13 +125,13 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
        <header className="z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10 p-4 flex items-center justify-between sticky top-0 shadow-sm">
            <button onClick={() => setView(View.DASHBOARD)} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                <ChevronLeft size={20} />
-               <span className="font-bold text-sm uppercase tracking-wider hidden sm:inline">{text.backToLobby || 'Назад'}</span>
+               <span className="font-bold text-sm uppercase tracking-wider hidden sm:inline">{text.backToLobby || lt.back}</span>
            </button>
            <div className="flex flex-col items-center">
-               <h1 className="text-slate-900 dark:text-white font-display font-black text-lg tracking-tight">{text.mapTitle || 'Карта курсов'}</h1>
+               <h1 className="text-slate-900 dark:text-white font-display font-black text-lg tracking-tight">{text.mapTitle || lt.mapTitle}</h1>
                <div className="flex items-center gap-1.5 text-[10px] font-bold text-arcade-action uppercase tracking-widest">
                    <MapIcon size={12} />
-                   <span>{text.season || 'Сезон обучения'} {currentSeason}</span>
+                   <span>{text.season || lt.season} {currentSeason}</span>
                </div>
                <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
                     Journey: {completedJourneyPractices}/{totalJourneyPractices} ({journeyPercent}%)
@@ -142,13 +156,13 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                              {courses.length === 0 && (
                                      <div className="absolute inset-0 flex items-center justify-center z-20 px-6">
                                              <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 text-center">
-                                                     <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">Курсы пока не загружены</h3>
-                                                     <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">Структура экрана сохранена. Проверьте интеграцию данных API /courses.</p>
+                                                     <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">{lt.noCoursesTitle}</h3>
+                                                     <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">{lt.noCoursesDesc}</p>
                                                      <button
                                                          onClick={() => setView(View.DASHBOARD)}
                                                          className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold"
                                                      >
-                                                         Вернуться на главную
+                                                         {lt.returnHome}
                                                      </button>
                                              </div>
                                      </div>
@@ -208,7 +222,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                    </span>
                                                                      {course.gradeBand && (
                                                                             <span className="text-[10px] text-emerald-700 dark:text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-wider mt-1 block">
-                                                                                {course.gradeBand === 'pre' ? 'До 8/9' : `${course.gradeBand} класс`}
+                                                                                {course.gradeBand === 'pre' ? lt.gradePre : `${course.gradeBand} ${lt.gradeClass}`}
                                                                             </span>
                                                                      )}
                                </div>
@@ -258,7 +272,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                            <div className="bg-slate-100 dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
                                <Award size={20} className="text-yellow-400" />
                                <div>
-                                   <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase">Прогресс</p>
+                                   <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase">{lt.progress}</p>
                                    <p className="font-bold text-slate-900 dark:text-white">{selectedLevel.progress}%</p>
                                </div>
                            </div>
@@ -273,13 +287,13 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
 
                        {typeof selectedLevel.completedLessons === 'number' && (
                            <div className="text-xs text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
-                               Уроки: <span className="text-slate-900 dark:text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}
+                               {lt.lessons}: <span className="text-slate-900 dark:text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}
                            </div>
                        )}
 
                        {selectedJourneyTopic && (
                            <div className="text-xs text-slate-700 dark:text-slate-300 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-                               Практика темы: <span className="text-emerald-800 font-bold">{selectedJourneyProgress.completedPractices.length}</span> / {Array.isArray(selectedJourneyTopic.practices) ? selectedJourneyTopic.practices.length : 0}
+                               {lt.topicPractice}: <span className="text-emerald-800 font-bold">{selectedJourneyProgress.completedPractices.length}</span> / {Array.isArray(selectedJourneyTopic.practices) ? selectedJourneyTopic.practices.length : 0}
                            </div>
                        )}
 
