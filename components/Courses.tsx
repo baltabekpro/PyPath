@@ -17,6 +17,35 @@ const localizeCourseMeta = (course: Course, isKz: boolean) => {
         };
     }
 
+    const translate = (value: string) => {
+        const replacements: Array<[RegExp, string]> = [
+            [/^Глава\s*(\d+)\s*:\s*/i, 'Тарау $1: '],
+            [/Первые шаги/gi, 'Алғашқы қадамдар'],
+            [/Переменные/gi, 'Айнымалылар'],
+            [/и числа/gi, 'және сандар'],
+            [/Условия/gi, 'Шарттар'],
+            [/Циклы/gi, 'Циклдер'],
+            [/Функции/gi, 'Функциялар'],
+            [/Тестовый курс/gi, 'Тест курсы'],
+            [/Пробуждение ИИ/gi, 'ИИ оянуы'],
+            [/Общий модуль/gi, 'Жалпы модуль'],
+            [/Подготовка к 8\/9/gi, '8/9 сыныпқа дайындық'],
+            [/8 класс/gi, '8 сынып'],
+            [/9 класс/gi, '9 сынып'],
+            [/Очень лёгкий/gi, 'Өте жеңіл'],
+            [/Лёгкий/gi, 'Жеңіл'],
+            [/Средний/gi, 'Орта'],
+            [/Босс/gi, 'Босс'],
+            [/Практика/gi, 'Практика'],
+            [/Теория/gi, 'Теория'],
+        ];
+        return replacements.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), value);
+    };
+
+    const fallbackTitle = translate(course.title || '');
+    const fallbackDescription = translate(course.description || '');
+    const fallbackDifficulty = translate(course.difficulty || '');
+
     const byId: Record<number, { title: string; description: string; difficulty: string }> = {
         1: {
             title: '1-тарау: Алғашқы қадамдар',
@@ -51,9 +80,9 @@ const localizeCourseMeta = (course: Course, isKz: boolean) => {
     };
 
     return byId[course.id] || {
-        title: course.title,
-        description: course.description,
-        difficulty: course.difficulty,
+        title: fallbackTitle,
+        description: fallbackDescription,
+        difficulty: fallbackDifficulty,
     };
 };
 
@@ -182,9 +211,9 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                    <MapIcon size={12} />
                    <span>{text.season || lt.season} {currentSeason}</span>
                </div>
-               <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
-                    Journey: {completedJourneyPractices}/{totalJourneyPractices} ({journeyPercent}%)
-               </div>
+            <div className="mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                {isKz ? 'Жол картасы' : 'Journey'}: {completedJourneyPractices}/{totalJourneyPractices} ({journeyPercent}%)
+            </div>
            </div>
            <div className="w-16"></div>
        </header>

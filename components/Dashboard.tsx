@@ -171,49 +171,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
       </div>
 
-      {/* NEW: Simple Learning Quick Access */}
-            <div
-                onClick={() => setView(View.COURSE_JOURNEY)}
-                className="relative"
-      >
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-        <div className="absolute -right-20 -bottom-20 size-80 bg-white/20 blur-[100px] rounded-full"></div>
-
-        <div className="relative flex flex-col md:flex-row items-center gap-6">
-          <div className="size-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-xl group-hover:scale-110 transition-transform duration-300">
-            <Award size={40} className="text-white" strokeWidth={2.5} />
-          </div>
-
-          <div className="flex-1 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 text-white rounded-full border border-white/20 mb-3">
-              <Sparkles size={14} />
-              <span className="text-xs font-black uppercase tracking-wider">{isKz ? 'Жаңа' : 'Новое'}</span>
-            </div>
-            <h2 className="text-3xl font-display font-black text-white mb-2">
-              {isKz ? 'Менің оқу жолым' : 'Моё обучение'}
-            </h2>
-            <p className="text-white/90 text-sm md:text-base mb-4">
-              {isKz ? 'Python негіздерін қадамдап үйрен. Теория + практика бір жерде!' : 'Изучай основы Python шаг за шагом. Теория + практика в одном месте!'}
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-              <div className="px-3 py-1 bg-white/20 rounded-lg text-xs text-white font-semibold">✅ {isKz ? 'Қарапайым интерфейс' : 'Простой интерфейс'}</div>
-              <div className="px-3 py-1 bg-white/20 rounded-lg text-xs text-white font-semibold">📚 {isKz ? 'Толық теория' : 'Полная теория'}</div>
-              <div className="px-3 py-1 bg-white/20 rounded-lg text-xs text-white font-semibold">💻 {isKz ? 'Практикалық тапсырмалар' : 'Практические задания'}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              className="px-8 py-4 rounded-2xl bg-white text-emerald-600 font-black text-lg hover:scale-110 active:scale-95 transition-all shadow-xl flex items-center gap-2"
-              onClick={() => setView(View.COURSE_JOURNEY)}
-            >
-              {isKz ? 'Бастау' : 'Начать'}
-              <ChevronRight size={24} strokeWidth={3} />
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Main Column */}

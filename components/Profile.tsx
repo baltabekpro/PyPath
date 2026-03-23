@@ -78,6 +78,27 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
     const text = UI_TEXTS?.profile ?? {};
         const battleStatText = text.battleStats ?? {};
 
+    const lt = {
+        skillsMatrix: isKz ? 'Дағдылар матрицасы' : 'Матрица навыков',
+        lastUpdated: isKz ? 'Жаңартылды' : 'Обновлено',
+        noSkillsTitle: isKz ? 'Дағдылар әлі толтырылмаған' : 'Навыки пока не заполнены',
+        noSkillsDesc: isKz ? 'Бірнеше тапсырманы орындаңыз — график автоматты түрде пайда болады.' : 'Решите несколько задач — график появится автоматически.',
+        taskLevelTitle: isKz ? 'Тапсырмалардан кейінгі деңгей' : 'Уровень после каждого задания',
+        lineChart: isKz ? 'Сызықтық динамика' : 'Линейная динамика',
+        topicProgress: isKz ? 'Тақырыптар бойынша прогресс' : 'Прогресс по темам',
+        notEnoughTasks: isKz ? 'Тапсырмалар бойынша дерек жеткіліксіз' : 'Недостаточно данных по заданиям',
+        notEnoughTopics: isKz ? 'Тақырыптар бойынша дерек жеткіліксіз' : 'Недостаточно данных по темам',
+        showcase: isKz ? 'Жетістіктер витринасы' : 'Витрина достижений',
+        personalMode: isKz ? 'Жеке режим' : 'Личный режим',
+        worldRank: isKz ? 'Әлемдік рейтинг' : 'Рейтинг мира',
+        currentLeague: isKz ? 'Ағымдағы лига' : 'Текущая лига',
+        streakDays: isKz ? 'Серия күн' : 'Серия дней',
+        openWorldRank: isKz ? 'Әлемдік рейтингті ашу' : 'Открыть рейтинг мира',
+        shareTitle: isKz ? 'PyPath профилі' : 'Профиль PyPath',
+        profileTitle: isKz ? 'Профиль' : 'Профиль',
+        edit: isKz ? 'Өңдеу' : 'Редактировать',
+    };
+
     const showAction = (message: string) => {
             setActionMessage(message);
             setTimeout(() => setActionMessage(''), 2200);
@@ -127,12 +148,12 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             {/* Top Actions */}
             <div className="absolute top-6 right-6 flex gap-3 z-20">
                 <button onClick={async () => {
-                    const shareText = `Профиль ${currentUser.name} на PyPath`;
+                    const shareText = isKz ? `${currentUser.name} - PyPath профилі` : `Профиль ${currentUser.name} на PyPath`;
                     const shareUrl = window.location.href;
                     try {
                         if (navigator.share) {
                             await navigator.share({
-                                title: 'Профиль PyPath',
+                                title: lt.shareTitle,
                                 text: shareText,
                                 url: shareUrl,
                             });
@@ -151,7 +172,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     className="p-2 bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-xl text-slate-800 dark:text-slate-200 dark:text-white hover:bg-white dark:hover:bg-white/20 transition-colors border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 flex items-center gap-2"
                 >
                     <Edit3 size={20} />
-                    <span className="text-sm font-bold hidden md:inline">{text.edit}</span>
+                    <span className="text-sm font-bold hidden md:inline">{text.edit || lt.edit}</span>
                 </button>
             </div>
         </div>
@@ -220,9 +241,9 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-display font-black text-xl text-slate-900 dark:text-white flex items-center gap-2">
                             <Zap size={20} className="text-yellow-400" />
-                                {text.skillsMatrix || 'Матрица навыков'}
+                                {text.skillsMatrix || lt.skillsMatrix}
                         </h3>
-                        <div className="text-xs font-bold text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-black/30 px-2 py-1 rounded">{text.lastUpdated || 'Обновлено'}: {lastUpdatedLabel}</div>
+                        <div className="text-xs font-bold text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-black/30 px-2 py-1 rounded">{text.lastUpdated || lt.lastUpdated}: {lastUpdatedLabel}</div>
                     </div>
                     
                     <div className="h-[300px] w-full relative z-10">
@@ -252,8 +273,8 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                         ) : (
                             <div className="h-full w-full flex items-center justify-center text-center px-6">
                                 <div className="bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-                                    <p className="text-slate-900 dark:text-white font-bold mb-1">Навыки пока не заполнены</p>
-                                    <p className="text-slate-600 dark:text-gray-400 text-sm">Решите несколько задач на арене — график появится автоматически.</p>
+                                    <p className="text-slate-900 dark:text-white font-bold mb-1">{lt.noSkillsTitle}</p>
+                                    <p className="text-slate-600 dark:text-gray-400 text-sm">{lt.noSkillsDesc}</p>
                                 </div>
                             </div>
                         )}
@@ -262,10 +283,10 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
 
                                 {/* Combined Progress Charts */}
                                 <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-6 border border-slate-200 dark:border-white/5">
-                                    <h3 className="font-display font-black text-xl text-slate-900 dark:text-white mb-4">Уровень после каждого задания</h3>
+                                    <h3 className="font-display font-black text-xl text-slate-900 dark:text-white mb-4">{lt.taskLevelTitle}</h3>
                                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                                         <div className="h-64 bg-slate-50 dark:bg-black/20 rounded-2xl p-3 border border-slate-200 dark:border-white/5">
-                                                        <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-2">Линейная динамика</p>
+                                                        <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-2">{lt.lineChart}</p>
                                                         {lineProgressData.length > 0 ? (
                                                             <ResponsiveContainer width="100%" height="90%">
                                                                 <LineChart data={lineProgressData}>
@@ -277,11 +298,11 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                                                 </LineChart>
                                                             </ResponsiveContainer>
                                                         ) : (
-                                                            <div className="h-full flex items-center justify-center text-sm text-slate-600 dark:text-gray-400">Недостаточно данных по заданиям</div>
+                                                            <div className="h-full flex items-center justify-center text-sm text-slate-600 dark:text-gray-400">{lt.notEnoughTasks}</div>
                                                         )}
                                                 </div>
                                                 <div className="h-64 bg-slate-50 dark:bg-black/20 rounded-2xl p-3 border border-slate-200 dark:border-white/5">
-                                                        <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-2">Прогресс по темам</p>
+                                                        <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-2">{lt.topicProgress}</p>
                                                         {topicProgressData.length > 0 ? (
                                                             <ResponsiveContainer width="100%" height="90%">
                                                                 <BarChart data={topicProgressData}>
@@ -293,7 +314,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                                                                 </BarChart>
                                                             </ResponsiveContainer>
                                                         ) : (
-                                                            <div className="h-full flex items-center justify-center text-sm text-slate-600 dark:text-gray-400">Недостаточно данных по темам</div>
+                                                                <div className="h-full flex items-center justify-center text-sm text-slate-600 dark:text-gray-400">{lt.notEnoughTopics}</div>
                                                         )}
                                                 </div>
                                         </div>
@@ -303,7 +324,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 <div>
                      <h3 className="font-display font-black text-xl text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                         <Trophy size={20} className="text-arcade-action" />
-                                {text.showcase || 'Витрина достижений'}
+                                {text.showcase || lt.showcase}
                      </h3>
                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
                          {(showcaseTrophies.length > 0 ? showcaseTrophies : Array.from({ length: 5 }, () => ({ locked: true }))).map((item: any, i: number) => {
@@ -331,23 +352,23 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             {/* --- RIGHT COLUMN --- */}
             <div className="space-y-8">
                 <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-6 border border-slate-200 dark:border-white/5">
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Личный режим</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">{lt.personalMode}</h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
-                            <span className="text-slate-600 dark:text-gray-400">Рейтинг мира</span>
+                            <span className="text-slate-600 dark:text-gray-400">{lt.worldRank}</span>
                             <span className="text-slate-900 dark:text-white font-bold">#{currentUser.rank}</span>
                         </div>
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
-                            <span className="text-slate-600 dark:text-gray-400">Текущая лига</span>
+                            <span className="text-slate-600 dark:text-gray-400">{lt.currentLeague}</span>
                             <span className="text-slate-900 dark:text-white font-bold">{currentUser.league || '—'}</span>
                         </div>
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
-                            <span className="text-slate-600 dark:text-gray-400">Серия дней</span>
+                            <span className="text-slate-600 dark:text-gray-400">{lt.streakDays}</span>
                             <span className="text-slate-900 dark:text-white font-bold">{currentUser.streak}</span>
                         </div>
                     </div>
                     <button onClick={() => setView(View.LEADERBOARD)} className="w-full mt-5 py-2 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs font-bold uppercase tracking-wider transition-colors">
-                        Открыть рейтинг мира
+                        {lt.openWorldRank}
                     </button>
                 </div>
 
