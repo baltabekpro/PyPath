@@ -204,6 +204,10 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     }
   }, [selectedTopic, selectedTopicId]);
 
+  const topicProgress: TopicProgress = selectedTopic
+    ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] }
+    : { theoryOpened: false, completedPractices: [] };
+
   useEffect(() => {
     if (!selectedTopic || topicProgress.theoryOpened) return;
     if (localStorage.getItem(AUTO_OPEN_THEORY_KEY) !== 'true') return;
@@ -223,10 +227,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   useEffect(() => {
     localStorage.setItem(ACTIVE_PAGE_KEY, activePage);
   }, [activePage]);
-
-  const topicProgress: TopicProgress = selectedTopic
-    ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] }
-    : { theoryOpened: false, completedPractices: [] };
 
   const theoryContent = useMemo(() => {
     if (!selectedTopic) return null;
