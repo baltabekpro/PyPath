@@ -22,7 +22,7 @@ from app.schemas.requests import (
     JourneyProgressUpdate,
 )
 from app.services.database_service import DatabaseService
-from app.api.dependencies import get_db_service, get_current_user_optional, get_current_user
+from app.api.dependencies import get_db_service, get_current_user_optional, get_current_user, get_request_language
 from app.services.ai_service import get_ai_service, AIService
 from app.core.rate_limit import rate_limiter
 
@@ -249,19 +249,21 @@ def get_progress_charts(
 @router.get("/courses", tags=["Courses"])
 def get_courses(
     user: Optional[User] = Depends(get_current_user_optional),
+    language: str = Depends(get_request_language),
     service: DatabaseService = Depends(get_db_service)
 ):
     """Get all available courses with progress tracking"""
-    return service.get_courses(user)
+    return service.get_courses(user, language)
 
 
 @router.get("/courses/journey", tags=["Courses"])
 def get_courses_journey(
     user: Optional[User] = Depends(get_current_user_optional),
+    language: str = Depends(get_request_language),
     service: DatabaseService = Depends(get_db_service)
 ):
     """Get course journey structure: theory first + 6/7 practices per topic."""
-    return service.get_course_journey(user)
+    return service.get_course_journey(user, language)
 
 
 @router.get("/courses/journey/progress", tags=["Courses"])
@@ -354,27 +356,16 @@ def delete_course(
 
 
 @router.get("/courses/{course_id}", tags=["Courses"])
-def get_course_by_id(course_id: int, service: DatabaseService = Depends(get_db_service)):
+def get_course_by_id(
+    course_id: int,
+    language: str = Depends(get_request_language),
+    service: DatabaseService = Depends(get_db_service),
+):
     """Get detailed information about specific course"""
     course = service.get_course_by_id(course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    
-    return {
-        "id": course.id,
-        "title": course.title,
-        "description": course.description,
-        "gradeBand": service._infer_course_meta(course).get("gradeBand"),
-        "section": service._infer_course_meta(course).get("section"),
-        "progress": course.progress,
-        "totalLessons": course.total_lessons,
-        "icon": course.icon,
-        "color": course.color,
-        "difficulty": course.difficulty,
-        "stars": course.stars,
-        "isBoss": course.is_boss,
-        "locked": course.locked
-    }
+    return service.serialize_course(course, language=language)
 
 
 @router.get("/leaderboard", tags=["Community"])
@@ -490,29 +481,12 @@ def get_achievements(
 
 
 @router.get("/missions", tags=["Missions"])
-def get_missions(service: DatabaseService = Depends(get_db_service)):
+def get_missions(
+    language: str = Depends(get_request_language),
+    service: DatabaseService = Depends(get_db_service),
+):
     """Get all available coding missions"""
-    missions = service.get_missions()
-    mission_ids = [m.id for m in missions]
-    response = []
-    for idx, m in enumerate(missions):
-        response.append(
-            {
-                "id": m.id,
-                "title": m.title,
-                "chapter": m.chapter,
-                "description": m.description,
-                "difficulty": m.difficulty,
-                "xpReward": m.xp_reward,
-                "objectives": m.objectives,
-                "starterCode": m.starter_code,
-                "testCases": m.test_cases,
-                "hints": m.hints,
-                "previousMissionId": mission_ids[idx - 1] if idx > 0 else None,
-                "nextMissionId": mission_ids[idx + 1] if idx < len(mission_ids) - 1 else None,
-            }
-        )
-    return response
+    return service.get_missions(language)
 
 
 @router.post("/missions", status_code=201, tags=["Missions"])
@@ -589,27 +563,23 @@ def delete_mission(
 
 
 @router.get("/missions/{mission_id}", tags=["Missions"])
-def get_mission_by_id(mission_id: str, service: DatabaseService = Depends(get_db_service)):
+def get_mission_by_id(
+    mission_id: str,
+    language: str = Depends(get_request_language),
+    service: DatabaseService = Depends(get_db_service),
+):
     """Get detailed mission with starter code, test cases, and hints"""
     mission = service.get_mission_by_id(mission_id)
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
     
     neighbors = service.get_mission_neighbors(mission_id)
-    return {
-        "id": mission.id,
-        "title": mission.title,
-        "chapter": mission.chapter,
-        "description": mission.description,
-        "difficulty": mission.difficulty,
-        "xpReward": mission.xp_reward,
-        "objectives": mission.objectives,
-        "starterCode": mission.starter_code,
-        "testCases": mission.test_cases,
-        "hints": mission.hints,
-        "previousMissionId": neighbors.get("previousMissionId"),
-        "nextMissionId": neighbors.get("nextMissionId"),
-    }
+    return service._localize_mission_item(
+        mission,
+        neighbors.get("previousMissionId"),
+        neighbors.get("nextMissionId"),
+        language,
+    )
 
 
 @router.get("/missions/{mission_id}/progress", tags=["Missions"])

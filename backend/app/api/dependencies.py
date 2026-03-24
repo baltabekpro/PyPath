@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import decode_access_token
 from app.core.database import get_db
+from app.core.locales import normalize_language
 from app.models.models import User
 from app.services.database_service import DatabaseService
 
@@ -59,3 +60,11 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="User not found")
     
     return user
+
+
+def get_request_language(
+    x_app_language: Optional[str] = Header(None, alias="X-App-Language"),
+    accept_language: Optional[str] = Header(None),
+) -> str:
+    """Get requested UI language from headers."""
+    return normalize_language(x_app_language or accept_language)

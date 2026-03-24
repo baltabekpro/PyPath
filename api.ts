@@ -3,6 +3,10 @@ const isVercelHost = typeof window !== 'undefined' && window.location.hostname.e
 const API_BASE_URL = isVercelHost ? '/api-proxy' : (envApiBaseUrl || 'http://localhost:8000');
 
 const buildUrl = (path: string) => `${API_BASE_URL}${path}`;
+const getAppLanguage = () => {
+  if (typeof window === 'undefined') return 'ru';
+  return localStorage.getItem('app-language') || 'ru';
+};
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = localStorage.getItem('token');
@@ -15,6 +19,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+
+  headers['X-App-Language'] = getAppLanguage();
 
   const response = await fetch(buildUrl(path), {
     ...init,

@@ -26,6 +26,7 @@ type LearningPage = 'theory' | 'practice';
 const ACTIVE_GRADE_KEY = 'courseJourneyActiveGradeV1';
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
+const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
 const PRACTICE_TOPIC_KEY = 'practicePrefillTopicIdV1';
 const PRACTICE_INDEX_KEY = 'practicePrefillIndexV1';
 
@@ -202,6 +203,13 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
       setSelectedTopicId(selectedTopic.id);
     }
   }, [selectedTopic, selectedTopicId]);
+
+  useEffect(() => {
+    if (!selectedTopic || topicProgress.theoryOpened) return;
+    if (localStorage.getItem(AUTO_OPEN_THEORY_KEY) !== 'true') return;
+    localStorage.removeItem(AUTO_OPEN_THEORY_KEY);
+    openTheory();
+  }, [selectedTopic, topicProgress.theoryOpened]);
 
   useEffect(() => {
     localStorage.setItem(ACTIVE_GRADE_KEY, grade);

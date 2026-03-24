@@ -4,6 +4,11 @@ import { APP_LANGUAGE, COURSES, CURRENT_USER, DASHBOARD_UI, MISSIONS, STATS, UI_
 import { View } from '../types';
 import { apiGet } from '../api';
 
+const ACTIVE_GRADE_KEY = 'courseJourneyActiveGradeV1';
+const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
+const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
+const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
+
 interface DashboardProps {
   setView: (view: View) => void;
 }
@@ -133,6 +138,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const summaryPre = buildJourneySummary('pre');
     const summary8 = buildJourneySummary('8');
     const summary9 = buildJourneySummary('9');
+
+    const openJourneyTheory = (grade: 'pre' | '8' | '9', topicId: string) => {
+        localStorage.setItem(ACTIVE_GRADE_KEY, grade);
+        localStorage.setItem(ACTIVE_TOPIC_KEY, topicId);
+        localStorage.setItem(ACTIVE_PAGE_KEY, 'theory');
+        localStorage.setItem(AUTO_OPEN_THEORY_KEY, 'true');
+        setView(View.COURSE_JOURNEY);
+    };
+
+    const preTopicCards = isKz ? [
+        { label: 'Алгоритмдік ойлау', topicId: 'course-1', grade: 'pre' as const },
+        { label: 'Блок-сызбалар және логика', topicId: 'course-1', grade: 'pre' as const },
+        { label: 'Айнымалылар және енгізу/шығару', topicId: 'course-2', grade: 'pre' as const },
+        { label: 'Алғашқы шарттар мен циклдер', topicId: 'course-3', grade: '8' as const },
+    ] : [
+        { label: 'Алгоритмическое мышление', topicId: 'course-1', grade: 'pre' as const },
+        { label: 'Блок-схемы и логика', topicId: 'course-1', grade: 'pre' as const },
+        { label: 'Переменные и ввод/вывод', topicId: 'course-2', grade: 'pre' as const },
+        { label: 'Первые условия и циклы', topicId: 'course-3', grade: '8' as const },
+    ];
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
@@ -281,14 +306,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
                         {/* Pre 8/9 + Python Topics */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+                            <div
+                                onClick={() => openJourneyTheory('pre', 'course-1')}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        openJourneyTheory('pre', 'course-1');
+                                    }
+                                }}
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:shadow-lg transition-all"
+                            >
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{lt.preTitle}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.preDesc}</p>
                                 <div className="space-y-2">
-                                    {preTopics.map((topic) => (
-                                        <div key={topic} className="text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-200">
-                                            {topic}
-                                        </div>
+                                    {preTopicCards.map((topic) => (
+                                        <button
+                                            key={topic.label}
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                openJourneyTheory(topic.grade, topic.topicId);
+                                            }}
+                                            className="w-full text-left text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                                        >
+                                            {topic.label}
+                                        </button>
                                     ))}
                                 </div>
                             </div>

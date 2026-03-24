@@ -14,6 +14,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onNotificationsClick, onLogout, language, onLanguageChange }) => {
   const [currentUser, setCurrentUser] = useState(CURRENT_USER);
+  const isKz = language === 'kz';
   const maxXp = currentUser.maxXp || 1000;
   const xpPercent = Math.min(100, Math.max(0, Math.round((currentUser.xp / maxXp) * 100)));
   const text = UI_TEXTS?.header ?? {};
@@ -89,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onProfileClick, onN
           {/* Logout Button */}
           <button
             onClick={onLogout}
-            title={text.logout || 'Выйти'}
+            title={text.logout || (isKz ? 'Шығу' : 'Выйти')}
             className="size-10 md:size-12 flex items-center justify-center rounded-2xl bg-white dark:bg-arcade-card border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-500/20 transition-all active:scale-95 shadow-sm"
           >
             <LogOut size={20} strokeWidth={2.5} />

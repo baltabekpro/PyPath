@@ -6,7 +6,7 @@ import { apiPut, authApi, notificationsApi } from '../api';
 
 type SettingsTab = 'profile' | 'appearance' | 'notifications';
 
-const REMOVED_NOTIFICATION_LABELS = new Set(['Достижения друзей', 'Ответы ментора']);
+const REMOVED_NOTIFICATION_LABELS = new Set(['Достижения друзей', 'Ответы ментора', 'Дос жетістіктері', 'Тәлімгер жауаптары']);
 
 const getDefaultSettingsTabs = (isKz: boolean) => [
     { id: 'profile', label: isKz ? 'Профиль' : 'Профиль', icon: 'User' },

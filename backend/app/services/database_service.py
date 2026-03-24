@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
+from app.core.locales import COURSE_TRANSLATIONS, MISSION_TRANSLATIONS, normalize_language
 from app.models.models import User, Post, Course, Mission, Achievement, LeaderboardEntry
 from app.schemas.requests import (
     UserUpdate,
@@ -211,6 +212,75 @@ class DatabaseService:
             return {"gradeBand": "9", "section": "9 класс: функции и проект"}
         return {"gradeBand": "common", "section": "Общий модуль"}
 
+    def _localize_course_item(self, item: dict, language: str) -> dict:
+        if normalize_language(language) != "kz":
+            return item
+
+        course_id = int(item.get("id") or 0)
+        translated = COURSE_TRANSLATIONS.get("kz", {}).get(course_id)
+        if not translated:
+            return item
+
+        unlock_requirement = item.get("unlockRequirement")
+        if unlock_requirement == "Завершите предыдущий сезон":
+            unlock_requirement = "Алдыңғы маусымды аяқтаңыз"
+        elif unlock_requirement == "Завершите предыдущий курс":
+            unlock_requirement = "Алдыңғы курсты аяқтаңыз"
+
+        return {
+            **item,
+            "title": translated.get("title", item.get("title")),
+            "description": translated.get("description", item.get("description")),
+            "section": translated.get("section", item.get("section")),
+            "unlockRequirement": unlock_requirement,
+        }
+
+    def _localize_mission_item(self, mission: Mission, previous_id: Optional[str], next_id: Optional[str], language: str) -> dict:
+        base = {
+            "id": mission.id,
+            "title": mission.title,
+            "chapter": mission.chapter,
+            "description": mission.description,
+            "difficulty": mission.difficulty,
+            "xpReward": mission.xp_reward,
+            "objectives": mission.objectives,
+            "starterCode": mission.starter_code,
+            "testCases": mission.test_cases,
+            "hints": mission.hints,
+            "previousMissionId": previous_id,
+            "nextMissionId": next_id,
+        }
+
+        if normalize_language(language) != "kz":
+            return base
+
+        translated = MISSION_TRANSLATIONS.get("kz", {}).get(mission.id)
+        if not translated:
+            return base
+
+        objectives = base.get("objectives") if isinstance(base.get("objectives"), list) else []
+        translated_objectives = translated.get("objectives", [])
+        localized_objectives = []
+        for index, objective in enumerate(objectives):
+            if isinstance(objective, dict):
+                localized_objectives.append(
+                    {
+                        **objective,
+                        "text": translated_objectives[index] if index < len(translated_objectives) else objective.get("text"),
+                    }
+                )
+            else:
+                localized_objectives.append(objective)
+
+        return {
+            **base,
+            "title": translated.get("title", base["title"]),
+            "chapter": translated.get("chapter", base["chapter"]),
+            "description": translated.get("description", base["description"]),
+            "objectives": localized_objectives,
+            "hints": translated.get("hints", base["hints"]),
+        }
+
     def _get_course_season(self, course_id: int) -> int:
         return ((course_id - 1) // COURSE_SEASON_SIZE) + 1
 
@@ -228,12 +298,15 @@ class DatabaseService:
 
     def _get_mission_counts_by_course(self) -> dict[int, int]:
         counts: dict[int, int] = {}
-        for mission in self.get_missions():
+        for mission in self._get_mission_models():
             course_id = self._parse_course_id_from_chapter(mission.chapter)
             if not course_id:
                 continue
             counts[course_id] = counts.get(course_id, 0) + 1
         return counts
+
+    def _get_mission_models(self) -> List[Mission]:
+        return self.db.query(Mission).order_by(Mission.id.asc()).all()
 
     def _normalize_user_course_progress(self, raw_progress: dict, courses: List[Course]) -> dict:
         normalized: dict = {}
@@ -469,7 +542,7 @@ class DatabaseService:
             "totalLessons": active_entry.get("totalLessons", 0),
         }
 
-    def get_courses(self, user: Optional[User] = None) -> List[dict]:
+    def get_courses(self, user: Optional[User] = None, language: str = "ru") -> List[dict]:
         """Get all courses with per-user progression when authenticated"""
         courses = self._get_courses_ordered()
         progress = self._get_user_course_progress(user, courses) if user else {}
@@ -531,7 +604,7 @@ class DatabaseService:
                     }
                 )
 
-            response.append(item)
+            response.append(self._localize_course_item(item, language))
 
         return response
 
@@ -564,7 +637,7 @@ class DatabaseService:
                 }
             )
 
-        missions = self.get_missions()
+        missions = self._get_mission_models()
         totals_by_topic: dict[str, int] = {}
         completed_by_topic: dict[str, int] = {}
 
@@ -602,25 +675,75 @@ class DatabaseService:
         """Get course by ID"""
         return self.db.query(Course).filter(Course.id == course_id).first()
 
-    def get_course_journey(self, user: Optional[User] = None) -> list[dict]:
+    def serialize_course(self, course: Course, language: str = "ru", user: Optional[User] = None) -> dict:
+        item = {
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "gradeBand": self._infer_course_meta(course).get("gradeBand"),
+            "section": self._infer_course_meta(course).get("section"),
+            "progress": int(course.progress or 0),
+            "totalLessons": int(course.total_lessons or 0),
+            "icon": course.icon,
+            "color": course.color,
+            "difficulty": course.difficulty,
+            "stars": int(course.stars or 0),
+            "isBoss": bool(course.is_boss),
+            "locked": bool(course.locked),
+        }
+
+        if user:
+            progress = self._get_user_course_progress(user, [course])
+            user_progress = progress.get(str(course.id), {})
+            season = self._get_course_season(course.id)
+            current_season = 1
+            season_progress = {}
+            settings = self._get_user_settings(user)
+            try:
+                current_season = int(settings.get("current_season") or 1)
+            except (TypeError, ValueError):
+                current_season = 1
+            if isinstance(settings.get("season_progress"), dict):
+                season_progress = settings.get("season_progress")
+            season_unlocked = season <= current_season
+            is_locked = (not bool(user_progress.get("unlocked"))) or (not season_unlocked)
+            is_completed = bool(user_progress.get("completed"))
+            item.update(
+                {
+                    "progress": int(user_progress.get("progress", 0) or 0),
+                    "stars": int(user_progress.get("stars", 0) or 0),
+                    "locked": is_locked,
+                    "status": "locked" if is_locked else ("completed" if is_completed else "in_progress"),
+                    "completedLessons": int(user_progress.get("completedLessons", 0) or 0),
+                    "totalLessons": int(user_progress.get("totalLessons", course.total_lessons or 0) or 0),
+                    "unlockRequirement": "" if not is_locked else ("Завершите предыдущий сезон" if not season_unlocked else "Завершите предыдущий курс"),
+                    "seasonUnlocked": season_unlocked,
+                    "seasonCompleted": bool(season_progress.get(str(season), {}).get("completed")),
+                    "currentSeason": current_season,
+                }
+            )
+
+        return self._localize_course_item(item, language)
+
+    def get_course_journey(self, user: Optional[User] = None, language: str = "ru") -> list[dict]:
         """Return structured journey topics: theory first, then 6/7 practices."""
-        courses = self.get_courses(user)
-        missions = self.get_missions()
+        courses = self.get_courses(user, language)
+        missions = self.get_missions(language)
         topics: list[dict] = []
 
         for course in courses:
             course_id = int(course.get("id") or 0)
-            related = [m for m in missions if self._parse_course_id_from_chapter(m.chapter) == course_id]
+            related = [m for m in missions if self._parse_course_id_from_chapter(m.get("chapter")) == course_id]
 
             theory = "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
             for mission in related:
-                hints = mission.hints if isinstance(mission.hints, list) else []
+                hints = mission.get("hints") if isinstance(mission.get("hints"), list) else []
                 theory_hint = next((str(item).replace("__THEORY__:", "").strip() for item in hints if isinstance(item, str) and item.startswith("__THEORY__:")), "")
                 if theory_hint:
                     theory = theory_hint
                     break
 
-            practices = [str(m.title or f"Практика по теме {course_id}") for m in related]
+            practices = [str(m.get("title") or f"Практика по теме {course_id}") for m in related]
             target_count = 7 if course.get("gradeBand") == "9" else 6
             while len(practices) < target_count:
                 practices.append(f"Практика {len(practices) + 1}")
@@ -834,9 +957,21 @@ class DatabaseService:
         return True
 
     # Mission operations
-    def get_missions(self) -> List[Mission]:
+    def get_missions(self, language: str = "ru") -> List[dict]:
         """Get all missions"""
-        return self.db.query(Mission).order_by(Mission.id.asc()).all()
+        missions = self._get_mission_models()
+        mission_ids = [m.id for m in missions]
+        response: list[dict] = []
+        for idx, mission in enumerate(missions):
+            response.append(
+                self._localize_mission_item(
+                    mission,
+                    mission_ids[idx - 1] if idx > 0 else None,
+                    mission_ids[idx + 1] if idx < len(mission_ids) - 1 else None,
+                    language,
+                )
+            )
+        return response
 
     def get_mission_by_id(self, mission_id: str) -> Optional[Mission]:
         """Get mission by ID"""
@@ -879,7 +1014,7 @@ class DatabaseService:
         ]
 
     def get_mission_neighbors(self, mission_id: str) -> dict:
-        missions = self.get_missions()
+        missions = self._get_mission_models()
         mission_ids = [m.id for m in missions]
         if mission_id not in mission_ids:
             return {"previousMissionId": None, "nextMissionId": None}
