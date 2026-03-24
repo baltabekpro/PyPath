@@ -84,7 +84,33 @@ const getStoredPage = (): LearningPage => {
 };
 
 const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => {
-  if (topic.id.includes('if')) {
+  if (topic.id === 'course-1' || topic.id.includes('pre-variables')) {
+    return {
+      intro: isKz ? 'Python тілінде ең алдымен экранға мәтін шығару мен алғашқы командаларды түсіну керек.' : 'В Python сначала важно понять вывод текста на экран и первые команды.',
+      bullets: [
+        isKz ? 'print мәтін мен мәндерді экранға шығарады.' : 'print выводит текст и значения на экран.',
+        isKz ? 'Жолдарды тырнақшамен жазыңыз.' : 'Строки пишутся в кавычках.',
+        isKz ? 'Алғашқы қадамда қарапайым мысалдармен жұмыс істеген дұрыс.' : 'На старте лучше работать с простыми примерами.',
+      ],
+      example: isKz ? 'print("Сәлем, әлем!")' : 'print("Привет, мир!")',
+      hint: isKz ? 'Алдымен экранға мәтін шығаруды меңгеріп алыңыз, содан кейін айнымалыларға өтіңіз.' : 'Сначала разберитесь с выводом на экран, потом переходите к переменным.',
+    };
+  }
+
+  if (topic.id === 'course-2' || topic.id.includes('variables')) {
+    return {
+      intro: isKz ? 'Айнымалылар деректерді сақтайды, ал түрлер олардың қалай өңделетінін анықтайды.' : 'Переменные хранят данные, а типы определяют, как их обрабатывать.',
+      bullets: [
+        isKz ? 'Айнымалы кейін қолданылатын мәнді сақтайды.' : 'Переменная сохраняет значение для последующего использования.',
+        isKz ? 'Сандар мен жолдар бірдей емес өңделеді.' : 'Числа и строки обрабатываются по-разному.',
+        isKz ? 'type() мәннің түрін тексеруге көмектеседі.' : 'type() помогает проверить тип значения.',
+      ],
+      example: isKz ? ['name = "Алия"', 'age = 14', 'print(name, age)'].join('\n') : ['name = "Аня"', 'age = 14', 'print(name, age)'].join('\n'),
+      hint: isKz ? 'Егер дерек керек болса, оны бірден айнымалыға сақтаңыз.' : 'Если данные нужны дальше, сразу сохраняйте их в переменную.',
+    };
+  }
+
+  if (topic.id === 'course-3' || topic.id.includes('if')) {
     return {
       intro: isKz ? 'Шарт тексеру нәтижесіне байланысты бағдарламаға әрекеттердің бірін таңдауға мүмкіндік береді.' : 'Условие позволяет программе выбирать одно из действий в зависимости от результата проверки.',
       bullets: [
@@ -97,7 +123,7 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
     };
   }
 
-  if (topic.id.includes('loop')) {
+  if (topic.id === 'course-4' || topic.id.includes('loop')) {
     return {
       intro: isKz ? 'Циклдер бір әрекет бірнеше рет қайталанғанда қажет.' : 'Циклы нужны, когда одно и то же действие повторяется несколько раз.',
       bullets: [
@@ -110,7 +136,7 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
     };
   }
 
-  if (topic.id.includes('func')) {
+  if (topic.id === 'course-5' || topic.id.includes('func')) {
     return {
       intro: isKz ? 'Функция қайталанатын кодты бірнеше рет шақыруға болатын бір атаулы блокқа жинайды.' : 'Функция собирает повторяющийся код в один именованный блок, который можно вызывать много раз.',
       bullets: [
@@ -123,7 +149,7 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
     };
   }
 
-  if (topic.id.includes('list')) {
+  if (topic.id === 'course-6' || topic.id.includes('list')) {
     return {
       intro: isKz ? 'Тізімдер элементтердің реттілігін сақтайды, ал сөздіктер кілт арқылы мәнді тез табуға көмектеседі.' : 'Списки хранят последовательность элементов, а словари помогают быстро находить значение по ключу.',
       bullets: [
@@ -388,6 +414,15 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                         <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
                           {theoryContent.hint}
                         </p>
+                        {selectedTopic.theoryDetails && Array.isArray(selectedTopic.theoryDetails) && selectedTopic.theoryDetails.length > 0 && (
+                          <div className="space-y-2">
+                            {selectedTopic.theoryDetails.map((detail) => (
+                              <div key={detail} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
+                                {detail}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -417,7 +452,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                             onClick={() => openPracticeInEditor(index)}
                             className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                           >
-                            <span className="text-sm">{index + 1}. {task}</span>
+                            <span className="text-sm">{task}</span>
                             {done && <CheckCircle2 size={18} className="text-emerald-600" />}
                           </button>
                         );

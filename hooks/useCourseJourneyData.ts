@@ -10,6 +10,9 @@ export type JourneyTopic = {
   grade: GradeTab;
   theory: string;
   practices: string[];
+  theoryDetails?: string[];
+  theoryExample?: string;
+  theoryHint?: string;
 };
 
 export type TopicProgress = {
