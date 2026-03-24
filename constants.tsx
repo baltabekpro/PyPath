@@ -1,7 +1,6 @@
 import { Course, User } from './types';
 import { Terminal, Database, Cpu, Code2, Gamepad2, Rocket, Ghost, Zap, Skull, Box, Layers, ShieldAlert, Key, Flame, Bug, Gift, LockKeyhole, Target, Sword, Crown, AlertCircle, Search, Sparkles, LayoutGrid, Map, Code, Bot, User as UserIcon, Trophy, Bell, CreditCard, Shield } from 'lucide-react';
 import { apiGet } from './api';
-import { KZ_COURSE_TRANSLATIONS, KZ_MISSION_TRANSLATIONS } from './locales';
 
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
@@ -416,30 +415,6 @@ export const initializeAppData = async (): Promise<void> => {
         if (posts) POSTS = posts;
         if (achievements) ACHIEVEMENTS = achievements;
         if (missions) MISSIONS = missions;
-        if (APP_LANGUAGE === 'kz') {
-            COURSES = (COURSES || []).map((course: any) => {
-                const translated = KZ_COURSE_TRANSLATIONS[String(course.id)];
-                return translated ? { ...course, title: translated.title, description: translated.description } : course;
-            });
-            MISSIONS = (MISSIONS || []).map((mission: any) => {
-                const translated = KZ_MISSION_TRANSLATIONS[String(mission.id)];
-                return translated
-                    ? {
-                        ...mission,
-                        title: translated.title,
-                        chapter: translated.chapter,
-                        description: translated.description,
-                        objectives: Array.isArray(mission.objectives)
-                            ? mission.objectives.map((objective: any, index: number) => ({
-                                ...objective,
-                                text: translated.objectives[index] || objective.text,
-                            }))
-                            : mission.objectives,
-                        hints: translated.hints,
-                    }
-                    : mission;
-            });
-        }
         if (logs) LOGS = logs;
         if (uiData && typeof uiData === 'object' && Object.keys(uiData).length > 0) {
             applyUiData(uiData);

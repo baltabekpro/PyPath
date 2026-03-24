@@ -9,80 +9,14 @@ interface CoursesProps {
 }
 
 const localizeCourseMeta = (course: Course, isKz: boolean) => {
-    if (!isKz) {
-        return {
-            title: course.title,
-            description: course.description,
-            difficulty: course.difficulty,
-        };
-    }
+    const genericTitle = course.title || (isKz ? 'Курс' : 'Курс');
+    const genericDescription = course.description || '';
+    const genericDifficulty = course.difficulty || (isKz ? 'Белгісіз' : 'Неизвестно');
 
-    const translate = (value: string) => {
-        const replacements: Array<[RegExp, string]> = [
-            [/^Глава\s*(\d+)\s*:\s*/i, 'Тарау $1: '],
-            [/Первые шаги/gi, 'Алғашқы қадамдар'],
-            [/Переменные/gi, 'Айнымалылар'],
-            [/и числа/gi, 'және сандар'],
-            [/Условия/gi, 'Шарттар'],
-            [/Циклы/gi, 'Циклдер'],
-            [/Функции/gi, 'Функциялар'],
-            [/Тестовый курс/gi, 'Тест курсы'],
-            [/Пробуждение ИИ/gi, 'ИИ оянуы'],
-            [/Общий модуль/gi, 'Жалпы модуль'],
-            [/Подготовка к 8\/9/gi, '8/9 сыныпқа дайындық'],
-            [/8 класс/gi, '8 сынып'],
-            [/9 класс/gi, '9 сынып'],
-            [/Очень лёгкий/gi, 'Өте жеңіл'],
-            [/Лёгкий/gi, 'Жеңіл'],
-            [/Средний/gi, 'Орта'],
-            [/Босс/gi, 'Босс'],
-            [/Практика/gi, 'Практика'],
-            [/Теория/gi, 'Теория'],
-        ];
-        return replacements.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), value);
-    };
-
-    const fallbackTitle = translate(course.title || '');
-    const fallbackDescription = translate(course.description || '');
-    const fallbackDifficulty = translate(course.difficulty || '');
-
-    const byId: Record<number, { title: string; description: string; difficulty: string }> = {
-        1: {
-            title: '1-тарау: Алғашқы қадамдар',
-            description: 'Python деген не, командаларды қалай іске қосу және мәтінді экранға шығару.',
-            difficulty: 'Өте жеңіл',
-        },
-        2: {
-            title: '2-тарау: Айнымалылар және сандар',
-            description: 'Сандарды айнымалыларда сақтап, қарапайым есептеулер жасаймыз.',
-            difficulty: 'Жеңіл',
-        },
-        3: {
-            title: '3-тарау: if шарттары',
-            description: 'Шарт тексеріп, дұрыс болғанда қажетті кодты орындаймыз.',
-            difficulty: 'Жеңіл',
-        },
-        4: {
-            title: '4-тарау: for циклдері',
-            description: 'Командаларды бірнеше рет қайталап, тізімдер бойынша өтеміз.',
-            difficulty: 'Жеңіл',
-        },
-        5: {
-            title: '5-тарау: Функциялар',
-            description: 'Кодты ықшам әрі түсінікті ету үшін өз функцияларымызды жазамыз.',
-            difficulty: 'Жеңіл',
-        },
-        6: {
-            title: 'БОСС: Мини-жоба',
-            description: 'Үйренген блоктардан мини-жоба құрастырыңыз: шығару, шарт, цикл және функция.',
-            difficulty: 'Босс',
-        },
-    };
-
-    return byId[course.id] || {
-        title: fallbackTitle,
-        description: fallbackDescription,
-        difficulty: fallbackDifficulty,
+    return {
+        title: genericTitle,
+        description: genericDescription,
+        difficulty: genericDifficulty,
     };
 };
 

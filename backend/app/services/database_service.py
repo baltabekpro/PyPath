@@ -205,9 +205,9 @@ class DatabaseService:
     def _infer_course_meta(self, course: Course) -> dict:
         title = str(course.title or '').lower()
         if 'глава 1' in title or 'глава 2' in title:
-            return {"gradeBand": "pre", "section": "Подготовка к 8/9"}
+            return {"gradeBand": "pre", "section": "Подготовка к 8/9: базовые шаги"}
         if 'глава 3' in title or 'глава 4' in title:
-            return {"gradeBand": "8", "section": "8 класс: основы и циклы"}
+            return {"gradeBand": "8", "section": "8 класс: условия и циклы"}
         if 'глава 5' in title or 'глава 6' in title or 'босс' in title:
             return {"gradeBand": "9", "section": "9 класс: функции и проект"}
         return {"gradeBand": "common", "section": "Общий модуль"}
@@ -728,7 +728,6 @@ class DatabaseService:
     def get_course_journey(self, user: Optional[User] = None, language: str = "ru") -> list[dict]:
         """Return structured journey topics: theory first, then 6/7 practices."""
         courses = self.get_courses(user, language)
-        missions = self.get_missions(language)
         topics: list[dict] = []
 
         theory_by_course = {
@@ -791,8 +790,8 @@ class DatabaseService:
                     "Сандар мен жолдар әртүрлі өңделеді.",
                 ],
                 "example": {
-                    "ru": ['name = "Аня"', 'age = 14', 'print(name, age)'].join("\n"),
-                    "kz": ['name = "Алия"', 'age = 14', 'print(name, age)'].join("\n"),
+                    "ru": "\n".join(['name = "Аня"', 'age = 14', 'print(name, age)']),
+                    "kz": "\n".join(['name = "Алия"', 'age = 14', 'print(name, age)']),
                 },
                 "hint": {
                     "ru": "Если данные нужны позже, сохраните их в переменную сразу.",
@@ -811,8 +810,8 @@ class DatabaseService:
                     "Салыстыру үшін >, <, >=, <=, ==, != операторлары қолданылады.",
                 ],
                 "example": {
-                    "ru": ['age = 12', 'if age >= 10:', '    print("Можно")', 'else:', '    print("Пока рано")'].join("\n"),
-                    "kz": ['age = 12', 'if age >= 10:', '    print("Рұқсат")', 'else:', '    print("Әлі ерте")'].join("\n"),
+                    "ru": "\n".join(['age = 12', 'if age >= 10:', '    print("Можно")', 'else:', '    print("Пока рано")']),
+                    "kz": "\n".join(['age = 12', 'if age >= 10:', '    print("Рұқсат")', 'else:', '    print("Әлі ерте")']),
                 },
                 "hint": {
                     "ru": "Сначала формулируйте условие словами, потом переводите в код.",
@@ -831,8 +830,8 @@ class DatabaseService:
                     "Цикл шарт немесе диапазон өзгергенде аяқталады.",
                 ],
                 "example": {
-                    "ru": ['for number in range(3):', '    print(number)', '', 'count = 3', 'while count > 0:', '    count -= 1'].join("\n"),
-                    "kz": ['for number in range(3):', '    print(number)', '', 'count = 3', 'while count > 0:', '    count -= 1'].join("\n"),
+                    "ru": "\n".join(['for number in range(3):', '    print(number)', '', 'count = 3', 'while count > 0:', '    count -= 1']),
+                    "kz": "\n".join(['for number in range(3):', '    print(number)', '', 'count = 3', 'while count > 0:', '    count -= 1']),
                 },
                 "hint": {
                     "ru": "Если заранее знаете количество повторений, начните с for.",
@@ -851,8 +850,8 @@ class DatabaseService:
                     "return нәтижені қайтарады.",
                 ],
                 "example": {
-                    "ru": ['def add(a, b):', '    return a + b', '', 'print(add(2, 3))'].join("\n"),
-                    "kz": ['def add(a, b):', '    return a + b', '', 'print(add(2, 3))'].join("\n"),
+                    "ru": "\n".join(['def add(a, b):', '    return a + b', '', 'print(add(2, 3))']),
+                    "kz": "\n".join(['def add(a, b):', '    return a + b', '', 'print(add(2, 3))']),
                 },
                 "hint": {
                     "ru": "Если код повторяется, его почти всегда стоит вынести в функцию.",
@@ -871,8 +870,8 @@ class DatabaseService:
                     "Мини-жоба негіздердің бірге жұмыс істейтінін тексереді.",
                 ],
                 "example": {
-                    "ru": ['def greet(name):', '    print("Привет,", name)', '', 'for i in range(3):', '    greet("друг")'].join("\n"),
-                    "kz": ['def greet(name):', '    print("Сәлем,", name)', '', 'for i in range(3):', '    greet("дос")'].join("\n"),
+                    "ru": "\n".join(['def greet(name):', '    print("Привет,", name)', '', 'for i in range(3):', '    greet("друг")']),
+                    "kz": "\n".join(['def greet(name):', '    print("Сәлем,", name)', '', 'for i in range(3):', '    greet("дос")']),
                 },
                 "hint": {
                     "ru": "Собирайте проект из маленьких шагов и проверяйте каждый блок отдельно.",
@@ -881,9 +880,63 @@ class DatabaseService:
             },
         }
 
+        practice_catalog_by_course = {
+            1: [
+                {"ru": {"title": "Приветствие и print", "description": "Выведи приветствие и имя ученика на экран."}, "kz": {"title": "Сәлем және print", "description": "Экранға сәлемдесу мен оқушының атын шығар."}},
+                {"ru": {"title": "Переменные name и age", "description": "Создай строковую и числовую переменные."}, "kz": {"title": "name және age айнымалылары", "description": "Жолдық және сандық айнымалыларды жаса."}},
+                {"ru": {"title": "Строки и пробел", "description": "Собери полное имя из двух строк."}, "kz": {"title": "Жолдарды біріктіру", "description": "Екі жолдан толық атты құрастыр."}},
+                {"ru": {"title": "Числа и сумма", "description": "Сложи два числа и сохрани результат."}, "kz": {"title": "Сандар қосындысы", "description": "Екі санды қосып, нәтижені сақта."}},
+                {"ru": {"title": "type() и str()", "description": "Проверь тип и преобразуй число в строку."}, "kz": {"title": "type() және str()", "description": "Түрді тексеріп, санды жолға айналдыр."}},
+                {"ru": {"title": "Мини-калькулятор", "description": "Считай два значения через input и выведи сумму."}, "kz": {"title": "Шағын калькулятор", "description": "input арқылы екі мәнді сұрап, қосындысын шығар."}},
+            ],
+            2: [
+                {"ru": {"title": "Преобразование в int", "description": "Преобразуй строку с числом в int."}, "kz": {"title": "int-ке түрлендіру", "description": "Сан жазылған жолды int түріне айналдыр."}},
+                {"ru": {"title": "Строка и число", "description": "Собери текст из строки и числа без ошибки типов."}, "kz": {"title": "Жол және сан", "description": "Түр қателігінсіз жол мен саннан мәтін құрастыр."}},
+                {"ru": {"title": "Проверка типа", "description": "Узнай тип значения и сохрани его в переменную."}, "kz": {"title": "Түрді тексеру", "description": "Мәннің түрін анықтап, айнымалыға сақта."}},
+                {"ru": {"title": "Ввод возраста", "description": "Считай возраст и покажи его после преобразования."}, "kz": {"title": "Жасты енгізу", "description": "Жасты енгізіп, түрлендіргеннен кейін шығар."}},
+                {"ru": {"title": "Сложение и формат", "description": "Сложи два числа и выведи красивое сообщение."}, "kz": {"title": "Қосу және формат", "description": "Екі санды қосып, әдемі хабарлама шығар."}},
+                {"ru": {"title": "Типы данных", "description": "Разберись, где строка, число и логический тип."}, "kz": {"title": "Дерек түрлері", "description": "Қайсысы жол, сан және логикалық тип екенін ажырат."}},
+            ],
+            3: [
+                {"ru": {"title": "Проверка возраста", "description": "Выведи разный ответ для взрослого и ребёнка."}, "kz": {"title": "Жасты тексеру", "description": "Ересек пен балаға әртүрлі жауап шығар."}},
+                {"ru": {"title": "Чётное или нечётное", "description": "Определи, делится ли число на 2 без остатка."}, "kz": {"title": "Жұп немесе тақ", "description": "Санның 2-ге қалдықсыз бөлінетінін анықта."}},
+                {"ru": {"title": "Сравнение чисел", "description": "Найди большее из двух чисел."}, "kz": {"title": "Сандарды салыстыру", "description": "Екі санның үлкенін тап."}},
+                {"ru": {"title": "Оценка по баллам", "description": "Преобразуй score в буквенную оценку."}, "kz": {"title": "Балл бойынша баға", "description": "score мәнін әріптік бағаға айналдыр."}},
+                {"ru": {"title": "Два условия", "description": "Проверь сразу два условия через and."}, "kz": {"title": "Екі шарт", "description": "Екі шартты and арқылы тексер."}},
+                {"ru": {"title": "Проверка пароля", "description": "Сравни пароль и выведи результат входа."}, "kz": {"title": "Құпия сөзді тексеру", "description": "Парольді салыстырып, кіру нәтижесін шығар."}},
+            ],
+            4: [
+                {"ru": {"title": "Цикл for", "description": "Выведи числа через range в цикле for."}, "kz": {"title": "for циклі", "description": "range арқылы сандарды for циклімен шығар."}},
+                {"ru": {"title": "Сумма чисел", "description": "Посчитай сумму чисел от 1 до 10."}, "kz": {"title": "Сандар қосындысы", "description": "1-ден 10-ға дейінгі сандардың қосындысын есепте."}},
+                {"ru": {"title": "Проход по списку", "description": "Пройди по списку имён и выведи каждое."}, "kz": {"title": "Тізіммен өту", "description": "Аттар тізімімен өтіп, әрқайсын шығар."}},
+                {"ru": {"title": "Счётчик while", "description": "Считай назад с помощью while."}, "kz": {"title": "while санауышы", "description": "while арқылы кері сана."}},
+                {"ru": {"title": "Повторение действий", "description": "Повтори действие несколько раз и измени счётчик."}, "kz": {"title": "Әрекетті қайталау", "description": "Әрекетті бірнеше рет қайталап, санағышты өзгерт."}},
+                {"ru": {"title": "Выход из цикла", "description": "Останови цикл, когда условие больше не подходит."}, "kz": {"title": "Циклден шығу", "description": "Шарт сәйкес келмегенде циклді тоқтат."}},
+            ],
+            5: [
+                {"ru": {"title": "Первая функция", "description": "Создай функцию и вызови её один раз."}, "kz": {"title": "Алғашқы функция", "description": "Функция құрып, оны бір рет шақыр."}},
+                {"ru": {"title": "Функция с параметром", "description": "Передай аргумент и используй его внутри."}, "kz": {"title": "Параметрі бар функция", "description": "Аргумент беріп, оны функция ішінде қолдан."}},
+                {"ru": {"title": "Возврат значения", "description": "Верни результат через return."}, "kz": {"title": "Мәнді қайтару", "description": "return арқылы нәтижені қайтар."}},
+                {"ru": {"title": "Параметры по умолчанию", "description": "Настрой значение по умолчанию для функции."}, "kz": {"title": "Әдепкі параметр", "description": "Функцияға әдепкі мән орнат."}},
+                {"ru": {"title": "Несколько параметров", "description": "Прими два и более значения в функции."}, "kz": {"title": "Бірнеше параметр", "description": "Функцияда екі және одан көп мән қабылда."}},
+                {"ru": {"title": "Помощник для повторов", "description": "Вынеси повторяющийся код в helper."}, "kz": {"title": "Қайталанатын көмекші", "description": "Қайталанатын кодты helper функциясына шығар."}},
+                {"ru": {"title": "Мини-калькулятор", "description": "Собери сложение в отдельную функцию."}, "kz": {"title": "Шағын калькулятор", "description": "Қосуды бөлек функцияға жина."}},
+            ],
+            6: [
+                {"ru": {"title": "Старт проекта", "description": "Определи цель мини-проекта и первые шаги."}, "kz": {"title": "Жоба бастау", "description": "Мини-жобаның мақсатын және алғашқы қадамдарын анықта."}},
+                {"ru": {"title": "Ввод и вывод", "description": "Добавь чтение данных и красивый вывод."}, "kz": {"title": "Енгізу және шығару", "description": "Дерек енгізуді және әдемі шығаруды қос."}},
+                {"ru": {"title": "Добавь условие", "description": "Сделай выбор ответа через if / else."}, "kz": {"title": "Шарт қосу", "description": "if / else арқылы жауап таңдауды жаса."}},
+                {"ru": {"title": "Цикл в проекте", "description": "Повтори часть логики несколько раз."}, "kz": {"title": "Жобадағы цикл", "description": "Логиканың бір бөлігін бірнеше рет қайтала."}},
+                {"ru": {"title": "Функция внутри проекта", "description": "Вынеси общий шаг в функцию."}, "kz": {"title": "Жобадағы функция", "description": "Ортақ қадамды функцияға шығар."}},
+                {"ru": {"title": "Проверка сценария", "description": "Прогони проект на нескольких примерах."}, "kz": {"title": "Сценарийді тексеру", "description": "Жобаны бірнеше мысалда тексер."}},
+                {"ru": {"title": "Финальная доработка", "description": "Улучшай код и убирай лишнее."}, "kz": {"title": "Соңғы жетілдіру", "description": "Кодты жақсартып, артықтарын алып таста."}},
+            ],
+        }
+
         for course in courses:
             course_id = int(course.get("id") or 0)
-            related = [m for m in missions if self._parse_course_id_from_chapter(m.get("chapter")) == course_id]
+            if course_id not in theory_by_course:
+                continue
 
             language_key = normalize_language(language)
             theory_entry = theory_by_course.get(course_id, {})
@@ -894,21 +947,21 @@ class DatabaseService:
             hint = theory_lines.get("hint", {}).get(language_key) or theory_lines.get("hint", {}).get("ru") or ""
 
             practices = []
-            for index, mission in enumerate(related, start=1):
-                title = str(mission.get("title") or f"Практика {index}")
-                description = str(mission.get("description") or "")
-                short_description = description.rstrip(".")
-                if short_description:
-                    practices.append(f"{index}. {title} — {short_description}")
-                else:
-                    practices.append(f"{index}. {title}")
+            for index, practice in enumerate(practice_catalog_by_course.get(course_id, []), start=1):
+                locale_practice = practice.get(language_key) or practice.get("ru") or {}
+                title = str(locale_practice.get("title") or f"Практика {index}")
+                description = str(locale_practice.get("description") or "")
+                practice_line = f"{index}. {title}"
+                if description:
+                    practice_line = f"{practice_line} — {description}"
+                practices.append(practice_line)
 
-            target_count = 7 if course.get("gradeBand") == "9" else 6
-            while len(practices) < target_count:
-                practice_number = len(practices) + 1
-                practices.append(f"{practice_number}. {language_key == 'kz' and 'Қосымша практика' or 'Дополнительная практика'} — {language_key == 'kz' and 'тақырыпты бекіту' or 'закрепление темы'}")
-            if len(practices) > target_count:
-                practices = practices[:target_count]
+            if not practices:
+                fallback_count = 7 if course.get("gradeBand") == "9" else 6
+                for practice_number in range(1, fallback_count + 1):
+                    practices.append(
+                        f"{practice_number}. {language_key == 'kz' and 'Тақырыпты бекіту' or 'Закрепление темы'} — {language_key == 'kz' and 'мысалдарды қайталап шық' or 'повтори примеры и закрепи тему'}"
+                    )
 
             topics.append(
                 {
