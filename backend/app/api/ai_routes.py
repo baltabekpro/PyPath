@@ -5,14 +5,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.models.models import User
-from app.api.dependencies import get_current_user_optional, get_db_service
+from app.api.dependencies import get_current_user_optional, get_db_service, get_request_language
 from app.schemas.ai_schemas import (
     ChatMessage,
     ChatResponse,
     QuickActionRequest,
-    SessionResetRequest
+    QuizGenerateRequest,
+    QuizGenerateResponse,
+    QuizQuestion,
+    SessionResetRequest,
 )
-from app.services.ai_service import get_ai_service, AIService
+from app.services.ai_service import get_ai_service, AIService, detect_language
 from app.services.database_service import DatabaseService
 from app.core.rate_limit import rate_limiter
 
@@ -168,28 +171,33 @@ def chat_with_ai(
     request: Request,
     user: Optional[User] = Depends(get_current_user_optional),
     ai_service: AIService = Depends(get_ai_service),
-    service: DatabaseService = Depends(get_db_service)
+    service: DatabaseService = Depends(get_db_service),
+    header_language: str = Depends(get_request_language),
 ):
     """
     Send message to AI assistant and get intelligent response
-    
-    The AI assistant helps with:
-    - Explaining Python concepts
-    - Debugging code errors
-    - Providing hints without full solutions
-    - Motivating learning progress
-    
+
+    The AI assistant responds in the same language as the user's message.
+    Language is determined by (in priority order):
+    1. ``language`` field in the request body
+    2. ``X-App-Language`` request header
+    3. Auto-detection from message text
+
     Powered by Google Gemini
     """
     identity = user.id if user else (payload.user_id or _client_ip(request))
     _enforce_rate_limit(request, key=f"ai:chat:{identity}", limit=60, window_seconds=60)
 
+    # Resolve effective language: explicit > header > auto-detect from text
+    _raw_lang = payload.language or header_language
+    effective_language = _raw_lang if _raw_lang in ("kz", "ru") else detect_language(payload.message)
+
     # Use authenticated user ID or provided user_id
     user_id = user.id if user else payload.user_id
     session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
-    
+
     try:
-        response_text = ai_service.chat(session_key, payload.message)
+        response_text = ai_service.chat(session_key, payload.message, language=effective_language)
         if user:
             now_ms = int(datetime.now().timestamp() * 1000)
             chats, _ = _get_persisted_chats(user)
@@ -216,7 +224,7 @@ def chat_with_ai(
             response=response_text,
             timestamp=datetime.now().isoformat()
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=500,
             detail="AI service temporarily unavailable"
@@ -229,11 +237,12 @@ def quick_action(
     request: Request,
     user: Optional[User] = Depends(get_current_user_optional),
     ai_service: AIService = Depends(get_ai_service),
-    service: DatabaseService = Depends(get_db_service)
+    service: DatabaseService = Depends(get_db_service),
+    header_language: str = Depends(get_request_language),
 ):
     """
     Get quick predefined AI response
-    
+
     Action types:
     - `hint` - Get learning hint
     - `error` - Help with error debugging
@@ -243,7 +252,11 @@ def quick_action(
     identity = user.id if user else (payload.user_id or _client_ip(request))
     _enforce_rate_limit(request, key=f"ai:quick:{identity}", limit=120, window_seconds=60)
 
-    response_text = ai_service.get_quick_response(payload.action_type)
+    effective_language = payload.language or header_language or "ru"
+    if effective_language not in ("kz", "ru"):
+        effective_language = "ru"
+
+    response_text = ai_service.get_quick_response(payload.action_type, language=effective_language)
     user_id = user.id if user else payload.user_id
 
     user_text = f"Quick action: {payload.action_type}"
@@ -375,3 +388,51 @@ def ai_history(
         and str(item.get("text") or "").strip()
     ]
     return {"items": in_memory, "active_chat_id": None, "chats": []}
+
+
+@router.post("/generate-quiz", response_model=QuizGenerateResponse, tags=["AI Chat"])
+def generate_quiz(
+    payload: QuizGenerateRequest,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    ai_service: AIService = Depends(get_ai_service),
+    header_language: str = Depends(get_request_language),
+):
+    """Generate quiz questions to reinforce a learning topic.
+
+    After a theory section is shown to the user, call this endpoint to get
+    auto-generated multiple-choice questions that test comprehension.
+
+    Returns a list of ``QuizQuestion`` objects with ``question``, ``options``
+    (4 choices), ``correct_index`` and ``explanation``.
+    """
+    identity = user.id if user else _client_ip(request)
+    _enforce_rate_limit(request, key=f"ai:quiz:{identity}", limit=30, window_seconds=60)
+
+    effective_language = payload.language or header_language or "ru"
+    if effective_language not in ("kz", "ru"):
+        effective_language = "ru"
+
+    raw_questions = ai_service.generate_quiz_questions(
+        topic=payload.topic,
+        theory_content=payload.theory_content,
+        language=effective_language,
+        num_questions=payload.num_questions,
+    )
+
+    questions = [
+        QuizQuestion(
+            question=q.get("question", ""),
+            options=q.get("options", []),
+            correct_index=int(q.get("correct_index", 0)),
+            explanation=q.get("explanation", ""),
+        )
+        for q in raw_questions
+        if isinstance(q, dict)
+    ]
+
+    return QuizGenerateResponse(
+        questions=questions,
+        topic=payload.topic,
+        language=effective_language,
+    )

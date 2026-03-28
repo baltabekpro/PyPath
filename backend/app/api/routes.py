@@ -661,3 +661,37 @@ def get_logs(
     require_content_admin(user)
     return service.get_logs()
 
+
+@router.get("/admin/users", tags=["Admin"])
+def get_admin_users(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    user: User = Depends(get_current_user),
+    service: DatabaseService = Depends(get_db_service),
+):
+    """Get list of all registered users (admin only).
+
+    Returns basic profile data without sensitive fields (no password hash).
+    """
+    require_content_admin(user)
+    users = service.get_all_users(skip=skip, limit=limit)
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "fullName": u.full_name,
+            "name": u.name,
+            "avatar": u.avatar,
+            "level": u.level,
+            "levelNum": u.level_num,
+            "xp": u.xp,
+            "league": u.league,
+            "streak": u.streak,
+            "rank": u.rank,
+            "createdAt": u.created_at.isoformat() if u.created_at else None,
+            "isAdmin": bool((u.settings or {}).get("is_admin") or (u.settings or {}).get("role") == "admin"),
+        }
+        for u in users
+    ]
+

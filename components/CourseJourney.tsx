@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle, X } fro
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { AIChat } from './AIChat';
+import { QuizBlock } from './QuizBlock';
 import {
   GradeTab,
   JourneyTopic,
@@ -423,6 +424,13 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                             ))}
                           </div>
                         )}
+                        {/* Auto-generated quiz after theory */}
+                        <QuizBlock
+                          topic={selectedTopic.title}
+                          theoryContent={[theoryContent.intro, ...theoryContent.bullets, theoryContent.example].join('\n')}
+                          numQuestions={3}
+                          language={isKz ? 'kz' : 'ru'}
+                        />
                       </div>
                     )}
                   </div>

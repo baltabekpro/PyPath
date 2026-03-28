@@ -130,6 +130,8 @@ def create_app() -> FastAPI:
 
     @application.on_event("startup")
     def startup_seed_data() -> None:
+        from app.core.database import init_db
+        init_db()
         if not settings.google_api_key:
             logging.getLogger(__name__).warning("GOOGLE_API_KEY is not configured. AI routes will return fallback responses.")
         ensure_default_courses()

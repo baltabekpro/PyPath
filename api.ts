@@ -98,6 +98,7 @@ export interface ChatMessageRequest {
   message: string;
   user_id?: string;
   chat_id?: string;
+  language?: string;
 }
 
 export interface ChatResponse {
@@ -109,6 +110,7 @@ export interface QuickActionRequest {
   action_type: 'hint' | 'error' | 'theory' | 'motivation';
   user_id?: string;
   chat_id?: string;
+  language?: string;
 }
 
 export interface AIStatusResponse {
@@ -137,13 +139,26 @@ export interface AIHistoryResponse {
   chats?: AIHistoryChatSummary[];
 }
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+}
+
+export interface QuizGenerateResponse {
+  questions: QuizQuestion[];
+  topic: string;
+  language: string;
+}
+
 export const aiChat = {
-  sendMessage: (message: string, userId?: string, chatId?: string) =>
-    apiPost<ChatResponse>('/ai/chat', { message, user_id: userId, chat_id: chatId }),
-  
-  quickAction: (actionType: string, userId?: string, chatId?: string) =>
-    apiPost<ChatResponse>('/ai/quick-action', { action_type: actionType, user_id: userId, chat_id: chatId }),
-  
+  sendMessage: (message: string, userId?: string, chatId?: string, language?: string) =>
+    apiPost<ChatResponse>('/ai/chat', { message, user_id: userId, chat_id: chatId, language }),
+
+  quickAction: (actionType: string, userId?: string, chatId?: string, language?: string) =>
+    apiPost<ChatResponse>('/ai/quick-action', { action_type: actionType, user_id: userId, chat_id: chatId, language }),
+
   resetSession: (userId: string, chatId?: string) =>
     apiPost<{ message: string; user_id: string }>('/ai/reset-session', { user_id: userId, chat_id: chatId }),
 
@@ -154,9 +169,17 @@ export const aiChat = {
     const query = params.toString();
     return apiGet<AIHistoryResponse>(`/ai/history${query ? `?${query}` : ''}`);
   },
-  
+
   getStatus: () =>
     apiGet<AIStatusResponse>('/ai/status'),
+
+  generateQuiz: (topic: string, theoryContent: string, numQuestions = 3, language = 'ru') =>
+    apiPost<QuizGenerateResponse>('/ai/generate-quiz', {
+      topic,
+      theory_content: theoryContent,
+      num_questions: numQuestions,
+      language,
+    }),
 };
 
 export const notificationsApi = {

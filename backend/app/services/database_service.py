@@ -127,6 +127,10 @@ class DatabaseService:
         """Get user by ID"""
         return self.db.query(User).filter(User.id == user_id).first()
 
+    def get_all_users(self, skip: int = 0, limit: int = 200) -> list[User]:
+        """Get all registered users (admin only)."""
+        return self.db.query(User).order_by(User.created_at.desc()).offset(skip).limit(limit).all()
+
     def create_user(self, user_data: dict) -> User:
         """Create new user"""
         user = User(**user_data)

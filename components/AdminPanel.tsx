@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ShieldAlert, Save, Trash2, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Save, Trash2, RefreshCw, Users } from 'lucide-react';
 import { APP_LANGUAGE } from '../constants';
 import { apiDelete, apiGet, apiPost, apiPut } from '../api';
 
-type Tab = 'courses' | 'missions';
+type Tab = 'courses' | 'missions' | 'users';
 
 interface AdminPanelProps {
   isAdmin: boolean;
@@ -98,6 +98,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
     demoApplied: isKz ? 'Дайын үлгі қойылды' : 'Готовый пример подставлен',
     duplicateCourseCreated: isKz ? 'Курс көшірмесі формаға қойылды. Өрістерді тексеріп, сақтаңыз.' : 'Копия курса создана в форме. Проверьте поля и сохраните.',
     duplicateMissionCreated: isKz ? 'Тапсырма көшірмесі жасалды. ID тексеріп, сақтаңыз.' : 'Копия задания создана. Проверьте ID и сохраните.',
+    users: isKz ? 'Пайдаланушылар' : 'Пользователи',
+    userList: isKz ? 'Тіркелген пайдаланушылар' : 'Зарегистрированные пользователи',
+    userCount: isKz ? 'Барлығы' : 'Всего',
+    colUsername: isKz ? 'Пайдаланушы' : 'Пользователь',
+    colEmail: isKz ? 'Email' : 'Email',
+    colLevel: isKz ? 'Деңгей' : 'Уровень',
+    colXp: isKz ? 'XP' : 'XP',
+    colLeague: isKz ? 'Лига' : 'Лига',
+    colAdmin: isKz ? 'Рөл' : 'Роль',
+    colRegistered: isKz ? 'Тіркелген' : 'Зарегистрирован',
+    adminBadge: isKz ? 'Әкімші' : 'Админ',
+    userBadge: isKz ? 'Пайдаланушы' : 'Юзер',
+    noUsers: isKz ? 'Пайдаланушылар жоқ' : 'Нет пользователей',
   };
   const formFieldClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:border-arcade-primary focus:outline-none shadow-inner transition-colors placeholder-slate-500 dark:placeholder-slate-400';
   const [activeTab, setActiveTab] = useState<Tab>('courses');
@@ -107,6 +120,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
 
   const [courses, setCourses] = useState<any[]>([]);
   const [missions, setMissions] = useState<any[]>([]);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
 
   const [courseForm, setCourseForm] = useState(emptyCourseForm);
   const [editingCourseId, setEditingCourseId] = useState<number | null>(null);
@@ -119,12 +133,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [coursesData, missionsData] = await Promise.all([
+      const [coursesData, missionsData, usersData] = await Promise.all([
         apiGet<any[]>('/courses'),
         apiGet<any[]>('/missions'),
+        apiGet<any[]>('/admin/users').catch(() => []),
       ]);
       setCourses(coursesData || []);
       setMissions(missionsData || []);
+      setAdminUsers(usersData || []);
     } finally {
       setLoading(false);
     }
@@ -422,7 +438,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
         </div>
       )}
 
-      <div className="flex gap-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-xl p-1 w-fit">
+      <div className="flex gap-2 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-xl p-1 w-fit flex-wrap">
         <button
           onClick={() => setActiveTab('courses')}
           className={`px-4 py-2 rounded-lg text-sm font-bold ${activeTab === 'courses' ? 'bg-arcade-primary text-white' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
@@ -434,6 +450,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
           className={`px-4 py-2 rounded-lg text-sm font-bold ${activeTab === 'missions' ? 'bg-arcade-primary text-white' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
         >
           {t.missions}
+        </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 ${activeTab === 'users' ? 'bg-arcade-primary text-white' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+        >
+          <Users size={14} /> {t.users}
         </button>
       </div>
 
@@ -525,6 +547,71 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-5 space-y-4 animate-float-up">
+          <div className="flex items-center justify-between">
+            <h3 className="text-slate-900 dark:text-white font-bold flex items-center gap-2">
+              <Users size={18} className="text-arcade-primary" />
+              {t.userList}
+            </h3>
+            <span className="text-xs bg-arcade-primary/10 text-arcade-primary px-3 py-1 rounded-full font-bold">
+              {t.userCount}: {adminUsers.length}
+            </span>
+          </div>
+          {loading ? (
+            <p className="text-slate-500 dark:text-gray-400">{t.loading}</p>
+          ) : adminUsers.length === 0 ? (
+            <p className="text-slate-500 dark:text-gray-400">{t.noUsers}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-white/10 text-left text-slate-500 dark:text-gray-400 text-xs uppercase tracking-wide">
+                    <th className="pb-2 pr-4">{t.colUsername}</th>
+                    <th className="pb-2 pr-4">{t.colEmail}</th>
+                    <th className="pb-2 pr-4">{t.colLevel}</th>
+                    <th className="pb-2 pr-4">{t.colXp}</th>
+                    <th className="pb-2 pr-4">{t.colLeague}</th>
+                    <th className="pb-2 pr-4">{t.colAdmin}</th>
+                    <th className="pb-2">{t.colRegistered}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                  {adminUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      <td className="py-2 pr-4">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`}
+                            alt={u.username}
+                            className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex-shrink-0"
+                          />
+                          <span className="font-medium text-slate-900 dark:text-white">{u.username}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 pr-4 text-slate-600 dark:text-gray-300 truncate max-w-[180px]">{u.email}</td>
+                      <td className="py-2 pr-4 text-slate-600 dark:text-gray-300">{u.levelNum ?? 1}</td>
+                      <td className="py-2 pr-4 text-slate-600 dark:text-gray-300">{u.xp ?? 0}</td>
+                      <td className="py-2 pr-4 text-slate-600 dark:text-gray-300">{u.league ?? '—'}</td>
+                      <td className="py-2 pr-4">
+                        {u.isAdmin ? (
+                          <span className="text-xs bg-amber-400/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold">{t.adminBadge}</span>
+                        ) : (
+                          <span className="text-xs bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 px-2 py-0.5 rounded-full">{t.userBadge}</span>
+                        )}
+                      </td>
+                      <td className="py-2 text-slate-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

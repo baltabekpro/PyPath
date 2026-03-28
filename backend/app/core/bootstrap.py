@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from app.core.auth import get_password_hash
 from app.core.config import get_settings
-from app.core.database import SessionLocal
 from app.models.models import Course, Mission, User
 
 
@@ -309,7 +308,8 @@ DEFAULT_MISSIONS = [
 
 
 def ensure_default_courses() -> None:
-    db = SessionLocal()
+    from app.core.database import _get_session_factory
+    db = _get_session_factory()()
     try:
         for course_data in DEFAULT_COURSES:
             existing = db.query(Course).filter(Course.id == course_data["id"]).first()
@@ -333,7 +333,8 @@ def ensure_default_courses() -> None:
 
 
 def ensure_default_missions() -> None:
-    db = SessionLocal()
+    from app.core.database import _get_session_factory
+    db = _get_session_factory()()
     try:
         for mission_data in DEFAULT_MISSIONS:
             existing = db.query(Mission).filter(Mission.id == mission_data["id"]).first()
@@ -362,7 +363,8 @@ def ensure_admin_account() -> None:
     admin_password = getattr(settings, "admin_password", "") or "Admin12345!"
     admin_name = (getattr(settings, "admin_name", "") or "PyPath Admin").strip()
 
-    db = SessionLocal()
+    from app.core.database import _get_session_factory
+    db = _get_session_factory()()
     try:
         admin_user = db.query(User).filter(User.username == admin_username).first()
         if not admin_user and admin_email:

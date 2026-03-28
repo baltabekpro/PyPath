@@ -4,6 +4,7 @@ import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { apiGet, apiPut } from '../api';
 import { AIChat } from './AIChat';
+import { QuizBlock } from './QuizBlock';
 
 interface SimpleLearningProps {
   setView: (view: View) => void;
@@ -491,6 +492,13 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   <div className="bg-slate-900 text-slate-100 p-3 rounded-lg">
                     <pre className="text-xs whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
                   </div>
+                  {/* Quiz after theory */}
+                  <QuizBlock
+                    topic={selectedTopic.title}
+                    theoryContent={[theoryContent.intro, ...theoryContent.points, theoryContent.example].join('\n')}
+                    numQuestions={3}
+                    language={isKz ? 'kz' : 'ru'}
+                  />
                 </div>
               )}
             </div>
