@@ -19,7 +19,6 @@ type LearningPage = 'theory' | 'practice';
 
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
-const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
 const AUTO_OPEN_QUIZ_KEY = 'courseJourneyAutoOpenQuizV1';
 const PRACTICE_TOPIC_KEY = 'practicePrefillTopicIdV1';
 const PRACTICE_INDEX_KEY = 'practicePrefillIndexV1';
@@ -45,9 +44,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     syncFail: isKz ? 'Теория жергілікті ашылды, сервер уақытша жауап бермеді' : 'Теория открыта локально, но сервер пока не ответил',
     theory: isKz ? 'Теория' : 'Теория',
     practicePage: isKz ? 'Практика' : 'Практика',
-    openTheory: isKz ? 'Теорияны ашу' : 'Открыть теорию',
     theoryOpened: isKz ? 'Теория ашық' : 'Теория открыта',
-    openTheoryHint: isKz ? 'Тақырыптың толық талдауын ашып, практиканы бұғаттан шығару үшін батырманы басыңыз.' : 'Нажмите кнопку, чтобы открыть полный разбор темы и разблокировать практику.',
     unlockPracticeHint: isKz ? 'Алдымен теорияны ашыңыз, содан кейін практикалық тапсырмалар белсенді болады.' : 'Сначала откройте теорию, после этого практические задания станут активными.',
     practiceOrderHint: isKz ? 'Практика ретімен ашылады: алдымен 1-тапсырма, кейін 2 және ары қарай.' : 'Практика открывается по порядку: сначала 1 задание, затем 2 и далее.',
     oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
@@ -114,8 +111,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
 
   useEffect(() => {
     if (!selectedTopic || topicProgress.theoryOpened) return;
-    if (localStorage.getItem(AUTO_OPEN_THEORY_KEY) !== 'true') return;
-    localStorage.removeItem(AUTO_OPEN_THEORY_KEY);
     openTheory();
   }, [selectedTopic, topicProgress.theoryOpened]);
 
@@ -277,13 +272,9 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                   {text.theory}
                 </h3>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={openTheory}
-                    disabled={topicProgress.theoryOpened}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-default"
-                  >
-                    {topicProgress.theoryOpened ? text.theoryOpened : text.openTheory}
-                  </button>
+                  <span className="px-3 py-1.5 rounded-lg bg-indigo-600/10 text-indigo-700 dark:text-indigo-200 text-sm font-semibold border border-indigo-200 dark:border-indigo-800/60">
+                    {topicProgress.theoryOpened ? text.theoryOpened : (isKz ? 'Теория ашылуда...' : 'Теория открывается...')}
+                  </span>
                   <button
                     onClick={() => {
                       const nextIndex = topicProgress.completedPractices.length;
@@ -299,15 +290,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                   </button>
                 </div>
               </div>
-
-              {!topicProgress.theoryOpened && (
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg p-3">
-                    {text.openTheoryHint}
-                  </p>
-                </div>
-              )}
 
               {topicProgress.theoryOpened && (
                 <div className="space-y-4">
