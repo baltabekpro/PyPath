@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Code, ChevronRight, Trophy, Lock, Play, X, AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { BookOpen, CheckCircle2, Code, ChevronRight, Play, Trophy, X, AlertCircle, Check } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { apiGet, apiPut } from '../api';
 import { AIChat } from './AIChat';
-import { QuizBlock } from './QuizBlock';
 
 interface SimpleLearningProps {
   setView: (view: View) => void;
@@ -31,28 +30,150 @@ type ProgressMap = Record<string, TopicProgress>;
 type PracticeDetails = {
   description: string;
   starterCode: string;
-  hints: string[];
   tests: {
     description: string;
     checkFunction: (code: string) => boolean;
   }[];
 };
 
-// Practice details mapping (topicId -> practiceIndex -> details)
+const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
+const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
+const AUTO_OPEN_QUIZ_KEY = 'courseJourneyAutoOpenQuizV1';
+
 const getPracticeDetails = (topicId: string, practiceIndex: number, practiceName: string): PracticeDetails => {
   const isKz = APP_LANGUAGE === 'kz';
 
-  // Variables topic
+  const normalized = (value: string) => value.toLowerCase();
+  const hasAll = (value: string, tokens: string[]) => tokens.every((token) => normalized(value).includes(token.toLowerCase()));
+  const hasAny = (value: string, tokens: string[]) => tokens.some((token) => normalized(value).includes(token.toLowerCase()));
+  const count = (value: string, token: string) => normalized(value).split(token.toLowerCase()).length - 1;
+
+  const starterCode = '# Кодты мұнда жаз\n';
+  const genericChecks = [
+    {
+      description: isKz ? 'Код жазылған' : 'Код написан',
+      checkFunction: (code: string) => code.trim().length > 0,
+    },
+  ];
+
+  if (topicId.includes('pre-variables') || topicId === 'course-1' || topicId.includes('variables')) {
+    const checksByIndex: Record<number, PracticeDetails['tests']> = {
+      0: [
+        { description: isKz ? 'Екі айнымалы бар' : 'Есть две переменные', checkFunction: (code) => hasAny(code, ['=', 'print(']) },
+        { description: isKz ? 'Нәтиже экранға шығарылады' : 'Результат выводится на экран', checkFunction: (code) => hasAny(code, ['print(']) },
+      ],
+      1: [
+        { description: isKz ? 'Қосу операторы қолданылған' : 'Использован оператор сложения', checkFunction: (code) => hasAny(code, ['+']) },
+        { description: isKz ? 'Экранға шығару бар' : 'Есть вывод на экран', checkFunction: (code) => hasAny(code, ['print(']) },
+      ],
+      2: [{ description: isKz ? 'Жолдар біріктірілген' : 'Строки объединены', checkFunction: (code) => hasAny(code, ['+', 'print(']) }],
+      3: [{ description: isKz ? 'Түрлендіру қолданылады' : 'Используется преобразование', checkFunction: (code) => hasAny(code, ['str(', 'int(']) }],
+      4: [{ description: isKz ? 'type() шақырылған' : 'Вызван type()', checkFunction: (code) => hasAny(code, ['type(']) }],
+      5: [{ description: isKz ? 'Нәтиже есептелген' : 'Результат вычислен', checkFunction: (code) => hasAny(code, ['+', '-', '*', '/']) }],
+    };
+
+    return {
+      description: isKz ? `${practiceName}: тақырып бойынша практика` : `${practiceName}: практика по теме`,
+      starterCode,
+      tests: checksByIndex[practiceIndex] || genericChecks,
+    };
+  }
+
+  if (topicId.includes('if')) {
+    const checksByIndex: Record<number, PracticeDetails['tests']> = {
+      0: [
+        { description: isKz ? 'if және else қолданылған' : 'Использованы if и else', checkFunction: (code) => hasAll(code, ['if', 'else']) },
+        { description: isKz ? 'Жас салыстырылады' : 'Есть сравнение возраста', checkFunction: (code) => hasAny(code, ['>=', '<=', '>', '<']) },
+        { description: isKz ? 'Экранға жауап шығарылады' : 'Есть вывод ответа', checkFunction: (code) => hasAny(code, ['print(']) },
+      ],
+      1: [
+        { description: isKz ? 'Жұп/тақ тексерісі бар' : 'Есть проверка чётности', checkFunction: (code) => hasAny(code, ['% 2', '%2']) },
+        { description: isKz ? 'if қолданылған' : 'Использован if', checkFunction: (code) => hasAny(code, ['if ']) },
+      ],
+      2: [{ description: isKz ? 'Екі мән салыстырылады' : 'Сравниваются два значения', checkFunction: (code) => hasAny(code, ['>', '<', '>=', '<=']) }],
+      3: [{ description: isKz ? 'Баға шарты бар' : 'Есть условие для оценки', checkFunction: (code) => hasAny(code, ['>=', '<=', 'elif', 'if']) }],
+      4: [{ description: isKz ? 'Кірістірілген if бар' : 'Есть вложенный if', checkFunction: (code) => count(code, 'if') >= 2 || hasAny(code, ['elif']) }],
+      5: [{ description: isKz ? 'Қолжетімділік шарты бар' : 'Есть условие доступа', checkFunction: (code) => hasAll(code, ['if', 'else']) }],
+    };
+
+    return {
+      description: isKz ? `${practiceName}: шарт арқылы шешілетін тапсырма` : `${practiceName}: задача на условие`,
+      starterCode,
+      tests: checksByIndex[practiceIndex] || genericChecks,
+    };
+  }
+
+  if (topicId.includes('loop')) {
+    const checksByIndex: Record<number, PracticeDetails['tests']> = {
+      0: [{ description: isKz ? 'range() қолданылған' : 'Используется range()', checkFunction: (code) => hasAny(code, ['range(']) }],
+      1: [
+        { description: isKz ? 'Қосынды жиналады' : 'Собирается сумма', checkFunction: (code) => hasAny(code, ['+=', 'sum']) },
+        { description: isKz ? 'Цикл қолданылған' : 'Использован цикл', checkFunction: (code) => hasAny(code, ['for ', 'while ']) },
+      ],
+      2: [
+        { description: isKz ? 'Көбейту бар' : 'Есть умножение', checkFunction: (code) => hasAny(code, ['*']) },
+        { description: isKz ? 'Цикл қолданылған' : 'Использован цикл', checkFunction: (code) => hasAny(code, ['for ', 'while ']) },
+      ],
+      3: [{ description: isKz ? 'Максимум салыстыру арқылы табылады' : 'Максимум ищется через сравнение', checkFunction: (code) => hasAny(code, ['if ', '>', '<']) }],
+      4: [
+        { description: isKz ? 'while қолданылған' : 'Используется while', checkFunction: (code) => hasAny(code, ['while ']) },
+        { description: isKz ? 'Санағыш өзгертіледі' : 'Счётчик изменяется', checkFunction: (code) => hasAny(code, ['+=', '-=']) },
+      ],
+      5: [{ description: isKz ? 'Циклден шығу бар' : 'Есть выход из цикла', checkFunction: (code) => hasAny(code, ['break', 'while ']) }],
+    };
+
+    return {
+      description: isKz ? `${practiceName}: цикл бойынша практика` : `${practiceName}: практика по циклам`,
+      starterCode,
+      tests: checksByIndex[practiceIndex] || genericChecks,
+    };
+  }
+
+  if (topicId.includes('func')) {
+    const checksByIndex: Record<number, PracticeDetails['tests']> = {
+      0: [
+        { description: isKz ? 'def қолданылған' : 'Использован def', checkFunction: (code) => hasAny(code, ['def ']) },
+        { description: isKz ? 'Экранға шығару бар' : 'Есть вывод на экран', checkFunction: (code) => hasAny(code, ['print(']) },
+      ],
+      1: [{ description: isKz ? 'Қосу қайтарылады' : 'Возвращается сумма', checkFunction: (code) => hasAny(code, ['return', '+']) }],
+      2: [{ description: isKz ? 'Аудан есептеледі' : 'Считается площадь', checkFunction: (code) => hasAny(code, ['return', '*']) }],
+      3: [{ description: isKz ? 'Жай сан шарты бар' : 'Есть условие простого числа', checkFunction: (code) => hasAny(code, ['%', 'for ', 'if ']) }],
+      4: [{ description: isKz ? 'Әдепкі параметр қолданылған' : 'Есть параметр по умолчанию', checkFunction: (code) => hasAny(code, ['=']) }],
+      5: [{ description: isKz ? 'Функция анықталған' : 'Функция определена', checkFunction: (code) => hasAny(code, ['def ']) }],
+    };
+
+    return {
+      description: isKz ? `${practiceName}: функциялармен жұмыс` : `${practiceName}: работа с функциями`,
+      starterCode,
+      tests: checksByIndex[practiceIndex] || genericChecks,
+    };
+  }
+
+  if (topicId.includes('list')) {
+    const checksByIndex: Record<number, PracticeDetails['tests']> = {
+      0: [{ description: isKz ? 'Тізімге қосу бар' : 'Есть добавление в список', checkFunction: (code) => hasAny(code, ['append(', '[']) }],
+      1: [{ description: isKz ? 'Жою операциясы бар' : 'Есть операция удаления', checkFunction: (code) => hasAny(code, ['remove(', 'pop(']) }],
+      2: [{ description: isKz ? 'Срез қолданылған' : 'Используется срез', checkFunction: (code) => hasAny(code, [':']) }],
+      3: [{ description: isKz ? 'Жиілік есептеледі' : 'Считается частота', checkFunction: (code) => hasAny(code, ['count(', 'for ']) }],
+      4: [{ description: isKz ? 'Сөздік жасалған' : 'Создан словарь', checkFunction: (code) => hasAny(code, ['{', ':']) }],
+      5: [{ description: isKz ? 'Журналға қосу бар' : 'Есть добавление в журнал', checkFunction: (code) => hasAny(code, ['append(', 'for ']) }],
+      6: [{ description: isKz ? 'Іздеу шарты бар' : 'Есть условие поиска', checkFunction: (code) => hasAny(code, ['in ', 'get(']) }],
+    };
+
+    return {
+      description: isKz ? `${practiceName}: коллекциялармен жұмыс` : `${practiceName}: работа с коллекциями`,
+      starterCode,
+      tests: checksByIndex[practiceIndex] || genericChecks,
+    };
+  }
+
   return {
-    description: isKz
-      ? `${practiceName}: тақырып бойынша практика`
-      : `${practiceName}: практика по теме`,
-    starterCode: '# Кодты мұнда жаз\n',
-    hints: [isKz ? 'Теорияны оқы және мысалды қара' : 'Прочитай теорию и посмотри пример'],
+    description: isKz ? `${practiceName}: тақырып бойынша практика` : `${practiceName}: практика по теме`,
+    starterCode,
     tests: [
       {
         description: isKz ? 'Код жазылған' : 'Код написан',
-        checkFunction: (code) => code.trim().length > 10,
+        checkFunction: (code) => code.trim().length > 0,
       },
     ],
   };
@@ -88,20 +209,6 @@ const saveProgressLocal = (progress: ProgressMap) => {
   }
 };
 
-const getTheoryContent = (topic: Topic) => {
-  const isKz = APP_LANGUAGE === 'kz';
-  return {
-    intro: topic.theory || '',
-    points: [
-      ...(Array.isArray(topic.theoryDetails) && topic.theoryDetails.length > 0
-        ? topic.theoryDetails
-        : [isKz ? 'Мысалдарды қарастыр' : 'Разбери примеры', isKz ? 'Практикаға өт' : 'Переходи к практике']),
-    ],
-    example: topic.theoryExample || (isKz ? 'print("Жаттығу")' : 'print("Практика")'),
-    hint: topic.theoryHint || (isKz ? 'Қиын жерін тағы оқы' : 'Еще раз прочитай сложное место'),
-  };
-};
-
 export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
   const isKz = APP_LANGUAGE === 'kz';
 
@@ -111,27 +218,23 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     theory: isKz ? 'Теория' : 'Теория',
     practice: isKz ? 'Практика' : 'Практика',
     completed: isKz ? 'Аяқталды' : 'Завершено',
-    locked: isKz ? 'Жабық' : 'Заблокировано',
     overall: isKz ? 'Жалпы прогресс' : 'Общий прогресс',
     runCode: isKz ? 'Кодты тексеру' : 'Проверить код',
     yourCode: isKz ? 'Сенің кодың' : 'Твой код',
     result: isKz ? 'Нәтиже' : 'Результат',
-    success: isKz ? 'Дұрыс! Келесі тапсырмаға өт' : 'Правильно! Переходи к следующему',
+    success: isKz ? 'Дұрыс! Тапсырма орындалды' : 'Правильно! Задание выполнено',
     nextTask: isKz ? 'Келесі' : 'Далее',
-    backToTopics: isKz ? 'Тақырыптарға оралу' : 'К темам',
+    backToTheory: isKz ? 'Теорияға оралу' : 'К теории',
     selectTask: isKz ? 'Тапсырманы таңда' : 'Выбери задание',
-    hints: isKz ? 'Кеңестер' : 'Подсказки',
     loading: isKz ? 'Жүктелуде...' : 'Загрузка...',
     preTab: isKz ? '8/9 дейін' : 'До 8/9',
-    class8: isKz ? '8 сынып' : '8 класс',
-    class9: isKz ? '9 сынып' : '9 класс',
+    goToQuiz: isKz ? 'Тестке өту' : 'Перейти к тесту',
     oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
   };
 
   const [topics, setTopics] = useState<Topic[]>([]);
   const [progress, setProgress] = useState<ProgressMap>(getInitialProgress);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const [showTheoryPanel, setShowTheoryPanel] = useState(true);
   const [selectedPracticeIndex, setSelectedPracticeIndex] = useState<number | null>(null);
   const [userCode, setUserCode] = useState('');
   const [testResults, setTestResults] = useState<{ passed: boolean; message: string }[]>([]);
@@ -167,7 +270,6 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     const details = getPracticeDetails(topic.id, parsedIndex, topic.practices[parsedIndex]);
     setSelectedTopic(topic);
     setSelectedPracticeIndex(parsedIndex);
-    setShowTheoryPanel(false);
     setUserCode(details.starterCode);
     setTestResults([]);
     setIsSuccess(false);
@@ -249,7 +351,6 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
 
     setSelectedTopic(topic);
     setSelectedPracticeIndex(null);
-    setShowTheoryPanel(true);
   };
 
   const handleSelectPractice = (practiceIndex: number) => {
@@ -265,11 +366,12 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
   };
 
   const handleBackToTopics = () => {
-    setSelectedTopic(null);
-    setSelectedPracticeIndex(null);
-    setUserCode('');
-    setTestResults([]);
-    setIsSuccess(false);
+    if (selectedTopic) {
+      localStorage.setItem(ACTIVE_TOPIC_KEY, selectedTopic.id);
+    }
+    localStorage.setItem(ACTIVE_PAGE_KEY, 'theory');
+    localStorage.removeItem(AUTO_OPEN_QUIZ_KEY);
+    setView(View.COURSE_JOURNEY);
   };
 
   const runTests = () => {
@@ -299,16 +401,29 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     }
   };
 
-  const handleNextPractice = () => {
+  const selectedPracticeDetails = useMemo(
+    () => (
+      selectedTopic && selectedPracticeIndex !== null
+        ? getPracticeDetails(selectedTopic.id, selectedPracticeIndex, selectedTopic.practices[selectedPracticeIndex])
+        : null
+    ),
+    [selectedPracticeIndex, selectedTopic],
+  );
+
+  const isLastPractice = Boolean(selectedTopic) && selectedPracticeIndex === selectedTopic!.practices.length - 1;
+
+  const handleContinueAfterSuccess = () => {
     if (!selectedTopic || selectedPracticeIndex === null) return;
-    if (selectedPracticeIndex < selectedTopic.practices.length - 1) {
+
+    if (!isLastPractice) {
       handleSelectPractice(selectedPracticeIndex + 1);
-    } else {
-      setSelectedPracticeIndex(null);
-      setUserCode('');
-      setTestResults([]);
-      setIsSuccess(false);
+      return;
     }
+
+    localStorage.setItem(ACTIVE_TOPIC_KEY, selectedTopic.id);
+    localStorage.setItem(ACTIVE_PAGE_KEY, 'theory');
+    localStorage.setItem(AUTO_OPEN_QUIZ_KEY, 'true');
+    setView(View.COURSE_JOURNEY);
   };
 
   if (isLoading) {
@@ -431,13 +546,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     );
   }
 
-  // Render topic detail view
   const topicProgress = progress[selectedTopic.id] || { theoryOpened: true, completedPractices: [] };
-  const theoryContent = getTheoryContent(selectedTopic);
-  const selectedPracticeDetails =
-    selectedPracticeIndex !== null
-      ? getPracticeDetails(selectedTopic.id, selectedPracticeIndex, selectedTopic.practices[selectedPracticeIndex])
-      : null;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100">
@@ -449,7 +558,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
             className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             <ChevronRight size={20} className="rotate-180" />
-            <span className="font-semibold">{text.backToTopics}</span>
+            <span className="font-semibold">{text.backToTheory}</span>
           </button>
           <div className="text-center">
             <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{selectedTopic.section}</div>
@@ -460,86 +569,41 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-120px)]">
-          {/* Left sidebar */}
-          <div className="lg:col-span-4 space-y-4 overflow-y-auto">
-            {/* Theory */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
-              <button
-                onClick={() => setShowTheoryPanel(!showTheoryPanel)}
-                className="w-full flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <BookOpen size={20} className="text-indigo-600" />
-                  <span className="font-bold">{text.theory}</span>
-                </div>
-                {showTheoryPanel ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </button>
-
-              {showTheoryPanel && (
-                <div className="p-4 space-y-3">
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{theoryContent.intro}</p>
-
-                  <ul className="space-y-2">
-                    {theoryContent.points.map((point, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <span className="text-indigo-600 font-bold mt-0.5">•</span>
-                        <span className="text-slate-700 dark:text-slate-300">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="bg-slate-900 text-slate-100 p-3 rounded-lg">
-                    <pre className="text-xs whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
-                  </div>
-                  {/* Quiz after theory */}
-                  <QuizBlock
-                    topic={selectedTopic.title}
-                    theoryContent={[theoryContent.intro, ...theoryContent.points, theoryContent.example].join('\n')}
-                    numQuestions={3}
-                    language={isKz ? 'kz' : 'ru'}
-                  />
-                </div>
-              )}
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 h-[calc(100vh-120px)]">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl p-4 overflow-y-auto custom-scrollbar">
+            <div className="flex items-center gap-2 mb-3">
+              <Code size={20} className="text-emerald-600" />
+              <span className="font-bold">{text.practice}</span>
+              <span className="ml-auto text-xs font-bold text-slate-600 dark:text-slate-400">
+                {topicProgress.completedPractices.length}/{selectedTopic.practices.length}
+              </span>
             </div>
 
-            {/* Practice List */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Code size={20} className="text-emerald-600" />
-                <span className="font-bold">{text.practice}</span>
-                <span className="ml-auto text-xs font-bold text-slate-600 dark:text-slate-400">
-                  {topicProgress.completedPractices.length}/{selectedTopic.practices.length}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {selectedTopic.practices.map((practiceName, index) => {
-                  const isDone = topicProgress.completedPractices.includes(index);
-                  const isActive = selectedPracticeIndex === index;
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleSelectPractice(index)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
-                        isActive
-                          ? 'bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-500'
-                          : isDone
-                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {isDone && <Check size={14} className="text-emerald-600" />}
-                      <span>{practiceName}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="space-y-2">
+              {selectedTopic.practices.map((practiceName, index) => {
+                const isDone = topicProgress.completedPractices.includes(index);
+                const isActive = selectedPracticeIndex === index;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleSelectPractice(index)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
+                      isActive
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                        : isDone
+                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {isDone && <Check size={14} className="text-emerald-600" />}
+                    <span>{practiceName}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Right panel - Code editor */}
-          <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden flex flex-col">
             {selectedPracticeDetails ? (
               <>
                 <div className="p-4 border-b border-slate-200 dark:border-white/10">
@@ -559,22 +623,6 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                       placeholder="# Кодты мұнда жаз..."
                     />
                   </div>
-
-                  {/* Hints */}
-                  {selectedPracticeDetails.hints.length > 0 && (
-                    <details className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                      <summary className="cursor-pointer font-semibold text-sm text-amber-800 dark:text-amber-300">
-                        💡 {text.hints}
-                      </summary>
-                      <ul className="mt-2 space-y-1">
-                        {selectedPracticeDetails.hints.map((hint, i) => (
-                          <li key={i} className="text-xs text-amber-700 dark:text-amber-400">
-                            {i + 1}. {hint}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
 
                   {/* Run Button */}
                   <button
@@ -611,10 +659,10 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                       <CheckCircle2 size={48} className="text-emerald-600 mx-auto mb-2" />
                       <p className="text-emerald-700 dark:text-emerald-400 font-bold mb-3">{text.success}</p>
                       <button
-                        onClick={handleNextPractice}
+                        onClick={handleContinueAfterSuccess}
                         className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700"
                       >
-                        {text.nextTask}
+                        {isLastPractice ? text.goToQuiz : text.nextTask}
                       </button>
                     </div>
                   )}
@@ -642,13 +690,13 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
               <div className="flex-1 flex items-center justify-center p-8 text-center">
                 <div className="w-full max-w-xl">
                   <div className="mb-8">
-                  <Code size={64} className="text-slate-300 dark:text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-500 dark:text-slate-400 text-lg font-semibold mb-2">
-                    {text.selectTask}
-                  </p>
-                  <p className="text-slate-400 dark:text-slate-500 text-sm">
-                    {isKz ? '← Солдағы тізімнен тапсырма таңда' : '← Выбери задание из списка слева'}
-                  </p>
+                    <Code size={64} className="text-slate-300 dark:text-slate-700 mx-auto mb-4" />
+                    <p className="text-slate-500 dark:text-slate-400 text-lg font-semibold mb-2">
+                      {text.selectTask}
+                    </p>
+                    <p className="text-slate-400 dark:text-slate-500 text-sm">
+                      {isKz ? '← Солдағы тізімнен тапсырма таңда' : '← Выбери задание из списка слева'}
+                    </p>
                   </div>
 
                   <div className="text-left">

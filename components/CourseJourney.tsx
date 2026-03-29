@@ -18,7 +18,7 @@ interface CourseJourneyProps {
 
 type TheoryContent = {
   intro: string;
-  bullets: string[];
+  paragraphs: string[];
   example: string;
   hint: string;
 };
@@ -28,6 +28,7 @@ type LearningPage = 'theory' | 'practice';
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
 const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
+const AUTO_OPEN_QUIZ_KEY = 'courseJourneyAutoOpenQuizV1';
 const PRACTICE_TOPIC_KEY = 'practicePrefillTopicIdV1';
 const PRACTICE_INDEX_KEY = 'practicePrefillIndexV1';
 
@@ -83,10 +84,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
   if (topic.id === 'course-1' || topic.id.includes('pre-variables')) {
     return {
       intro: isKz ? 'Python тілінде ең алдымен экранға мәтін шығару мен алғашқы командаларды түсіну керек.' : 'В Python сначала важно понять вывод текста на экран и первые команды.',
-      bullets: [
-        isKz ? 'print мәтін мен мәндерді экранға шығарады.' : 'print выводит текст и значения на экран.',
-        isKz ? 'Жолдарды тырнақшамен жазыңыз.' : 'Строки пишутся в кавычках.',
-        isKz ? 'Алғашқы қадамда қарапайым мысалдармен жұмыс істеген дұрыс.' : 'На старте лучше работать с простыми примерами.',
+      paragraphs: [
+        isKz ? 'Бастапқыда print() функциясы арқылы не шығатынын түсіну маңызды. Бұл Python-дағы ең алғашқы кері байланыс береді.' : 'На старте важно понять, как работает print(). Именно он дает первый видимый результат в Python.',
+        isKz ? 'Жолдар тырнақшаға алынады, ал сандар мен мәтін әртүрлі ережемен өңделеді. Сондықтан алғашқы мысалдар өте қарапайым болуы керек.' : 'Строки берутся в кавычки, а числа и текст обрабатываются по разным правилам. Поэтому первые примеры должны быть максимально простыми.',
+        isKz ? 'Ең дұрысы, алдымен бір-екі жолдық шағын мысалмен қолды үйретіп, содан кейін ғана айнымалыларға көшу.' : 'Лучше сначала закрепить навык на коротком примере из одной-двух строк, а уже потом переходить к переменным.',
       ],
       example: isKz ? 'print("Сәлем, әлем!")' : 'print("Привет, мир!")',
       hint: isKz ? 'Алдымен экранға мәтін шығаруды меңгеріп алыңыз, содан кейін айнымалыларға өтіңіз.' : 'Сначала разберитесь с выводом на экран, потом переходите к переменным.',
@@ -96,10 +97,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
   if (topic.id === 'course-2' || topic.id.includes('variables')) {
     return {
       intro: isKz ? 'Айнымалылар деректерді сақтайды, ал түрлер олардың қалай өңделетінін анықтайды.' : 'Переменные хранят данные, а типы определяют, как их обрабатывать.',
-      bullets: [
-        isKz ? 'Айнымалы кейін қолданылатын мәнді сақтайды.' : 'Переменная сохраняет значение для последующего использования.',
-        isKz ? 'Сандар мен жолдар бірдей емес өңделеді.' : 'Числа и строки обрабатываются по-разному.',
-        isKz ? 'type() мәннің түрін тексеруге көмектеседі.' : 'type() помогает проверить тип значения.',
+      paragraphs: [
+        isKz ? 'Айнымалыға сақталған мәнді кейін қайта қолдануға болады. Бұл кодты қысқартып, оқуға жеңіл етеді.' : 'Переменная позволяет сохранить значение и использовать его позже. Это делает код короче и понятнее.',
+        isKz ? 'Сандар, мәтін және логикалық мәндер әртүрлі өңделеді. Сондықтан дерек түрін түсіну кейінгі есептердің бәріне әсер етеді.' : 'Числа, текст и логические значения обрабатываются по-разному, поэтому понимание типа данных влияет на все дальнейшие задачи.',
+        isKz ? 'type() арқылы мәннің қандай тип екенін тексеру арқылы қателерді ертерек байқауға болады.' : 'Проверка type() помогает быстрее заметить ошибки и понять, что именно хранится в переменной.',
       ],
       example: isKz ? ['name = "Алия"', 'age = 14', 'print(name, age)'].join('\n') : ['name = "Аня"', 'age = 14', 'print(name, age)'].join('\n'),
       hint: isKz ? 'Егер дерек керек болса, оны бірден айнымалыға сақтаңыз.' : 'Если данные нужны дальше, сразу сохраняйте их в переменную.',
@@ -109,10 +110,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
   if (topic.id === 'course-3' || topic.id.includes('if')) {
     return {
       intro: isKz ? 'Шарт тексеру нәтижесіне байланысты бағдарламаға әрекеттердің бірін таңдауға мүмкіндік береді.' : 'Условие позволяет программе выбирать одно из действий в зависимости от результата проверки.',
-      bullets: [
-        isKz ? 'if-тен кейін True немесе False беретін шарт жазылады.' : 'После if пишется условие, которое даёт True или False.',
-        isKz ? 'if-тен кейінгі блок шарт ақиқат болса ғана орындалады.' : 'Блок после if выполняется только если условие истинно.',
-        isKz ? 'else шарт жалған болса балама әрекет үшін керек.' : 'else нужен для альтернативного действия, когда условие ложно.',
+      paragraphs: [
+        isKz ? 'if арқылы бағдарламаға бір ғана жағдайға емес, екі түрлі сценарийге де дайын болуды үйретеміз. Шарт ақиқат болса бір тармақ, жалған болса басқа тармақ іске қосылады.' : 'С помощью if программа учится выбирать между двумя сценариями: если условие истинно, выполняется один путь, если ложно — другой.',
+        isKz ? 'Осы тақырыпта басты ой — шарт тексеру бағдарламаның шешім қабылдауына әсер етеді. Сондықтан салыстыру операторларын сенімді қолдану маңызды.' : 'Главная идея здесь в том, что проверка условия влияет на решение программы. Поэтому важно уверенно использовать операторы сравнения.',
+        isKz ? 'else бөлігі кодты толықтырады: егер алғашқы шарт орындалмаса, бағдарлама не істеу керегін анықтап береді.' : 'Блок else завершает логику: он говорит программе, что делать, когда первое условие не выполнено.',
       ],
       example: isKz ? ['age = 14', 'if age >= 14:', '    print("Қатысуға болады")', 'else:', '    print("Әзірге ерте")'].join('\n') : ['age = 14', 'if age >= 14:', '    print("Можно участвовать")', 'else:', '    print("Пока рано")'].join('\n'),
       hint: isKz ? 'Алдымен шартты сөзбен құрастырып, содан кейін оны кодқа аударыңыз.' : 'Сначала сформулируйте условие словами, а потом переведите его в код.',
@@ -122,10 +123,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
   if (topic.id === 'course-4' || topic.id.includes('loop')) {
     return {
       intro: isKz ? 'Циклдер бір әрекет бірнеше рет қайталанғанда қажет.' : 'Циклы нужны, когда одно и то же действие повторяется несколько раз.',
-      bullets: [
-        isKz ? 'for элементтер немесе диапазон алдын ала белгілі болса ыңғайлы.' : 'for удобно использовать, когда заранее известны элементы или диапазон.',
-        isKz ? 'while шарт ақиқат болып тұрғанша қайталау үшін қолайлы.' : 'while подходит для повторения до тех пор, пока условие истинно.',
-        isKz ? 'while бір кезде аяқталатынын бақылау маңызды.' : 'Важно следить, чтобы while когда-нибудь завершался.',
+      paragraphs: [
+        isKz ? 'for көбіне қайталану саны немесе элементтер тізімі белгілі болғанда қолданылады. Бұл цикл оқу үшін де, код жазу үшін де ыңғайлы.' : 'for удобно использовать, когда заранее известен диапазон или список элементов. Такой цикл хорошо читается и легко записывается.',
+        isKz ? 'while шарт орындалып тұрғанша жұмыс істейді. Сондықтан оның қашан тоқтайтынын алдын ала ойлау керек.' : 'while работает, пока условие остается истинным. Поэтому заранее важно понимать, когда цикл должен остановиться.',
+        isKz ? 'Циклдер қайталанатын логиканы қысқартады, бірақ оларды дұрыс тоқтату өте маңызды. Әйтпесе бағдарлама шексіз айналып кетуі мүмкін.' : 'Циклы уменьшают повторяющийся код, но их важно правильно завершать. Иначе программа может уйти в бесконечный цикл.',
       ],
       example: ['for number in range(1, 4):', '    print(number)', '', 'count = 3', 'while count > 0:', '    print(count)', '    count -= 1'].join('\n'),
       hint: isKz ? 'Қайталану саны белгілі болса, көбіне for-дан бастау оңай.' : 'Если повторений известно количество, почти всегда проще начать с for.',
@@ -135,10 +136,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
   if (topic.id === 'course-5' || topic.id.includes('func')) {
     return {
       intro: isKz ? 'Функция қайталанатын кодты бірнеше рет шақыруға болатын бір атаулы блокқа жинайды.' : 'Функция собирает повторяющийся код в один именованный блок, который можно вызывать много раз.',
-      bullets: [
-        isKz ? 'Функциялар def арқылы жасалады.' : 'Функции создаются через def.',
-        isKz ? 'Параметрлер кіріс деректерін қабылдайды.' : 'Параметры принимают входные данные.',
-        isKz ? 'return нәтижені сыртқа қайтарады.' : 'return возвращает результат наружу.',
+      paragraphs: [
+        isKz ? 'Функция кодтың бір бөлігін атауы бар жеке блокқа бөледі. Бұл бір әрекетті бірнеше жерде қайта қолдануға мүмкіндік береді.' : 'Функция выделяет кусок кода в отдельный именованный блок. Это позволяет переиспользовать одно и то же действие в нескольких местах.',
+        isKz ? 'Параметрлер функцияға сырттан дерек береді, ал return нәтижені қайтарады. Осы екі нәрсе функцияны пайдалы етеді.' : 'Параметры передают данные внутрь функции, а return возвращает результат наружу. Именно эти две вещи делают функцию полезной.',
+        isKz ? 'Егер бір логика бірнеше рет қайталанса, оны функцияға айналдыру кодты таза әрі сенімді етеді.' : 'Если одна и та же логика повторяется несколько раз, её стоит вынести в функцию, чтобы код стал чище и надежнее.',
       ],
       example: ['def add(a, b):', '    return a + b', '', 'result = add(2, 3)', 'print(result)'].join('\n'),
       hint: isKz ? 'Бір код екі рет қайталанса, функция туралы ойлану керек.' : 'Если один и тот же код повторяется два раза, уже стоит подумать о функции.',
@@ -148,10 +149,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
   if (topic.id === 'course-6' || topic.id.includes('list')) {
     return {
       intro: isKz ? 'Тізімдер элементтердің реттілігін сақтайды, ал сөздіктер кілт арқылы мәнді тез табуға көмектеседі.' : 'Списки хранят последовательность элементов, а словари помогают быстро находить значение по ключу.',
-      bullets: [
-        isKz ? 'Тізім элементтері индекс арқылы қолжетімді.' : 'Элементы списка доступны по индексу.',
-        isKz ? 'Сөздікте әр мәннің өз кілті бар.' : 'В словаре у каждого значения есть свой ключ.',
-        isKz ? 'Екі құрылым да оқу деректері мен нәтижелерін сақтауда жиі қолданылады.' : 'Обе структуры часто используются для хранения учебных данных и результатов.',
+      paragraphs: [
+        isKz ? 'Тізім реті маңызды болғанда қолданылады: элементтер индекс арқылы алынады, өзгертіледі немесе жойылады.' : 'Список используют, когда важен порядок: элементы можно брать по индексу, менять и удалять.',
+        isKz ? 'Сөздікке келгенде негізгі ой — кілт пен мән. Кілт арқылы керек ақпаратты тез табуға болады.' : 'В словаре главный принцип — пара ключ-значение. По ключу можно быстро получить нужную информацию.',
+        isKz ? 'Бұл екі құрылым деректерді жинақтап сақтауға көмектеседі, сондықтан оларды бір-бірінен ажырата білу өте маңызды.' : 'Обе структуры помогают хранить данные, поэтому важно понимать, чем они отличаются и где каждая полезна.',
       ],
       example: isKz ? ['students = ["Алия", "Бекзат"]', 'profile = {"name": "Алия", "score": 95}', 'print(students[0])', 'print(profile["score"])'].join('\n') : ['students = ["Аня", "Борис"]', 'profile = {"name": "Аня", "score": 95}', 'print(students[0])', 'print(profile["score"])'].join('\n'),
       hint: isKz ? 'Рет керек болса тізім алыңыз. Өріс атауы бойынша қолжетімділік керек болса сөздік алыңыз.' : 'Если нужен порядок, берите список. Если нужен доступ по имени поля, берите словарь.',
@@ -160,10 +161,10 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
 
   return {
     intro: topic.theory,
-    bullets: [
-      isKz ? 'Алдымен негізгі ұғымды өз сөзіңізбен түсіндіріңіз.' : 'Сначала разберите основное понятие своими словами.',
-      isKz ? 'Содан кейін өзіңізді қысқа мысалмен тексеріңіз.' : 'Потом проверьте себя на коротком примере.',
-      isKz ? 'Осыдан кейін практикаға қадаммен өтіңіз.' : 'После этого переходите к практике по шагам.',
+    paragraphs: [
+      isKz ? 'Алдымен тақырыптың негізгі идеясын өз сөзіңізбен түсіндіріп көріңіз. Содан кейін сол ойды кодпен қалай көрсетуге болатынын ойлаңыз.' : 'Сначала попробуйте объяснить основную идею своими словами. Потом подумайте, как показать её кодом.',
+      isKz ? 'Қысқа мысал арқылы түсінуді тексеру жақсы жұмыс істейді: мысалды оқып қана қоймай, неге дәл солай жазылғанын түсініңіз.' : 'Короткий пример помогает проверить понимание: не просто прочитайте его, а разберите, почему он написан именно так.',
+      isKz ? 'Осыдан кейін практикаға өтіңіз: теориядағы ойды шағын тапсырмада қолданып көру білімді бекітеді.' : 'После этого переходите к практике: применение идеи в небольшой задаче закрепляет материал.',
     ],
     example: isKz ? 'print("Тақырыпты талдау")' : 'print("Разбор темы")',
     hint: isKz ? 'Теория есептерді шешпей тұрып идеяны түсінуге көмектесуі керек.' : 'Теория должна помочь вам понять идею до решения задач.',
@@ -173,7 +174,7 @@ const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => 
 export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const isKz = APP_LANGUAGE === 'kz';
   const text = {
-    backToCourses: isKz ? 'Бастыға оралу' : 'Вернуться на главную',
+    backToCourses: isKz ? 'Курстарға оралу' : 'К курсам',
     openPractice: isKz ? 'Практикаға өту' : 'Перейти к практике',
     fullCourse: isKz ? 'Толық курс' : 'Полный курс',
     preTab: isKz ? '8/9 дейін' : 'До 8/9',
@@ -262,6 +263,14 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   }, [selectedTopic, topicProgress.theoryOpened]);
 
   useEffect(() => {
+    if (!selectedTopic || !topicProgress.theoryOpened || !allPracticesCompleted || !selectedTopic.quizBank?.length) return;
+    if (localStorage.getItem(AUTO_OPEN_QUIZ_KEY) !== 'true') return;
+    localStorage.removeItem(AUTO_OPEN_QUIZ_KEY);
+    setIsQuizOpen(true);
+    setActivePage('theory');
+  }, [allPracticesCompleted, selectedTopic, topicProgress.theoryOpened]);
+
+  useEffect(() => {
     if (!selectedTopicId) return;
     localStorage.setItem(ACTIVE_TOPIC_KEY, selectedTopicId);
   }, [selectedTopicId]);
@@ -274,6 +283,14 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     if (!selectedTopic) return null;
     return getTheoryContent(selectedTopic, isKz);
   }, [selectedTopic, isKz]);
+
+  const quizQuestions = useMemo(() => {
+    if (!selectedTopic?.quizBank?.length) return undefined;
+    return selectedTopic.quizBank.map((question) => ({
+      ...question,
+      explanation: question.explanation || '',
+    }));
+  }, [selectedTopic]);
 
   const openTheory = () => {
     if (!selectedTopic) return;
@@ -315,10 +332,10 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <button
-            onClick={() => setView(View.DASHBOARD)}
+            onClick={() => setView(View.COURSES)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft size={18} />
@@ -348,179 +365,150 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <aside className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <GraduationCap size={18} className="text-indigo-600" />
-              <h2 className="font-bold">{text.fullCourse}</h2>
-            </div>
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 md:p-6 space-y-6">
+          <div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
+            <h1 className="text-2xl md:text-3xl font-black mb-2">{selectedTopic.title}</h1>
+            {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400">{saveNote || text.saving}</p>}
+          </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              {isKz ? 'Курс сыныбы профильде сақталады.' : 'Класс курса сохраняется в профиле.'}
-            </p>
-
-            <div className="space-y-2 max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
-              {topics.map((topic) => {
-                const p = progress[topic.id] || { theoryOpened: false, completedPractices: [] };
-                const done = p.completedPractices.length;
-                return (
+          {activePage === 'theory' && theoryContent && (
+            <div className="rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30 p-4 md:p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h3 className="font-semibold inline-flex items-center gap-2">
+                  <BookOpen size={18} className="text-indigo-600" />
+                  {text.theory}
+                </h3>
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    key={topic.id}
-                    onClick={() => setSelectedTopicId(topic.id)}
-                    className={`w-full text-left p-3 rounded-xl border ${selectedTopic?.id === topic.id ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900'}`}
+                    onClick={openTheory}
+                    disabled={topicProgress.theoryOpened}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-default"
                   >
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{topic.section}</p>
-                    <p className="font-semibold text-sm">{topic.title}</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{text.theoryAndPractices.replace('{count}', String(topic.practices.length))}</p>
-                    <p className="text-xs mt-1 text-emerald-700 dark:text-emerald-400">{text.completed.replace('{done}', String(done)).replace('{total}', String(topic.practices.length))}</p>
+                    {topicProgress.theoryOpened ? text.theoryOpened : text.openTheory}
                   </button>
-                );
-              })}
-            </div>
-          </aside>
-
-          <section className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
-            {selectedTopic && (
-              <>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
-                <h1 className="text-2xl font-bold mb-2">{selectedTopic.title}</h1>
-                {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{saveNote || text.saving}</p>}
-
-                {activePage === 'theory' && (
-                  <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30">
-                    <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
-                      <h3 className="font-semibold inline-flex items-center gap-2">
-                        <BookOpen size={18} className="text-indigo-600" />
-                        {text.theory}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={openTheory}
-                          disabled={topicProgress.theoryOpened}
-                          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-default"
-                        >
-                          {topicProgress.theoryOpened ? text.theoryOpened : text.openTheory}
-                        </button>
-                        <button
-                          onClick={() => {
-                            const nextIndex = topicProgress.completedPractices.length;
-                            openPracticeInEditor(Math.min(nextIndex, Math.max(0, selectedTopic.practices.length - 1)));
-                          }}
-                          disabled={!topicProgress.theoryOpened}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            <PlayCircle size={16} />
-                            {text.openPractice}
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {!topicProgress.theoryOpened && (
-                      <div className="space-y-3">
-                        <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg p-3">
-                          {text.openTheoryHint}
-                        </p>
-                      </div>
-                    )}
-
-                    {topicProgress.theoryOpened && theoryContent && (
-                      <div className="space-y-4">
-                        <p className="text-sm text-slate-700 dark:text-slate-200">{theoryContent.intro}</p>
-                        <ul className="space-y-2">
-                          {theoryContent.bullets.map((item) => (
-                            <li key={item} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
-                          <pre className="text-sm whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
-                        </div>
-                        <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
-                          {theoryContent.hint}
-                        </p>
-                        {selectedTopic.theoryDetails && Array.isArray(selectedTopic.theoryDetails) && selectedTopic.theoryDetails.length > 0 && (
-                          <div className="space-y-2">
-                            {selectedTopic.theoryDetails.map((detail) => (
-                              <div key={detail} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
-                                {detail}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {allPracticesCompleted
-                              ? (isKz ? 'Практика аяқталды. Енді финалдық тестке өтіңіз.' : 'Практика завершена. Можно перейти к финальному тесту.')
-                              : (isKz ? 'Тест барлық практикалық қадамдардан кейін ашылады.' : 'Тест откроется после завершения всех практических шагов.')}
-                          </p>
-                          <button
-                            onClick={openQuiz}
-                            disabled={!topicProgress.theoryOpened || !allPracticesCompleted}
-                            className="px-4 py-2 rounded-xl bg-arcade-primary text-white text-sm font-bold hover:bg-arcade-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isKz ? 'Финалдық тест' : 'Финальный тест'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activePage === 'practice' && (
-                  <div>
-                    <h3 className="font-semibold mb-3">{text.practicePage} ({selectedTopic.practices.length})</h3>
-                    {!topicProgress.theoryOpened && (
-                      <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-                        {text.unlockPracticeHint}
-                      </p>
-                    )}
-                    {topicProgress.theoryOpened && (
-                      <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg p-3 mb-3">
-                        {text.practiceOrderHint}
-                      </p>
-                    )}
-                    <div className="space-y-2">
-                      {selectedTopic.practices.map((task, index) => {
-                        const done = topicProgress.completedPractices.includes(index);
-                        const unlocked = topicProgress.theoryOpened && (index === 0 || topicProgress.completedPractices.includes(index - 1) || done);
-                        return (
-                          <button
-                            key={`${selectedTopic.id}-${index}`}
-                            disabled={!unlocked}
-                            onClick={() => openPracticeInEditor(index)}
-                            className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                          >
-                            <span className="text-sm">{task}</span>
-                            {done && <CheckCircle2 size={18} className="text-emerald-600" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <h3 className="font-semibold mb-1">{text.oracleChat}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {isKz ? 'Сұрақ қойсаңыз, Оракул бөлек терезеде ашылады.' : 'Если нужен совет, Оракул откроется в отдельном окне.'}
-                    </p>
-                  </div>
                   <button
-                    onClick={() => setIsOracleOpen(true)}
-                    className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-semibold hover:bg-cyan-700"
+                    onClick={() => {
+                      const nextIndex = topicProgress.completedPractices.length;
+                      openPracticeInEditor(Math.min(nextIndex, Math.max(0, selectedTopic.practices.length - 1)));
+                    }}
+                    disabled={!topicProgress.theoryOpened}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {isKz ? 'Оракулды ашу' : 'Открыть Оракул'}
+                    <span className="inline-flex items-center gap-1">
+                      <PlayCircle size={16} />
+                      {text.openPractice}
+                    </span>
                   </button>
                 </div>
-              </>
-            )}
-          </section>
-        </div>
+              </div>
+
+              {!topicProgress.theoryOpened && (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-700 dark:text-slate-200">{selectedTopic.theory}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg p-3">
+                    {text.openTheoryHint}
+                  </p>
+                </div>
+              )}
+
+              {topicProgress.theoryOpened && (
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{theoryContent.intro}</p>
+                  <div className="space-y-3">
+                    {theoryContent.paragraphs.map((paragraph) => (
+                      <p key={paragraph} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-3 leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                  <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
+                    <pre className="text-sm whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
+                  </div>
+                  <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
+                    {theoryContent.hint}
+                  </p>
+                  {selectedTopic.theoryDetails && Array.isArray(selectedTopic.theoryDetails) && selectedTopic.theoryDetails.length > 0 && (
+                    <div className="space-y-2">
+                      {selectedTopic.theoryDetails.map((detail) => (
+                        <div key={detail} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-3 leading-relaxed">
+                          {detail}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {allPracticesCompleted
+                        ? (isKz ? 'Практика аяқталды. Енді финалдық тест ашылады.' : 'Практика завершена. Финальный тест готов к открытию.')
+                        : (isKz ? 'Тест барлық практикалық қадамдардан кейін ашылады.' : 'Тест откроется после завершения всех практических шагов.')}
+                    </p>
+                    <button
+                      onClick={openQuiz}
+                      disabled={!topicProgress.theoryOpened || !allPracticesCompleted}
+                      className="px-4 py-2 rounded-xl bg-arcade-primary text-white text-sm font-bold hover:bg-arcade-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isKz ? 'Финалдық тест' : 'Финальный тест'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activePage === 'practice' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h3 className="font-semibold">{text.practicePage} ({selectedTopic.practices.length})</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isKz ? 'Әр тапсырма бөлек ашылады, ал теория бөлек бетте қалады.' : 'Каждое задание открывается отдельно, а теория остается на отдельной странице.'}
+                </p>
+              </div>
+              {!topicProgress.theoryOpened && (
+                <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                  {text.unlockPracticeHint}
+                </p>
+              )}
+              {topicProgress.theoryOpened && (
+                <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg p-3">
+                  {text.practiceOrderHint}
+                </p>
+              )}
+              <div className="space-y-2">
+                {selectedTopic.practices.map((task, index) => {
+                  const done = topicProgress.completedPractices.includes(index);
+                  const unlocked = topicProgress.theoryOpened && (index === 0 || topicProgress.completedPractices.includes(index - 1) || done);
+                  return (
+                    <button
+                      key={`${selectedTopic.id}-${index}`}
+                      disabled={!unlocked}
+                      onClick={() => openPracticeInEditor(index)}
+                      className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      <span className="text-sm">{task}</span>
+                      {done && <CheckCircle2 size={18} className="text-emerald-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-white/10">
+            <div>
+              <h3 className="font-semibold mb-1">{text.oracleChat}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {isKz ? 'Сұрақ қойсаңыз, Оракул бөлек терезеде ашылады.' : 'Если нужен совет, Оракул откроется в отдельном окне.'}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsOracleOpen(true)}
+              className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-semibold hover:bg-cyan-700"
+            >
+              {isKz ? 'Оракулды ашу' : 'Открыть Оракул'}
+            </button>
+          </div>
+        </section>
       </div>
 
       {isOracleOpen && (
@@ -550,10 +538,10 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             </button>
             <QuizBlock
               topic={selectedTopic.title}
-              theoryContent={[theoryContent?.intro || '', ...(theoryContent?.bullets || []), theoryContent?.example || ''].filter(Boolean).join('\n')}
+              theoryContent={[theoryContent?.intro || '', ...(theoryContent?.paragraphs || []), theoryContent?.example || ''].filter(Boolean).join('\n')}
               numQuestions={selectedTopic.quizBank?.length || 5}
               language={isKz ? 'kz' : 'ru'}
-              presetQuestions={selectedTopic.quizBank}
+              presetQuestions={quizQuestions}
               onFinished={finishQuiz}
               className="mt-8"
             />
