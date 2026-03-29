@@ -44,6 +44,46 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
     const text = UI_TEXTS?.courses ?? {};
         const currentSeason = courses.find((c: any) => typeof c.currentSeason === 'number')?.currentSeason ?? 1;
 
+    const getCourseJourneyState = (courseId: number) => {
+        const topic = journeyTopics.find((item: any) => String(item?.id) === `course-${courseId}`);
+        const progressState = topic ? journeyProgress[String(topic.id)] || { theoryOpened: false, completedPractices: [] } : { theoryOpened: false, completedPractices: [] };
+        const totalPractices = Array.isArray(topic?.practices) ? topic.practices.length : 0;
+        const completedPractices = Array.isArray(progressState.completedPractices) ? progressState.completedPractices.length : 0;
+        const theoryOpened = Boolean(progressState.theoryOpened);
+        const practiceCompleted = totalPractices > 0 && completedPractices >= totalPractices;
+        const fullyCompleted = Boolean(topic) && practiceCompleted && Boolean(topic?.quizBank?.length) && (progressState as any).quizCompleted;
+
+        let label = isKz ? 'Құлыптаулы' : 'Закрыт';
+        let tone = 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+        let progressText = isKz ? 'Ашылмаған' : 'Не открыт';
+
+        if (!topic) {
+            progressText = isKz ? 'Сервер дерегі жоқ' : 'Нет данных с сервера';
+        } else if (fullyCompleted) {
+            label = isKz ? 'Аяқталған' : 'Завершён';
+            tone = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30';
+            progressText = isKz ? 'Барлық теория, практика және тест аяқталды' : 'Теория, практика и тест завершены';
+        } else if (practiceCompleted) {
+            label = isKz ? 'Теория аяқталды' : 'Теория завершена';
+            tone = 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30';
+            progressText = isKz ? 'Практика кезеңі дайын' : 'Этап практики готов';
+        } else if (theoryOpened) {
+            label = isKz ? 'Теория ашық' : 'Теория открыта';
+            tone = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30';
+            progressText = isKz ? 'Практика әлі аяқталмады' : 'Практика ещё не завершена';
+        } else if (!course.locked) {
+            label = isKz ? 'Ашық' : 'Открыт';
+            tone = 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30';
+            progressText = isKz ? 'Курс қолжетімді' : 'Курс доступен';
+        }
+
+        const percent = topic
+            ? Math.round(((theoryOpened ? 1 : 0) + completedPractices + (fullyCompleted ? 1 : 0)) / (2 + totalPractices) * 100)
+            : Math.max(0, Math.min(100, course.progress || 0));
+
+        return { label, tone, progressText, percent, theoryOpened, completedPractices, totalPractices, fullyCompleted };
+    };
+
   useEffect(() => {
     const loadCourses = async () => {
         try {
@@ -186,7 +226,8 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                    const xPos = index % 4 === 1 ? '80%' : (index % 4 === 3 ? '20%' : '50%');
                    const yPos = index * 180 + 100;
                    const isLocked = course.locked;
-                   const isCompleted = course.progress === 100;
+                   const courseJourneyState = getCourseJourneyState(course.id);
+                   const isCompleted = courseJourneyState.fullyCompleted || course.progress === 100;
                    const isCurrent = !isLocked && !isCompleted;
 
                    return (
@@ -233,11 +274,20 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                    <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[1px] text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>
                                        {localizedMeta.title}
                                    </span>
-                                                                     {course.gradeBand && (
-                                                                            <span className="text-[10px] text-emerald-700 dark:text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-wider mt-1 block">
-                                                                                {course.gradeBand === 'pre' ? lt.gradePre : `${course.gradeBand} ${lt.gradeClass}`}
-                                                                            </span>
-                                                                     )}
+                                   {course.gradeBand && (
+                                       <span className="text-[10px] text-emerald-700 dark:text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-wider mt-1 block">
+                                           {course.gradeBand === 'pre' ? lt.gradePre : `${course.gradeBand} ${lt.gradeClass}`}
+                                       </span>
+                                   )}
+                                   <span className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${courseJourneyState.tone}`}>
+                                       {courseJourneyState.label}
+                                   </span>
+                                   <div className="mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                                       <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-arcade-action" style={{ width: `${courseJourneyState.percent}%` }} />
+                                   </div>
+                                   <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                       {courseJourneyState.progressText}
+                                   </p>
                                </div>
                            </div>
 
