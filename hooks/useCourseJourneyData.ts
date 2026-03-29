@@ -84,67 +84,13 @@ const saveLocalProgress = (progress: ProgressMap) => {
   localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(progress));
 };
 
-export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
+export const useCourseJourneyData = (texts: {
   saving: string;
   saved: string;
   syncLater: string;
   syncFail: string;
-}, isKz: boolean) => {
-  const translateRuToKz = (input: string): string => {
-    const exact: Record<string, string> = {
-      'Первые шаги': 'Алғашқы қадамдар',
-      'Переменные и числа': 'Айнымалылар және сандар',
-      'Условия if': 'if шарттары',
-      'Циклы for': 'for циклдері',
-      'Функции': 'Функциялар',
-      'Мини-игра': 'Мини-жоба',
-      'Тестовый курс': 'Тест курсы',
-      'Пробуждение ИИ': 'ИИ оянуы',
-      'Подготовка к 8/9': '8/9 сыныпқа дайындық',
-      'Общий модуль': 'Жалпы модуль',
-      '8 класс': '8 сынып',
-      '9 класс': '9 сынып',
-      'основы': 'негіздер',
-      'циклы': 'циклдер',
-      'функции': 'функциялар',
-      'коллекции': 'коллекциялар',
-      'Практика': 'Практика',
-      'Теория': 'Теория',
-      'Глава': 'Тарау',
-    };
-    if (exact[input]) return exact[input];
-    let value = input;
-    for (const [ru, kz] of Object.entries(exact)) {
-      value = value.replaceAll(ru, kz);
-    }
-
-    const chapter = value.match(/^Глава\s*(\d+)\s*:\s*(.+)$/i);
-    if (chapter) {
-      value = `Тарау ${chapter[1]}: ${chapter[2]}`;
-    }
-    return value;
-  };
-
-  const localizeTopic = (topic: JourneyTopic): JourneyTopic => {
-    if (!isKz) return topic;
-    return {
-      ...topic,
-      section: translateRuToKz(String(topic.section || '')),
-      title: translateRuToKz(String(topic.title || '')),
-      theory: translateRuToKz(String(topic.theory || '')),
-      practices: Array.isArray(topic.practices) ? topic.practices.map((item) => translateRuToKz(String(item))) : [],
-      quizBank: Array.isArray(topic.quizBank)
-        ? topic.quizBank.map((question) => ({
-            ...question,
-            question: translateRuToKz(String(question.question || '')),
-            options: Array.isArray(question.options) ? question.options.map((option) => translateRuToKz(String(option))) : [],
-            explanation: translateRuToKz(String(question.explanation || '')),
-          }))
-        : [],
-    };
-  };
-
-  const [topicsData, setTopicsData] = useState<JourneyTopic[]>(() => fallbackTopics);
+}) => {
+  const [topicsData, setTopicsData] = useState<JourneyTopic[]>([]);
   const [progress, setProgress] = useState<ProgressMap>(loadLocalProgress);
   const [isSaving, setIsSaving] = useState(false);
   const [saveNote, setSaveNote] = useState('');
@@ -160,23 +106,10 @@ export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
 
       if (!mounted) return;
 
-      if (topicsResult.status === 'fulfilled' && Array.isArray(topicsResult.value) && topicsResult.value.length > 0) {
-        const fallbackById = new Map(fallbackTopics.map((topic) => [topic.id, topic]));
-        const localizedTopics = topicsResult.value.map((topic) => {
-          const localized = fallbackById.get(topic.id);
-          if (!localized) return localizeTopic(topic);
-          return {
-            ...localizeTopic(topic),
-            section: isKz ? localized.section : topic.section,
-            title: isKz ? localized.title : topic.title,
-            theory: isKz ? localized.theory : topic.theory,
-            practices: isKz ? localized.practices : topic.practices,
-            quizBank: isKz ? localized.quizBank : topic.quizBank,
-          };
-        });
-        setTopicsData(localizedTopics);
+      if (topicsResult.status === 'fulfilled' && Array.isArray(topicsResult.value)) {
+        setTopicsData(topicsResult.value);
       } else {
-        setTopicsData((prev) => (prev.length > 0 ? prev : fallbackTopics));
+        setTopicsData([]);
       }
 
       if (progressResult.status === 'fulfilled' && progressResult.value && typeof progressResult.value === 'object') {
@@ -191,7 +124,7 @@ export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
     return () => {
       mounted = false;
     };
-  }, [fallbackTopics, isKz]);
+  }, []);
 
   useEffect(() => {
     if (!saveNote) return;

@@ -7,7 +7,6 @@ import { AIChat } from './AIChat';
 import { QuizBlock } from './QuizBlock';
 import {
   GradeTab,
-  JourneyTopic,
   TopicProgress,
   useCourseJourneyData,
 } from '../hooks/useCourseJourneyData';
@@ -15,13 +14,6 @@ import {
 interface CourseJourneyProps {
   setView: (view: View) => void;
 }
-
-type TheoryContent = {
-  intro: string;
-  paragraphs: string[];
-  example: string;
-  hint: string;
-};
 
 type LearningPage = 'theory' | 'practice';
 
@@ -32,143 +24,9 @@ const AUTO_OPEN_QUIZ_KEY = 'courseJourneyAutoOpenQuizV1';
 const PRACTICE_TOPIC_KEY = 'practicePrefillTopicIdV1';
 const PRACTICE_INDEX_KEY = 'practicePrefillIndexV1';
 
-const getDefaultTopics = (isKz: boolean): JourneyTopic[] => [
-  {
-    id: 'pre-variables',
-    section: isKz ? '8/9 сыныпқа дайындық' : 'Подготовка к 8/9',
-    title: isKz ? 'Айнымалылар және дерек түрлері' : 'Переменные и типы данных',
-    grade: 'pre',
-    theory: isKz ? 'Айнымалы мәнді сақтайды. Python тілінде int, str, float және bool жиі қолданылады.' : 'Переменная хранит значение. В Python часто используются int, str, float и bool.',
-    practices: isKz ? ['2 айнымалы жаса', 'Сандарды қос', 'Жолдарды біріктір', 'int -> str түрлендір', 'type() арқылы түрін тексер', 'Шағын калькулятор жаса'] : ['Создай 2 переменные', 'Сложи числа', 'Склей строки', 'Преобразуй int -> str', 'Проверь тип через type()', 'Сделай мини-калькулятор'],
-  },
-  {
-    id: 'g8-if',
-    section: isKz ? '8 сынып: негіздер' : '8 класс: основы',
-    title: isKz ? 'if / else шарттары' : 'Условия if / else',
-    grade: '8',
-    theory: isKz ? 'Шарт логикалық өрнекке байланысты әрекетті таңдауға мүмкіндік береді.' : 'Условие позволяет выбрать действие в зависимости от логического выражения.',
-    practices: isKz ? ['Жасты тексеру', 'Жұп/тақ тексеру', 'Екі санды салыстыру', 'Ұпай бойынша баға', 'Кірістірілген if', 'Шағын жоба: рұқсат'] : ['Проверка возраста', 'Проверка четности', 'Сравнение двух чисел', 'Оценка по баллам', 'Вложенный if', 'Мини-проект: доступ'],
-  },
-  {
-    id: 'g8-loops',
-    section: isKz ? '8 сынып: циклдер' : '8 класс: циклы',
-    title: isKz ? 'for және while циклдері' : 'Циклы for и while',
-    grade: '8',
-    theory: isKz ? 'Циклдер әрекеттерді қайталайды: for коллекция бойынша, while шарт ақиқат болғанша.' : 'Циклы повторяют действия: for по коллекции, while пока условие истинно.',
-    practices: isKz ? ['range(1,10)', 'Сандар қосындысы', 'Көбейту кестесі', 'Максимумды табу', 'Санағышы бар while', 'Шығатын мәзір'] : ['range(1,10)', 'Сумма чисел', 'Таблица умножения', 'Поиск максимума', 'while со счетчиком', 'Меню с выходом'],
-  },
-  {
-    id: 'g9-func',
-    section: isKz ? '9 сынып: функциялар' : '9 класс: функции',
-    title: isKz ? 'Функциялар және параметрлер' : 'Функции и параметры',
-    grade: '9',
-    theory: isKz ? 'Функция кодты қайта пайдалануға көмектеседі. def қолданып, нәтижені return арқылы қайтарыңыз.' : 'Функция помогает переиспользовать код. Используй def и возвращай результат через return.',
-    practices: isKz ? ['Сәлемдесу функциясы', 'Екі санның қосындысы', 'Аудан функциясы', 'Жай санды тексеру', 'Әдепкі параметрлер', 'Шағын калькулятор'] : ['Функция приветствия', 'Сумма двух чисел', 'Функция площади', 'Проверка простого числа', 'Параметры по умолчанию', 'Мини-калькулятор'],
-  },
-  {
-    id: 'g9-lists',
-    section: isKz ? '9 сынып: коллекциялар' : '9 класс: коллекции',
-    title: isKz ? 'Тізімдер мен сөздіктер' : 'Списки и словари',
-    grade: '9',
-    theory: isKz ? 'Тізім реттілікті сақтайды, ал сөздік кілт-мән жұптарын сақтайды.' : 'Список хранит последовательность, словарь хранит пары ключ-значение.',
-    practices: isKz ? ['Элемент қосу', 'Элемент жою', 'Тізім тілімдері', 'Жиілікті санау', 'Профиль сөздігі', 'Бағалар журналы', 'Сөздік бойынша іздеу'] : ['Добавить элемент', 'Удалить элемент', 'Срезы списка', 'Подсчет частоты', 'Словарь профиля', 'Мини-журнал оценок', 'Поиск по словарю'],
-  },
-];
-
 const getStoredPage = (): LearningPage => {
   const raw = localStorage.getItem(ACTIVE_PAGE_KEY);
   return raw === 'practice' ? 'practice' : 'theory';
-};
-
-const getTheoryContent = (topic: JourneyTopic, isKz: boolean): TheoryContent => {
-  if (topic.id === 'course-1' || topic.id.includes('pre-variables')) {
-    return {
-      intro: isKz ? 'Python тілінде ең алдымен экранға мәтін шығару мен алғашқы командаларды түсіну керек.' : 'В Python сначала важно понять вывод текста на экран и первые команды.',
-      paragraphs: [
-        isKz ? 'Бастапқыда print() функциясы арқылы не шығатынын түсіну маңызды. Бұл Python-дағы ең алғашқы кері байланыс береді.' : 'На старте важно понять, как работает print(). Именно он дает первый видимый результат в Python.',
-        isKz ? 'Жолдар тырнақшаға алынады, ал сандар мен мәтін әртүрлі ережемен өңделеді. Сондықтан алғашқы мысалдар өте қарапайым болуы керек.' : 'Строки берутся в кавычки, а числа и текст обрабатываются по разным правилам. Поэтому первые примеры должны быть максимально простыми.',
-        isKz ? 'Ең дұрысы, алдымен бір-екі жолдық шағын мысалмен қолды үйретіп, содан кейін ғана айнымалыларға көшу.' : 'Лучше сначала закрепить навык на коротком примере из одной-двух строк, а уже потом переходить к переменным.',
-      ],
-      example: isKz ? 'print("Сәлем, әлем!")' : 'print("Привет, мир!")',
-      hint: isKz ? 'Алдымен экранға мәтін шығаруды меңгеріп алыңыз, содан кейін айнымалыларға өтіңіз.' : 'Сначала разберитесь с выводом на экран, потом переходите к переменным.',
-    };
-  }
-
-  if (topic.id === 'course-2' || topic.id.includes('variables')) {
-    return {
-      intro: isKz ? 'Айнымалылар деректерді сақтайды, ал түрлер олардың қалай өңделетінін анықтайды.' : 'Переменные хранят данные, а типы определяют, как их обрабатывать.',
-      paragraphs: [
-        isKz ? 'Айнымалыға сақталған мәнді кейін қайта қолдануға болады. Бұл кодты қысқартып, оқуға жеңіл етеді.' : 'Переменная позволяет сохранить значение и использовать его позже. Это делает код короче и понятнее.',
-        isKz ? 'Сандар, мәтін және логикалық мәндер әртүрлі өңделеді. Сондықтан дерек түрін түсіну кейінгі есептердің бәріне әсер етеді.' : 'Числа, текст и логические значения обрабатываются по-разному, поэтому понимание типа данных влияет на все дальнейшие задачи.',
-        isKz ? 'type() арқылы мәннің қандай тип екенін тексеру арқылы қателерді ертерек байқауға болады.' : 'Проверка type() помогает быстрее заметить ошибки и понять, что именно хранится в переменной.',
-      ],
-      example: isKz ? ['name = "Алия"', 'age = 14', 'print(name, age)'].join('\n') : ['name = "Аня"', 'age = 14', 'print(name, age)'].join('\n'),
-      hint: isKz ? 'Егер дерек керек болса, оны бірден айнымалыға сақтаңыз.' : 'Если данные нужны дальше, сразу сохраняйте их в переменную.',
-    };
-  }
-
-  if (topic.id === 'course-3' || topic.id.includes('if')) {
-    return {
-      intro: isKz ? 'Шарт тексеру нәтижесіне байланысты бағдарламаға әрекеттердің бірін таңдауға мүмкіндік береді.' : 'Условие позволяет программе выбирать одно из действий в зависимости от результата проверки.',
-      paragraphs: [
-        isKz ? 'if арқылы бағдарламаға бір ғана жағдайға емес, екі түрлі сценарийге де дайын болуды үйретеміз. Шарт ақиқат болса бір тармақ, жалған болса басқа тармақ іске қосылады.' : 'С помощью if программа учится выбирать между двумя сценариями: если условие истинно, выполняется один путь, если ложно — другой.',
-        isKz ? 'Осы тақырыпта басты ой — шарт тексеру бағдарламаның шешім қабылдауына әсер етеді. Сондықтан салыстыру операторларын сенімді қолдану маңызды.' : 'Главная идея здесь в том, что проверка условия влияет на решение программы. Поэтому важно уверенно использовать операторы сравнения.',
-        isKz ? 'else бөлігі кодты толықтырады: егер алғашқы шарт орындалмаса, бағдарлама не істеу керегін анықтап береді.' : 'Блок else завершает логику: он говорит программе, что делать, когда первое условие не выполнено.',
-      ],
-      example: isKz ? ['age = 14', 'if age >= 14:', '    print("Қатысуға болады")', 'else:', '    print("Әзірге ерте")'].join('\n') : ['age = 14', 'if age >= 14:', '    print("Можно участвовать")', 'else:', '    print("Пока рано")'].join('\n'),
-      hint: isKz ? 'Алдымен шартты сөзбен құрастырып, содан кейін оны кодқа аударыңыз.' : 'Сначала сформулируйте условие словами, а потом переведите его в код.',
-    };
-  }
-
-  if (topic.id === 'course-4' || topic.id.includes('loop')) {
-    return {
-      intro: isKz ? 'Циклдер бір әрекет бірнеше рет қайталанғанда қажет.' : 'Циклы нужны, когда одно и то же действие повторяется несколько раз.',
-      paragraphs: [
-        isKz ? 'for көбіне қайталану саны немесе элементтер тізімі белгілі болғанда қолданылады. Бұл цикл оқу үшін де, код жазу үшін де ыңғайлы.' : 'for удобно использовать, когда заранее известен диапазон или список элементов. Такой цикл хорошо читается и легко записывается.',
-        isKz ? 'while шарт орындалып тұрғанша жұмыс істейді. Сондықтан оның қашан тоқтайтынын алдын ала ойлау керек.' : 'while работает, пока условие остается истинным. Поэтому заранее важно понимать, когда цикл должен остановиться.',
-        isKz ? 'Циклдер қайталанатын логиканы қысқартады, бірақ оларды дұрыс тоқтату өте маңызды. Әйтпесе бағдарлама шексіз айналып кетуі мүмкін.' : 'Циклы уменьшают повторяющийся код, но их важно правильно завершать. Иначе программа может уйти в бесконечный цикл.',
-      ],
-      example: ['for number in range(1, 4):', '    print(number)', '', 'count = 3', 'while count > 0:', '    print(count)', '    count -= 1'].join('\n'),
-      hint: isKz ? 'Қайталану саны белгілі болса, көбіне for-дан бастау оңай.' : 'Если повторений известно количество, почти всегда проще начать с for.',
-    };
-  }
-
-  if (topic.id === 'course-5' || topic.id.includes('func')) {
-    return {
-      intro: isKz ? 'Функция қайталанатын кодты бірнеше рет шақыруға болатын бір атаулы блокқа жинайды.' : 'Функция собирает повторяющийся код в один именованный блок, который можно вызывать много раз.',
-      paragraphs: [
-        isKz ? 'Функция кодтың бір бөлігін атауы бар жеке блокқа бөледі. Бұл бір әрекетті бірнеше жерде қайта қолдануға мүмкіндік береді.' : 'Функция выделяет кусок кода в отдельный именованный блок. Это позволяет переиспользовать одно и то же действие в нескольких местах.',
-        isKz ? 'Параметрлер функцияға сырттан дерек береді, ал return нәтижені қайтарады. Осы екі нәрсе функцияны пайдалы етеді.' : 'Параметры передают данные внутрь функции, а return возвращает результат наружу. Именно эти две вещи делают функцию полезной.',
-        isKz ? 'Егер бір логика бірнеше рет қайталанса, оны функцияға айналдыру кодты таза әрі сенімді етеді.' : 'Если одна и та же логика повторяется несколько раз, её стоит вынести в функцию, чтобы код стал чище и надежнее.',
-      ],
-      example: ['def add(a, b):', '    return a + b', '', 'result = add(2, 3)', 'print(result)'].join('\n'),
-      hint: isKz ? 'Бір код екі рет қайталанса, функция туралы ойлану керек.' : 'Если один и тот же код повторяется два раза, уже стоит подумать о функции.',
-    };
-  }
-
-  if (topic.id === 'course-6' || topic.id.includes('list')) {
-    return {
-      intro: isKz ? 'Тізімдер элементтердің реттілігін сақтайды, ал сөздіктер кілт арқылы мәнді тез табуға көмектеседі.' : 'Списки хранят последовательность элементов, а словари помогают быстро находить значение по ключу.',
-      paragraphs: [
-        isKz ? 'Тізім реті маңызды болғанда қолданылады: элементтер индекс арқылы алынады, өзгертіледі немесе жойылады.' : 'Список используют, когда важен порядок: элементы можно брать по индексу, менять и удалять.',
-        isKz ? 'Сөздікке келгенде негізгі ой — кілт пен мән. Кілт арқылы керек ақпаратты тез табуға болады.' : 'В словаре главный принцип — пара ключ-значение. По ключу можно быстро получить нужную информацию.',
-        isKz ? 'Бұл екі құрылым деректерді жинақтап сақтауға көмектеседі, сондықтан оларды бір-бірінен ажырата білу өте маңызды.' : 'Обе структуры помогают хранить данные, поэтому важно понимать, чем они отличаются и где каждая полезна.',
-      ],
-      example: isKz ? ['students = ["Алия", "Бекзат"]', 'profile = {"name": "Алия", "score": 95}', 'print(students[0])', 'print(profile["score"])'].join('\n') : ['students = ["Аня", "Борис"]', 'profile = {"name": "Аня", "score": 95}', 'print(students[0])', 'print(profile["score"])'].join('\n'),
-      hint: isKz ? 'Рет керек болса тізім алыңыз. Өріс атауы бойынша қолжетімділік керек болса сөздік алыңыз.' : 'Если нужен порядок, берите список. Если нужен доступ по имени поля, берите словарь.',
-    };
-  }
-
-  return {
-    intro: topic.theory,
-    paragraphs: [
-      isKz ? 'Алдымен тақырыптың негізгі идеясын өз сөзіңізбен түсіндіріп көріңіз. Содан кейін сол ойды кодпен қалай көрсетуге болатынын ойлаңыз.' : 'Сначала попробуйте объяснить основную идею своими словами. Потом подумайте, как показать её кодом.',
-      isKz ? 'Қысқа мысал арқылы түсінуді тексеру жақсы жұмыс істейді: мысалды оқып қана қоймай, неге дәл солай жазылғанын түсініңіз.' : 'Короткий пример помогает проверить понимание: не просто прочитайте его, а разберите, почему он написан именно так.',
-      isKz ? 'Осыдан кейін практикаға өтіңіз: теориядағы ойды шағын тапсырмада қолданып көру білімді бекітеді.' : 'После этого переходите к практике: применение идеи в небольшой задаче закрепляет материал.',
-    ],
-    example: isKz ? 'print("Тақырыпты талдау")' : 'print("Разбор темы")',
-    hint: isKz ? 'Теория есептерді шешпей тұрып идеяны түсінуге көмектесуі керек.' : 'Теория должна помочь вам понять идею до решения задач.',
-  };
 };
 
 export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
@@ -195,7 +53,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
   };
 
-  const fallbackTopics = useMemo(() => getDefaultTopics(isKz), [isKz]);
   const [grade, setGrade] = useState<GradeTab>('8');
   const [selectedTopicId, setSelectedTopicId] = useState<string>(() => localStorage.getItem(ACTIVE_TOPIC_KEY) || '');
   const [activePage, setActivePage] = useState<LearningPage>(getStoredPage);
@@ -208,12 +65,12 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     isSaving,
     saveNote,
     upsertTopicProgress,
-  } = useCourseJourneyData(fallbackTopics, {
+  } = useCourseJourneyData({
     saving: text.saving,
     saved: text.saved,
     syncLater: text.syncLater,
     syncFail: text.syncFail,
-  }, isKz);
+  });
 
   const topics = topicsByGrade[grade] || [];
 
@@ -279,11 +136,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     localStorage.setItem(ACTIVE_PAGE_KEY, activePage);
   }, [activePage]);
 
-  const theoryContent = useMemo(() => {
-    if (!selectedTopic) return null;
-    return getTheoryContent(selectedTopic, isKz);
-  }, [selectedTopic, isKz]);
-
   const quizQuestions = useMemo(() => {
     if (!selectedTopic?.quizBank?.length) return undefined;
     return selectedTopic.quizBank.map((question) => ({
@@ -330,6 +182,19 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     setIsQuizOpen(false);
   };
 
+  if (!selectedTopic) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6">
+            <h1 className="text-2xl font-black mb-2">{text.fullCourse}</h1>
+            <p className="text-slate-600 dark:text-slate-300">{isKz ? 'Серверден курс тақырыптары жүктелмеді.' : 'Темы курса не загрузились с сервера.'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
@@ -372,7 +237,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400">{saveNote || text.saving}</p>}
           </div>
 
-          {activePage === 'theory' && theoryContent && (
+          {activePage === 'theory' && (
             <div className="rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30 p-4 md:p-5 space-y-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="font-semibold inline-flex items-center gap-2">
@@ -414,29 +279,24 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
 
               {topicProgress.theoryOpened && (
                 <div className="space-y-4">
-                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{theoryContent.intro}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{selectedTopic.theory}</p>
                   <div className="space-y-3">
-                    {theoryContent.paragraphs.map((paragraph) => (
-                      <p key={paragraph} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-3 leading-relaxed">
+                    {(selectedTopic.theoryDetails && selectedTopic.theoryDetails.length > 0 ? selectedTopic.theoryDetails : [selectedTopic.theory]).map((paragraph, index) => (
+                      <p key={`${selectedTopic.id}-detail-${index}`} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-3 leading-relaxed">
                         {paragraph}
                       </p>
                     ))}
                   </div>
-                  <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
-                    <pre className="text-sm whitespace-pre-wrap font-mono">{theoryContent.example}</pre>
-                  </div>
-                  <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
-                    {theoryContent.hint}
-                  </p>
-                  {selectedTopic.theoryDetails && Array.isArray(selectedTopic.theoryDetails) && selectedTopic.theoryDetails.length > 0 && (
-                    <div className="space-y-2">
-                      {selectedTopic.theoryDetails.map((detail) => (
-                        <div key={detail} className="text-sm text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-3 leading-relaxed">
-                          {detail}
-                        </div>
-                      ))}
+                  {selectedTopic.theoryExample ? (
+                    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-900 text-slate-100 p-4 overflow-x-auto">
+                      <pre className="text-sm whitespace-pre-wrap font-mono">{selectedTopic.theoryExample}</pre>
                     </div>
-                  )}
+                  ) : null}
+                  {selectedTopic.theoryHint ? (
+                    <p className="text-sm text-indigo-800 dark:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3">
+                      {selectedTopic.theoryHint}
+                    </p>
+                  ) : null}
                   <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {allPracticesCompleted
@@ -538,7 +398,11 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             </button>
             <QuizBlock
               topic={selectedTopic.title}
-              theoryContent={[theoryContent?.intro || '', ...(theoryContent?.paragraphs || []), theoryContent?.example || ''].filter(Boolean).join('\n')}
+              theoryContent={[
+                selectedTopic.theory || '',
+                ...(Array.isArray(selectedTopic.theoryDetails) ? selectedTopic.theoryDetails : []),
+                selectedTopic.theoryExample || '',
+              ].filter(Boolean).join('\n')}
               numQuestions={selectedTopic.quizBank?.length || 5}
               language={isKz ? 'kz' : 'ru'}
               presetQuestions={quizQuestions}

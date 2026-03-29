@@ -31,11 +31,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         grade9: isKz ? '9 сынып' : '9 класс',
         practicesWord: isKz ? 'практика' : 'практик',
         preTitle: isKz ? '8/9 сыныпқа дейін' : 'До 8/9 класса',
-        preDesc: isKz ? '8/9 сынып тақырыптарына дейін түсіну керек база.' : 'База, которую нужно понять до тем 8/9 классов.',
-        pythonInterestingTitle: isKz ? 'Python-ның қызықты тақырыптары' : 'Интересные темы Python',
-        pythonInterestingDesc: isKz ? 'Мотивация үшін практикалық бағыттар.' : 'Практические направления для мотивации.',
-        dataSitesTitle: isKz ? 'Практикаға арналған дерек сайттары' : 'Сайты с данными для практики',
-        dataSitesDesc: isKz ? 'Жобалар үшін шынайы датасеттерді қолданыңыз.' : 'Используйте реальные датасеты для проектов.',
         details: isKz ? 'Толығырақ' : 'Детали',
         totalXp: isKz ? 'Жалпы XP' : 'Общий XP',
         solved: isKz ? 'Шешілген есептер' : 'Решено задач',
@@ -95,33 +90,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const progressPercent = activeCourse?.progress ?? 0;
     const text = UI_TEXTS?.dashboard ?? {};
     const visibleDailyQuests = dailyQuests;
-        const preTopics = isKz ? [
-            'Алгоритмдік ойлау',
-            'Блок-сызбалар және логика',
-            'Айнымалылар және енгізу/шығару',
-            'Алғашқы шарттар мен циклдер',
-        ] : [
-            'Алгоритмическое мышление',
-            'Блок-схемы и логика',
-            'Переменные и ввод/вывод',
-            'Первые условия и циклы',
-        ];
-        const pythonInteresting = isKz ? [
-            'Python ойындарда (pygame)',
-            'Python деректер талдауында',
-            'Боттар және автоматтандыру',
-            'Графиктерді визуализациялау',
-        ] : [
-            'Python в играх (pygame)',
-            'Python для анализа данных',
-            'Боты и автоматизация',
-            'Визуализация графиков',
-        ];
-        const datasetSites = [
-            { label: 'Kaggle Datasets', url: 'https://www.kaggle.com/datasets' },
-            { label: 'UCI ML Repository', url: 'https://archive.ics.uci.edu' },
-            { label: 'Google Dataset Search', url: 'https://datasetsearch.research.google.com' },
-        ];
+    const journeyTopicsByGrade = {
+        pre: journeyTopics.filter((topic: any) => topic?.grade === 'pre').slice(0, 4),
+        '8': journeyTopics.filter((topic: any) => topic?.grade === '8').slice(0, 4),
+        '9': journeyTopics.filter((topic: any) => topic?.grade === '9').slice(0, 4),
+    };
 
     const buildJourneySummary = (grade: 'pre' | '8' | '9') => {
         const gradeTopics = journeyTopics.filter((item: any) => item?.grade === grade);
@@ -144,18 +117,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         localStorage.setItem(AUTO_OPEN_THEORY_KEY, 'true');
         setView(View.COURSE_JOURNEY);
     };
-
-    const preTopicCards = isKz ? [
-        { label: 'Алгоритмдік ойлау', topicId: 'course-1', grade: 'pre' as const },
-        { label: 'Блок-сызбалар және логика', topicId: 'course-1', grade: 'pre' as const },
-        { label: 'Айнымалылар және енгізу/шығару', topicId: 'course-2', grade: 'pre' as const },
-        { label: 'Алғашқы шарттар мен циклдер', topicId: 'course-3', grade: '8' as const },
-    ] : [
-        { label: 'Алгоритмическое мышление', topicId: 'course-1', grade: 'pre' as const },
-        { label: 'Блок-схемы и логика', topicId: 'course-1', grade: 'pre' as const },
-        { label: 'Переменные и ввод/вывод', topicId: 'course-2', grade: 'pre' as const },
-        { label: 'Первые условия и циклы', topicId: 'course-3', grade: '8' as const },
-    ];
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pt-6">
@@ -303,67 +264,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                         </div>
 
                         {/* Pre 8/9 + Python Topics */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div
-                                onClick={() => openJourneyTheory('pre', 'course-1')}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                        event.preventDefault();
-                                        openJourneyTheory('pre', 'course-1');
-                                    }
-                                }}
-                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:shadow-lg transition-all"
-                            >
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{lt.preTitle}</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.preDesc}</p>
-                                <div className="space-y-2">
-                                    {preTopicCards.map((topic) => (
-                                        <button
-                                            key={topic.label}
-                                            type="button"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                openJourneyTheory(topic.grade, topic.topicId);
-                                            }}
-                                            className="w-full text-left text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
-                                        >
-                                            {topic.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{lt.pythonInterestingTitle}</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.pythonInterestingDesc}</p>
-                                <div className="space-y-2">
-                                    {pythonInteresting.map((topic) => (
-                                        <div key={topic} className="text-sm px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-900 dark:text-emerald-300">
-                                            {topic}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {([
+                                { grade: 'pre' as const, title: lt.preTitle, fallback: isKz ? 'Серверден келген тақырыптар' : 'Темы, пришедшие с сервера' },
+                                { grade: '8' as const, title: lt.grade8, fallback: isKz ? 'Серверден келген тақырыптар' : 'Темы, пришедшие с сервера' },
+                                { grade: '9' as const, title: lt.grade9, fallback: isKz ? 'Серверден келген тақырыптар' : 'Темы, пришедшие с сервера' },
+                            ]).map((group) => {
+                                const topicsForGrade = journeyTopicsByGrade[group.grade];
+                                return (
+                                    <div key={group.grade} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+                                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{group.title}</h3>
+                                        <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                                            {topicsForGrade.length > 0 ? (isKz ? 'Серверден келген тақырыптар' : 'Темы, пришедшие с сервера') : group.fallback}
+                                        </p>
+                                        <div className="space-y-2">
+                                            {topicsForGrade.length > 0 ? topicsForGrade.map((topic: any) => (
+                                                <button
+                                                    key={topic.id}
+                                                    type="button"
+                                                    onClick={() => openJourneyTheory(group.grade, topic.id)}
+                                                    className="w-full text-left text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                                                >
+                                                    {topic.title}
+                                                </button>
+                                            )) : (
+                                                <div className="text-sm px-3 py-2 bg-slate-50 dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg text-slate-500 dark:text-slate-400">
+                                                    {isKz ? 'Темалар жүктелмеді' : 'Темы не загрузились'}
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-                            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">{lt.dataSitesTitle}</h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{lt.dataSitesDesc}</p>
-                            <div className="flex flex-wrap gap-2">
-                                {datasetSites.map((site) => (
-                                    <a
-                                        key={site.url}
-                                        href={site.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-sm px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/40"
-                                    >
-                                        {site.label}
-                                    </a>
-                                ))}
-                            </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
         </div>
