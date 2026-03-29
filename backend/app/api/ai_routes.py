@@ -197,7 +197,12 @@ def chat_with_ai(
     session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
 
     try:
-        response_text = ai_service.chat(session_key, payload.message, language=effective_language)
+        response_text = ai_service.chat(
+            session_key,
+            payload.message,
+            language=effective_language,
+            context=payload.context,
+        )
         if user:
             now_ms = int(datetime.now().timestamp() * 1000)
             chats, _ = _get_persisted_chats(user)

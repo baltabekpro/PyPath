@@ -295,6 +295,44 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     [selectedPracticeIndex, selectedTopic],
   );
 
+  const oracleContext = useMemo(() => {
+    if (!selectedTopic || selectedPracticeIndex === null) return undefined;
+
+    const topicProgress = progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] };
+    const currentPracticeName = selectedTopic.practices[selectedPracticeIndex];
+    const failedChecks = testResults.filter((item) => !item.passed).map((item) => item.message);
+
+    return {
+      screen: 'practice',
+      page: 'practice',
+      courseId: Number(selectedTopic.id.replace(/[^0-9]/g, '')) || undefined,
+      courseTitle: selectedTopic.title,
+      courseSection: selectedTopic.section,
+      gradeBand: selectedTopic.grade,
+      courseStatus: !topicProgress.theoryOpened
+        ? (isKz ? 'Теория ашылмаған' : 'Теория не открыта')
+        : (selectedPracticeIndex < selectedTopic.practices.length ? (isKz ? 'Практика ашық' : 'Практика открыта') : (isKz ? 'Курс аяқталды' : 'Курс завершён')),
+      theoryOpened: topicProgress.theoryOpened,
+      practiceIndex: selectedPracticeIndex,
+      practiceName: currentPracticeName,
+      completedPractices: topicProgress.completedPractices.length,
+      totalPractices: selectedTopic.practices.length,
+      lastValidation: testResults.length > 0
+        ? {
+            success: isSuccess,
+            message: isSuccess
+              ? (isKz ? 'Тапсырма өтті' : 'Задание прошло')
+              : (failedChecks[0] || (isKz ? 'Тексеру нәтиже бермеді' : 'Проверка не прошла')),
+            failedChecks,
+          }
+        : undefined,
+      lastError: !isSuccess && testResults.length > 0
+        ? (failedChecks[0] || (isKz ? 'Қате табылды' : 'Ошибка обнаружена'))
+        : undefined,
+      codeSnippet: userCode.slice(0, 800),
+    };
+  }, [isKz, isSuccess, progress, selectedPracticeIndex, selectedTopic, testResults, userCode]);
+
   const isLastPractice = Boolean(selectedTopic) && selectedPracticeIndex === selectedTopic!.practices.length - 1;
 
   const handleContinueAfterSuccess = () => {
@@ -618,7 +656,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
             >
               <X size={18} />
             </button>
-            <AIChat embedded />
+            <AIChat embedded context={oracleContext} />
           </div>
         </div>
       )}

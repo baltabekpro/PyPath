@@ -118,6 +118,29 @@ export interface ChatResponse {
   timestamp: string;
 }
 
+export interface AIChatContext {
+  screen?: string;
+  page?: string;
+  courseId?: number;
+  courseTitle?: string;
+  courseSection?: string;
+  gradeBand?: string;
+  courseStatus?: string;
+  theoryOpened?: boolean;
+  practiceIndex?: number;
+  practiceName?: string;
+  completedPractices?: number;
+  totalPractices?: number;
+  quizCompleted?: boolean;
+  lastValidation?: {
+    success?: boolean;
+    message?: string;
+    failedChecks?: string[];
+  };
+  lastError?: string;
+  codeSnippet?: string;
+}
+
 export interface QuickActionRequest {
   action_type: 'hint' | 'error' | 'theory' | 'motivation';
   user_id?: string;
@@ -166,8 +189,8 @@ export interface QuizGenerateResponse {
 }
 
 export const aiChat = {
-  sendMessage: (message: string, userId?: string, chatId?: string, language?: string) =>
-    apiPost<ChatResponse>('/ai/chat', { message, user_id: userId, chat_id: chatId, language }),
+  sendMessage: (message: string, userId?: string, chatId?: string, language?: string, context?: AIChatContext) =>
+    apiPost<ChatResponse>('/ai/chat', { message, user_id: userId, chat_id: chatId, language, context }),
 
   quickAction: (actionType: string, userId?: string, chatId?: string, language?: string) =>
     apiPost<ChatResponse>('/ai/quick-action', { action_type: actionType, user_id: userId, chat_id: chatId, language }),

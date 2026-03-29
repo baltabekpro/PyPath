@@ -182,6 +182,38 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     setIsQuizOpen(false);
   };
 
+  const oracleContext = useMemo(() => {
+    if (!selectedTopic) return undefined;
+
+    const completedPractices = topicProgress.completedPractices.length;
+    const totalPractices = selectedTopic.practices.length;
+    const stage = activePage === 'practice'
+      ? 'Практика'
+      : 'Теория';
+
+    return {
+      screen: 'course-journey',
+      page: stage,
+      courseId: Number(selectedTopic.id.replace(/[^0-9]/g, '')) || undefined,
+      courseTitle: selectedTopic.title,
+      courseSection: selectedTopic.section,
+      gradeBand: selectedTopic.grade,
+      courseStatus: !topicProgress.theoryOpened
+        ? (isKz ? 'Теория ашылмаған' : 'Теория не открыта')
+        : completedPractices >= totalPractices
+          ? (selectedTopic.quizBank?.length ? (isKz ? 'Тестке дайын' : 'Готов к тесту') : (isKz ? 'Курс аяқталды' : 'Курс завершён'))
+          : (isKz ? 'Практика жалғасып жатыр' : 'Практика продолжается'),
+      theoryOpened: topicProgress.theoryOpened,
+      completedPractices,
+      totalPractices,
+      quizCompleted: Boolean(topicProgress.quizCompleted),
+      practiceIndex: activePage === 'practice' ? topicProgress.completedPractices.length : undefined,
+      practiceName: activePage === 'practice' && selectedTopic.practices[topicProgress.completedPractices.length]
+        ? selectedTopic.practices[topicProgress.completedPractices.length]
+        : undefined,
+    };
+  }, [activePage, isKz, selectedTopic, topicProgress.completedPractices.length, topicProgress.theoryOpened, topicProgress.quizCompleted]);
+
   if (!selectedTopic) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
@@ -381,7 +413,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             >
               <X size={18} />
             </button>
-            <AIChat embedded />
+            <AIChat embedded context={oracleContext} />
           </div>
         </div>
       )}

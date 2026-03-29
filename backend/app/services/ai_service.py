@@ -1,4 +1,5 @@
 """AI service for Google Gemini integration"""
+import json
 import re
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -117,7 +118,7 @@ class AIService:
             )
         return self.chat_sessions[key]
 
-    def chat(self, user_id: str, message: str, language: str | None = None) -> str:
+    def chat(self, user_id: str, message: str, language: str | None = None, context: Optional[dict] = None) -> str:
         """Send message and get AI response.
 
         The response language is determined (in priority order) by:
@@ -140,7 +141,13 @@ class AIService:
             })
             # Prepend a per-message language reminder so the model cannot drift
             lang_reminder = _language_instruction(language)
-            augmented = f"{lang_reminder}\n\n{message}"
+            context_block = ""
+            if isinstance(context, dict) and context:
+                try:
+                    context_block = f"\n\nКонтекст экрана обучения:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
+                except Exception:
+                    context_block = ""
+            augmented = f"{lang_reminder}{context_block}\n\nСообщение пользователя:\n{message}"
             response = session.send_message(augmented)
             self.message_history.setdefault(user_id, []).append({
                 "id": f"{int(datetime.now().timestamp() * 1000)}_a",

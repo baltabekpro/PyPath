@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Zap, Bot, ChevronRight, AlertCircle } from 'lucide-react';
 import { AI_CHAT_DATA, APP_LANGUAGE, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
-import { aiChat } from '../api';
+import { aiChat, AIChatContext } from '../api';
 
 interface Message {
   id: string;
@@ -12,9 +12,28 @@ interface Message {
 
 interface AIChatProps {
     embedded?: boolean;
+    context?: AIChatContext;
 }
 
-export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
+const buildContextSummary = (context?: AIChatContext) => {
+    if (!context) return [] as Array<{ label: string; value: string }>;
+    const items: Array<{ label: string; value: string }> = [];
+
+    if (context.courseTitle) items.push({ label: 'Курс', value: context.courseTitle });
+    if (context.courseSection) items.push({ label: 'Раздел', value: context.courseSection });
+    if (context.page) items.push({ label: 'Экран', value: context.page });
+    if (context.courseStatus) items.push({ label: 'Статус', value: context.courseStatus });
+    if (typeof context.theoryOpened === 'boolean') items.push({ label: 'Теория', value: context.theoryOpened ? 'Открыта' : 'Не открыта' });
+    if (typeof context.completedPractices === 'number' && typeof context.totalPractices === 'number') {
+        items.push({ label: 'Практика', value: `${context.completedPractices}/${context.totalPractices}` });
+    }
+    if (context.practiceName) items.push({ label: 'Задание', value: context.practiceName });
+    if (context.lastError) items.push({ label: 'Ошибка', value: context.lastError });
+
+    return items;
+};
+
+export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => {
     const isKz = APP_LANGUAGE === 'kz';
     const lt = {
         fallbackError: isKz ? 'Кешіріңіз, қате орын алды. Қайтадан көріңіз!' : 'Извини, произошла ошибка. Попробуй еще раз!',
@@ -34,6 +53,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+    const contextSummary = buildContextSummary(context);
 
     const escapeHtml = (value: string) =>
         value
@@ -92,8 +112,8 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
     setIsTyping(true);
 
     try {
-      // Call real AI API
-      const response = await aiChat.sendMessage(text, CURRENT_USER.id);
+            // Call real AI API
+            const response = await aiChat.sendMessage(text, CURRENT_USER.id, undefined, undefined, context);
       
       // Determine message type based on keywords
       let msgType: 'text' | 'hint' | 'error' = 'text';
@@ -215,6 +235,27 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false }) => {
 
                     {/* Messages Body */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-transparent to-slate-100 dark:to-black/20">
+                        {contextSummary.length > 0 && (
+                            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-50/80 dark:bg-cyan-950/20 p-3 shadow-sm">
+                                <div className="flex items-center justify-between gap-2 mb-3">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-600 dark:text-cyan-300">Контекст оператора</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-300">Оракул видит текущий курс, раздел и состояние практики</p>
+                                    </div>
+                                    <div className="size-8 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-600 dark:text-cyan-300">
+                                        <Bot size={16} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {contextSummary.map((item) => (
+                                        <div key={`${item.label}-${item.value}`} className="rounded-xl border border-cyan-500/15 bg-white/80 dark:bg-slate-900/70 px-3 py-2">
+                                            <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-500 dark:text-cyan-400 font-bold">{item.label}</p>
+                                            <p className="text-xs text-slate-800 dark:text-slate-100 mt-1 leading-snug">{item.value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                                 {msg.sender === 'ai' && (

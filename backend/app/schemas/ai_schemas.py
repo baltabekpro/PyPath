@@ -9,6 +9,7 @@ class ChatMessage(BaseModel):
     user_id: str = Field(default="guest", description="User ID for session management")
     chat_id: str | None = Field(default=None, description="Chat ID for multi-chat sessions")
     language: str | None = Field(default=None, description="Preferred response language: 'ru' or 'kz'")
+    context: dict | None = Field(default=None, description="Optional structured learning context")
 
 
 class ChatResponse(BaseModel):
