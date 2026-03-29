@@ -44,8 +44,8 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
     const text = UI_TEXTS?.courses ?? {};
         const currentSeason = courses.find((c: any) => typeof c.currentSeason === 'number')?.currentSeason ?? 1;
 
-    const getCourseJourneyState = (courseId: number) => {
-        const topic = journeyTopics.find((item: any) => String(item?.id) === `course-${courseId}`);
+    const getCourseJourneyState = (course: Course) => {
+        const topic = journeyTopics.find((item: any) => String(item?.id) === `course-${course.id}`);
         const progressState = topic ? journeyProgress[String(topic.id)] || { theoryOpened: false, completedPractices: [] } : { theoryOpened: false, completedPractices: [] };
         const totalPractices = Array.isArray(topic?.practices) ? topic.practices.length : 0;
         const completedPractices = Array.isArray(progressState.completedPractices) ? progressState.completedPractices.length : 0;
@@ -226,7 +226,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                    const xPos = index % 4 === 1 ? '80%' : (index % 4 === 3 ? '20%' : '50%');
                    const yPos = index * 180 + 100;
                    const isLocked = course.locked;
-                   const courseJourneyState = getCourseJourneyState(course.id);
+                   const courseJourneyState = getCourseJourneyState(course);
                    const isCompleted = courseJourneyState.fullyCompleted || course.progress === 100;
                    const isCurrent = !isLocked && !isCompleted;
 
