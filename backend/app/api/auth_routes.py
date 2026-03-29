@@ -91,7 +91,8 @@ def register(payload: UserRegister, request: Request, service: DatabaseService =
         "settings": {
             "theme": "dark",
             "notifications": True,
-            "sound": True
+            "sound": True,
+            "currentGrade": "8"
         }
     }
 

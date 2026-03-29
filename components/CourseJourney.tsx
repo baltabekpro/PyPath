@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle, X } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
+import { apiGet } from '../api';
 import { AIChat } from './AIChat';
 import { QuizBlock } from './QuizBlock';
 import {
@@ -24,7 +25,6 @@ type TheoryContent = {
 
 type LearningPage = 'theory' | 'practice';
 
-const ACTIVE_GRADE_KEY = 'courseJourneyActiveGradeV1';
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
 const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
@@ -73,11 +73,6 @@ const getDefaultTopics = (isKz: boolean): JourneyTopic[] => [
     practices: isKz ? ['Элемент қосу', 'Элемент жою', 'Тізім тілімдері', 'Жиілікті санау', 'Профиль сөздігі', 'Бағалар журналы', 'Сөздік бойынша іздеу'] : ['Добавить элемент', 'Удалить элемент', 'Срезы списка', 'Подсчет частоты', 'Словарь профиля', 'Мини-журнал оценок', 'Поиск по словарю'],
   },
 ];
-
-const getStoredGrade = (): GradeTab => {
-  const raw = localStorage.getItem(ACTIVE_GRADE_KEY);
-  return raw === 'pre' || raw === '8' || raw === '9' ? raw : '8';
-};
 
 const getStoredPage = (): LearningPage => {
   const raw = localStorage.getItem(ACTIVE_PAGE_KEY);
@@ -200,10 +195,11 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   };
 
   const fallbackTopics = useMemo(() => getDefaultTopics(isKz), [isKz]);
-  const [grade, setGrade] = useState<GradeTab>(getStoredGrade);
+  const [grade, setGrade] = useState<GradeTab>('8');
   const [selectedTopicId, setSelectedTopicId] = useState<string>(() => localStorage.getItem(ACTIVE_TOPIC_KEY) || '');
   const [activePage, setActivePage] = useState<LearningPage>(getStoredPage);
   const [isOracleOpen, setIsOracleOpen] = useState(false);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
 
   const {
     topicsByGrade,
@@ -219,6 +215,28 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   }, isKz);
 
   const topics = topicsByGrade[grade] || [];
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadGrade = async () => {
+      try {
+        const currentUser = await apiGet<any>('/currentUser');
+        const storedGrade = currentUser?.settings?.currentGrade;
+        if (!mounted) return;
+        if (storedGrade === 'pre' || storedGrade === '8' || storedGrade === '9') {
+          setGrade(storedGrade);
+        }
+      } catch {
+      }
+    };
+
+    void loadGrade();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const selectedTopic = useMemo(
     () => topics.find((topic) => topic.id === selectedTopicId) || topics[0],
     [topics, selectedTopicId],
@@ -232,8 +250,9 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   }, [selectedTopic, selectedTopicId]);
 
   const topicProgress: TopicProgress = selectedTopic
-    ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [] }
-    : { theoryOpened: false, completedPractices: [] };
+    ? progress[selectedTopic.id] || { theoryOpened: false, completedPractices: [], quizCompleted: false }
+    : { theoryOpened: false, completedPractices: [], quizCompleted: false };
+  const allPracticesCompleted = Boolean(selectedTopic) && topicProgress.completedPractices.length >= (selectedTopic?.practices?.length || 0);
 
   useEffect(() => {
     if (!selectedTopic || topicProgress.theoryOpened) return;
@@ -241,10 +260,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     localStorage.removeItem(AUTO_OPEN_THEORY_KEY);
     openTheory();
   }, [selectedTopic, topicProgress.theoryOpened]);
-
-  useEffect(() => {
-    localStorage.setItem(ACTIVE_GRADE_KEY, grade);
-  }, [grade]);
 
   useEffect(() => {
     if (!selectedTopicId) return;
@@ -282,6 +297,22 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     setView(View.SIMPLE_LEARNING);
   };
 
+  const openQuiz = () => {
+    if (!selectedTopic || !topicProgress.theoryOpened || !allPracticesCompleted) return;
+    setIsQuizOpen(true);
+  };
+
+  const finishQuiz = (summary: { correct: number; total: number; questions: Array<{ question: string }>; }) => {
+    if (!selectedTopic) return;
+    upsertTopicProgress(selectedTopic.id, (current) => ({
+      ...current,
+      quizCompleted: true,
+      quizScore: summary.correct,
+      quizTotal: summary.total,
+    }));
+    setIsQuizOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -294,19 +325,26 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
             {text.backToCourses}
           </button>
 
-          <div className="inline-flex items-center p-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900">
-            <button
-              onClick={() => setActivePage('theory')}
-              className={`px-3 py-1.5 rounded-md text-sm font-semibold ${activePage === 'theory' ? 'bg-indigo-600 text-white' : 'text-slate-700 dark:text-slate-300'}`}
-            >
-              {text.theory}
-            </button>
-            <button
-              onClick={() => setActivePage('practice')}
-              className={`px-3 py-1.5 rounded-md text-sm font-semibold ${activePage === 'practice' ? 'bg-emerald-600 text-white' : 'text-slate-700 dark:text-slate-300'}`}
-            >
-              {text.practicePage}
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center p-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900">
+              <button
+                onClick={() => setActivePage('theory')}
+                className={`px-3 py-1.5 rounded-md text-sm font-semibold ${activePage === 'theory' ? 'bg-indigo-600 text-white' : 'text-slate-700 dark:text-slate-300'}`}
+              >
+                {text.theory}
+              </button>
+              <button
+                onClick={() => setActivePage('practice')}
+                className={`px-3 py-1.5 rounded-md text-sm font-semibold ${activePage === 'practice' ? 'bg-emerald-600 text-white' : 'text-slate-700 dark:text-slate-300'}`}
+              >
+                {text.practicePage}
+              </button>
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <GraduationCap size={16} className="text-indigo-600" />
+              {grade === 'pre' ? text.preTab : `${grade} ${text.classLabel}`}
+            </div>
           </div>
         </div>
 
@@ -317,20 +355,9 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               <h2 className="font-bold">{text.fullCourse}</h2>
             </div>
 
-            <div className="flex gap-2 mb-4">
-              {(['pre', '8', '9'] as GradeTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setGrade(tab);
-                    setSelectedTopicId((topicsByGrade[tab] || [])[0]?.id || '');
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${grade === tab ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
-                >
-                  {tab === 'pre' ? text.preTab : `${tab} ${text.classLabel}`}
-                </button>
-              ))}
-            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              {isKz ? 'Курс сыныбы профильде сақталады.' : 'Класс курса сохраняется в профиле.'}
+            </p>
 
             <div className="space-y-2 max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
               {topics.map((topic) => {
@@ -424,13 +451,20 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                             ))}
                           </div>
                         )}
-                        {/* Auto-generated quiz after theory */}
-                        <QuizBlock
-                          topic={selectedTopic.title}
-                          theoryContent={[theoryContent.intro, ...theoryContent.bullets, theoryContent.example].join('\n')}
-                          numQuestions={3}
-                          language={isKz ? 'kz' : 'ru'}
-                        />
+                        <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {allPracticesCompleted
+                              ? (isKz ? 'Практика аяқталды. Енді финалдық тестке өтіңіз.' : 'Практика завершена. Можно перейти к финальному тесту.')
+                              : (isKz ? 'Тест барлық практикалық қадамдардан кейін ашылады.' : 'Тест откроется после завершения всех практических шагов.')}
+                          </p>
+                          <button
+                            onClick={openQuiz}
+                            disabled={!topicProgress.theoryOpened || !allPracticesCompleted}
+                            className="px-4 py-2 rounded-xl bg-arcade-primary text-white text-sm font-bold hover:bg-arcade-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isKz ? 'Финалдық тест' : 'Финальный тест'}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -500,6 +534,29 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               <X size={18} />
             </button>
             <AIChat embedded />
+          </div>
+        </div>
+      )}
+
+      {isQuizOpen && selectedTopic && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl p-5 md:p-6">
+            <button
+              onClick={() => setIsQuizOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/20"
+              aria-label={isKz ? 'Тестті жабу' : 'Закрыть тест'}
+            >
+              <X size={18} />
+            </button>
+            <QuizBlock
+              topic={selectedTopic.title}
+              theoryContent={[theoryContent?.intro || '', ...(theoryContent?.bullets || []), theoryContent?.example || ''].filter(Boolean).join('\n')}
+              numQuestions={selectedTopic.quizBank?.length || 5}
+              language={isKz ? 'kz' : 'ru'}
+              presetQuestions={selectedTopic.quizBank}
+              onFinished={finishQuiz}
+              className="mt-8"
+            />
           </div>
         </div>
       )}

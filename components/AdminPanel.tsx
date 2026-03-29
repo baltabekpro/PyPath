@@ -98,6 +98,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
     demoApplied: isKz ? 'Дайын үлгі қойылды' : 'Готовый пример подставлен',
     duplicateCourseCreated: isKz ? 'Курс көшірмесі формаға қойылды. Өрістерді тексеріп, сақтаңыз.' : 'Копия курса создана в форме. Проверьте поля и сохраните.',
     duplicateMissionCreated: isKz ? 'Тапсырма көшірмесі жасалды. ID тексеріп, сақтаңыз.' : 'Копия задания создана. Проверьте ID и сохраните.',
+    quizGenerated: isKz ? 'Сұрақтар банкі құрылды' : 'Банк вопросов создан',
+    quizGenerateFailed: isKz ? 'Сұрақтар жасау мүмкін болмады' : 'Не удалось сгенерировать вопросы',
     users: isKz ? 'Пайдаланушылар' : 'Пользователи',
     userList: isKz ? 'Тіркелген пайдаланушылар' : 'Зарегистрированные пользователи',
     userCount: isKz ? 'Барлығы' : 'Всего',
@@ -293,6 +295,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
       locked: true,
     });
     showMessage(t.duplicateCourseCreated);
+  };
+
+  const generateQuizBank = async (courseId: number) => {
+    setSaving(true);
+    try {
+      await apiPost(`/courses/${courseId}/quiz-bank/generate`, {
+        numQuestions: 5,
+        language: isKz ? 'kz' : 'ru',
+        overwrite: true,
+      });
+      showMessage(t.quizGenerated);
+      await loadData();
+    } catch (e: any) {
+      showMessage(e?.message || t.quizGenerateFailed);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeCourse = async (id: number) => {
@@ -494,6 +513,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
                 <div className="flex gap-2">
                   <button onClick={() => editCourse(course)} className="px-3 py-1.5 text-xs rounded bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 dark:text-white">{t.edit}</button>
                   <button onClick={() => duplicateCourse(course)} className="px-3 py-1.5 text-xs rounded bg-arcade-primary/20 text-arcade-primary">{t.copy}</button>
+                    <button onClick={() => generateQuizBank(course.id)} className="px-3 py-1.5 text-xs rounded bg-emerald-500/20 text-emerald-300">AI Quiz</button>
                   <button onClick={() => removeCourse(course.id)} className="px-3 py-1.5 text-xs rounded bg-red-500/20 text-red-300 flex items-center gap-1"><Trash2 size={12} /> {t.delete}</button>
                 </div>
               </div>

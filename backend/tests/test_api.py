@@ -56,6 +56,20 @@ def test_current_user(client: TestClient, auth_headers: dict[str, str]) -> None:
     assert response.json()["username"] == "test_user"
 
 
+def test_current_user_grade_persists(client: TestClient, auth_headers: dict[str, str]) -> None:
+    update_response = client.put(
+        "/currentUser",
+        json={"settings": {"currentGrade": "9"}},
+        headers=auth_headers,
+    )
+    assert update_response.status_code == 200
+
+    response = client.get("/currentUser", headers=auth_headers)
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["settings"]["currentGrade"] == "9"
+
+
 def test_create_and_like_post(client: TestClient, auth_headers: dict[str, str]) -> None:
     payload = {
         "content": "Это тестовый пост для проверки FastAPI backend.",
@@ -111,6 +125,17 @@ def test_courses_journey_endpoint(client: TestClient) -> None:
     assert len(payload) > 0
     assert "theory" in payload[0]
     assert "practices" in payload[0]
+
+
+def test_courses_journey_endpoint_kazakh(client: TestClient) -> None:
+    response = client.get("/courses/journey", headers={"X-App-Language": "kz"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) > 0
+    assert "theory" in payload[0]
+    assert any(char in payload[0]["theory"].lower() for char in "әіңғүұқөһ")
+    assert any(keyword in payload[0]["title"].lower() for keyword in ("тарау", "сынып"))
 
 
 def test_courses_journey_progress_roundtrip(client: TestClient, auth_headers: dict[str, str]) -> None:
@@ -336,3 +361,21 @@ def test_quiz_generate_kazakh_language(client: TestClient) -> None:
     data = response.json()
     assert data["language"] == "kz"
     assert len(data["questions"]) >= 1
+
+
+def test_quiz_generate_returns_bilingual_translations(client: TestClient) -> None:
+    response = client.post(
+        "/ai/generate-quiz",
+        json={
+            "topic": "Переменные",
+            "theory_content": "Переменные хранят значения. Например: x = 5.",
+            "num_questions": 1,
+            "language": "ru",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "translations" in data
+    assert "ru" in data["translations"]
+    assert "kz" in data["translations"]
+    assert len(data["translations"]["kz"]) >= 1

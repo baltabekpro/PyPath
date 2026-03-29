@@ -17,6 +17,10 @@ class InMemoryRateLimiter:
         self._buckets: dict[str, deque[float]] = {}
         self._lock = Lock()
 
+    def reset(self) -> None:
+        with self._lock:
+            self._buckets.clear()
+
     def check(self, key: str, limit: int, window_seconds: int) -> RateLimitResult:
         now = time()
         window_start = now - window_seconds

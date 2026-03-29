@@ -13,11 +13,21 @@ export type JourneyTopic = {
   theoryDetails?: string[];
   theoryExample?: string;
   theoryHint?: string;
+  quizBank?: Array<{
+    id?: string;
+    question: string;
+    options: string[];
+    correct_index: number;
+    explanation?: string;
+  }>;
 };
 
 export type TopicProgress = {
   theoryOpened: boolean;
   completedPractices: number[];
+  quizCompleted?: boolean;
+  quizScore?: number;
+  quizTotal?: number;
 };
 
 export type ProgressMap = Record<string, TopicProgress>;
@@ -44,6 +54,9 @@ const sanitizeProgress = (raw: unknown): ProgressMap => {
     sanitized[String(topicId)] = {
       theoryOpened: Boolean(value.theoryOpened),
       completedPractices: completed,
+      quizCompleted: Boolean(value.quizCompleted),
+      quizScore: Number.isFinite(Number(value.quizScore)) ? Number(value.quizScore) : undefined,
+      quizTotal: Number.isFinite(Number(value.quizTotal)) ? Number(value.quizTotal) : undefined,
     };
   }
 
@@ -120,6 +133,14 @@ export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
       title: translateRuToKz(String(topic.title || '')),
       theory: translateRuToKz(String(topic.theory || '')),
       practices: Array.isArray(topic.practices) ? topic.practices.map((item) => translateRuToKz(String(item))) : [],
+      quizBank: Array.isArray(topic.quizBank)
+        ? topic.quizBank.map((question) => ({
+            ...question,
+            question: translateRuToKz(String(question.question || '')),
+            options: Array.isArray(question.options) ? question.options.map((option) => translateRuToKz(String(option))) : [],
+            explanation: translateRuToKz(String(question.explanation || '')),
+          }))
+        : [],
     };
   };
 
@@ -150,6 +171,7 @@ export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
             title: isKz ? localized.title : topic.title,
             theory: isKz ? localized.theory : topic.theory,
             practices: isKz ? localized.practices : topic.practices,
+            quizBank: isKz ? localized.quizBank : topic.quizBank,
           };
         });
         setTopicsData(localizedTopics);
@@ -205,7 +227,7 @@ export const useCourseJourneyData = (fallbackTopics: JourneyTopic[], texts: {
   };
 
   const upsertTopicProgress = (topicId: string, producer: (current: TopicProgress) => TopicProgress) => {
-    const current = progress[topicId] || { theoryOpened: false, completedPractices: [] };
+    const current = progress[topicId] || { theoryOpened: false, completedPractices: [], quizCompleted: false };
     const nextTopicState = producer(current);
     const nextProgress = {
       ...progress,

@@ -6,6 +6,7 @@ from datetime import datetime
 from app.core.auth import get_password_hash
 from app.core.config import get_settings
 from app.core.database import SessionLocal
+from app.core.locales import COURSE_TRANSLATIONS, translate_ru_to_kz
 from app.models.models import Course, Mission, User, LeaderboardEntry
 
 
@@ -245,6 +246,446 @@ DEFAULT_COURSES = [
         "locked": False,
     },
 ]
+
+
+COURSE_CONTENT_PROFILES = {
+    1: {
+        "focus": "вывод текста и запуск программы",
+        "intro": "Первые шаги в Python начинаются с понимания того, как программа печатает результат и как она вообще запускается.",
+        "sections": [
+            "Команда print() выводит текст, числа и значения переменных. Это базовый способ показать результат работы кода.",
+            "Строки нужно оборачивать в кавычки, а простой код лучше проверять маленькими кусками, чтобы быстрее видеть ошибки.",
+        ],
+        "example": 'print("Привет, Python!")\nname = "Алия"\nprint("Меня зовут", name)',
+        "takeaways": ["print() выводит данные", "Строки пишутся в кавычках", "Первый код должен быть коротким и проверяемым"],
+        "reward": {"xp": 40, "badge": "Старт Python", "icon": "Award", "medal": "Terminal"},
+    },
+    2: {
+        "focus": "переменные и типы данных",
+        "intro": "Переменные позволяют сохранить данные и использовать их позже, а типы подсказывают, как именно эти данные можно обрабатывать.",
+        "sections": [
+            "Переменная — это имя, за которым стоит значение. Если значение нужно в нескольких местах, его лучше сохранить в переменную.",
+            "Числа, строки и логические значения ведут себя по-разному, поэтому при работе с ними важно понимать тип данных.",
+        ],
+        "example": 'name = "Алия"\nage = 14\nprint(name, age)\nprint(type(age))',
+        "takeaways": ["Переменная хранит значение", "Тип влияет на операции", "type() помогает проверять данные"],
+        "reward": {"xp": 45, "badge": "Переменные", "icon": "Key", "medal": "Variables"},
+    },
+    3: {
+        "focus": "ветвления if / else",
+        "intro": "Условия позволяют программе выбирать разные действия в зависимости от результата проверки.",
+        "sections": [
+            "Блок if выполняется только тогда, когда условие истинно. Если условие ложно, можно перейти в else.",
+            "Сравнение строится на операторах >, <, >=, <=, == и !=. Частая ошибка — забыть двоеточие и отступы.",
+        ],
+        "example": 'age = 14\nif age >= 14:\n    print("Можно участвовать")\nelse:\n    print("Пока рано")',
+        "takeaways": ["if выбирает ветку", "else даёт альтернативу", "Сравнения строятся на операторах"],
+        "reward": {"xp": 50, "badge": "Логика", "icon": "Shield", "medal": "IfElse"},
+    },
+    4: {
+        "focus": "циклы for и while",
+        "intro": "Циклы нужны, когда одно и то же действие должно повторяться несколько раз.",
+        "sections": [
+            "for удобен, когда известен диапазон или последовательность элементов. while подходит для повторения до тех пор, пока условие остаётся истинным.",
+            "При работе с while важно следить за условием выхода, иначе цикл может стать бесконечным.",
+        ],
+        "example": 'for number in range(3):\n    print(number)\n\ncount = 3\nwhile count > 0:\n    count -= 1',
+        "takeaways": ["for повторяет по диапазону", "while повторяет по условию", "Нужно предусматривать выход из цикла"],
+        "reward": {"xp": 55, "badge": "Циклы", "icon": "RefreshCw", "medal": "Loops"},
+    },
+    5: {
+        "focus": "функции и параметры",
+        "intro": "Функции помогают собирать повторяющийся код в отдельные блоки и делать программу понятнее.",
+        "sections": [
+            "Функция создаётся через def. Параметры дают возможность передавать в неё данные.",
+            "return возвращает результат наружу. Если код повторяется дважды, его уже стоит вынести в функцию.",
+        ],
+        "example": 'def add(a, b):\n    return a + b\n\nprint(add(2, 3))',
+        "takeaways": ["def создаёт функцию", "Параметры передают данные", "return возвращает результат"],
+        "reward": {"xp": 60, "badge": "Функции", "icon": "Zap", "medal": "Functions"},
+    },
+    6: {
+        "focus": "мини-проект и связка базовых навыков",
+        "intro": "Мини-проект проверяет, умеет ли ученик соединять вывод, переменные, условия, циклы и функции в одну программу.",
+        "sections": [
+            "Сначала полезно собрать маленький сценарий: ввод данных, проверка условия и вывод результата.",
+            "Хороший мини-проект всегда можно разбить на отдельные шаги и проверить каждый шаг отдельно.",
+        ],
+        "example": 'def greet(name):\n    print("Привет", name)\n\nfor _ in range(3):\n    greet("друг")',
+        "takeaways": ["Мини-проект связывает базовые темы", "Каждый шаг стоит проверять отдельно", "Функции помогают собирать проект"],
+        "reward": {"xp": 70, "badge": "Мини-проект", "icon": "Sword", "medal": "Project"},
+    },
+    7: {
+        "focus": "списки и доступ к элементам",
+        "intro": "Списки нужны, когда данные идут в порядке и к каждому элементу можно обратиться по индексу.",
+        "sections": [
+            "Список хранит последовательность значений. Его удобно использовать для учеников, оценок, товаров и любых наборов данных.",
+            "Обращение по индексу начинается с нуля, поэтому первый элемент списка всегда находится по индексу 0.",
+        ],
+        "example": 'students = ["Алия", "Бекзат", "Мира"]\nprint(students[0])\nprint(students[-1])',
+        "takeaways": ["Список хранит порядок", "Индексация начинается с нуля", "Отрицательные индексы берут элементы с конца"],
+        "reward": {"xp": 60, "badge": "Списки", "icon": "Layers", "medal": "Lists"},
+    },
+    8: {
+        "focus": "операции со списками",
+        "intro": "После знакомства со списками важно научиться добавлять, удалять, менять и сортировать элементы.",
+        "sections": [
+            "Методы append(), insert() и remove() помогают управлять содержимым списка без ручного пересоздания.",
+            "Сортировка и перебор списков используются почти в каждом реальном проекте, где данные нужно обработать по порядку.",
+        ],
+        "example": 'numbers = [3, 1, 2]\nnumbers.append(4)\nnumbers.sort()\nprint(numbers)',
+        "takeaways": ["append добавляет в конец", "remove удаляет по значению", "sort упорядочивает список"],
+        "reward": {"xp": 65, "badge": "Операции со списками", "icon": "Boxes", "medal": "ListOps"},
+    },
+    9: {
+        "focus": "двумерные массивы и матрицы",
+        "intro": "Двумерные массивы помогают хранить таблицы, шахматные поля, сетки и любую структуру с строками и столбцами.",
+        "sections": [
+            "Матрица — это список списков. Чтобы добраться до ячейки, нужно указать индекс строки и столбца.",
+            "При обходе таблиц важно помнить, что внешний цикл обычно идёт по строкам, а внутренний — по элементам строки.",
+        ],
+        "example": 'matrix = [[1, 2], [3, 4]]\nprint(matrix[0][1])\nfor row in matrix:\n    for value in row:\n        print(value)',
+        "takeaways": ["Матрица — список списков", "К элементу обращаются двумя индексами", "Вложенные циклы обходят таблицы"],
+        "reward": {"xp": 70, "badge": "Матрицы", "icon": "Grid2x2", "medal": "Matrices"},
+    },
+    10: {
+        "focus": "основы PyGame и игровое окно",
+        "intro": "PyGame открывает путь к графическим программам, где код управляет окном, спрайтами и движением объектов.",
+        "sections": [
+            "Сначала создаётся окно и игровой цикл. Затем добавляются фон, персонаж и ввод с клавиатуры.",
+            "Даже в простой игре важно отделять логику обновления экрана от обработки событий.",
+        ],
+        "example": 'import pygame\npygame.init()\nscreen = pygame.display.set_mode((800, 600))\npygame.display.set_caption("PyPath Game")',
+        "takeaways": ["PyGame работает через игровой цикл", "Первым создают окно", "События и отрисовка должны быть разделены"],
+        "reward": {"xp": 75, "badge": "PyGame", "icon": "Gamepad2", "medal": "GameWindow"},
+    },
+    11: {
+        "focus": "спрайты, движение и столкновения",
+        "intro": "Когда окно игры уже работает, следующий шаг — научиться двигать объекты и проверять столкновения.",
+        "sections": [
+            "Спрайт — это объект с изображением и координатами. Он может двигаться, падать, прыгать и сталкиваться с другими объектами.",
+            "Проверка столкновений позволяет понять, когда герой коснулся стены, врага или бонуса.",
+        ],
+        "example": 'player_rect = pygame.Rect(50, 50, 40, 40)\nwall_rect = pygame.Rect(120, 50, 40, 40)\nprint(player_rect.colliderect(wall_rect))',
+        "takeaways": ["Спрайт имеет координаты", "colliderect проверяет столкновение", "Движение строится на изменении координат"],
+        "reward": {"xp": 80, "badge": "Столкновения", "icon": "ShieldAlert", "medal": "Collisions"},
+    },
+    12: {
+        "focus": "сборка 2D-игры",
+        "intro": "Финальная игра соединяет всё изученное: окно, персонажей, управление, препятствия и завершение уровня.",
+        "sections": [
+            "В проекте важно разбить работу на части: фон, персонаж, цели, проигрыш и победа.",
+            "Хороший игровой проект всегда можно расширить новыми уровнями, счётом и простым интерфейсом.",
+        ],
+        "example": 'score = 0\nlevel_finished = False\nif score >= 10:\n    level_finished = True',
+        "takeaways": ["Проект должен иметь цель", "Игра строится по частям", "Уровень завершает проверка условий"],
+        "reward": {"xp": 100, "badge": "Игра", "icon": "Trophy", "medal": "GameProject"},
+    },
+    13: {
+        "focus": "чтение и запись файлов",
+        "intro": "Файлы позволяют хранить данные между запусками программы: списки, оценки, логи и отчёты.",
+        "sections": [
+            "Открывая файл через with open(...), вы автоматически закрываете его после завершения блока.",
+            "Чтение и запись в текстовый файл помогают сохранять результат работы программы на диск.",
+        ],
+        "example": 'with open("notes.txt", "w", encoding="utf-8") as file:\n    file.write("Привет, файл")',
+        "takeaways": ["with open безопаснее обычного open", "Файл можно читать и писать", "Данные сохраняются между запусками"],
+        "reward": {"xp": 75, "badge": "Файлы", "icon": "FileText", "medal": "Files"},
+    },
+    14: {
+        "focus": "словари и наборы",
+        "intro": "Словари связывают ключ и значение, а множества помогают быстро проверять уникальность элементов.",
+        "sections": [
+            "Словарь удобен, когда данные нужно искать по имени поля: профиль, настройки, счёт.",
+            "set помогает избавиться от повторов и быстро проверять наличие элемента.",
+        ],
+        "example": 'profile = {"name": "Алия", "score": 95}\nunique_tags = {"python", "fastapi"}\nprint(profile["score"])',
+        "takeaways": ["Словарь хранит ключ и значение", "set убирает дубликаты", "По ключу можно быстро искать данные"],
+        "reward": {"xp": 80, "badge": "Структуры данных", "icon": "Database", "medal": "DictSet"},
+    },
+    15: {
+        "focus": "объектно-ориентированное программирование",
+        "intro": "ООП помогает описывать реальные сущности через классы, объекты и методы.",
+        "sections": [
+            "Класс задаёт шаблон объекта, а объект хранит конкретные данные и умеет выполнять методы.",
+            "ООП делает код крупного проекта понятнее, потому что объединяет данные и поведение в одном месте.",
+        ],
+        "example": 'class Student:\n    def __init__(self, name):\n        self.name = name\n\nstudent = Student("Алия")',
+        "takeaways": ["Класс — шаблон объекта", "Методы работают с данными объекта", "ООП упрощает крупные программы"],
+        "reward": {"xp": 85, "badge": "ООП", "icon": "Cpu", "medal": "OOP"},
+    },
+    16: {
+        "focus": "API и финальный проект",
+        "intro": "Финальный модуль соединяет файлы, структуры данных, ООП и внешнее взаимодействие через API.",
+        "sections": [
+            "На практике это уже небольшой сервис или приложение с данными, интерфейсом и логикой обработки запросов.",
+            "Важнее всего здесь научиться собирать проект из знакомых частей и проверять работу каждого слоя отдельно.",
+        ],
+        "example": 'import requests\nresponse = requests.get("https://example.com/api")\nprint(response.status_code)',
+        "takeaways": ["Финальный проект использует много тем сразу", "API позволяет общаться с внешними сервисами", "Крупный проект нужно собирать по слоям"],
+        "reward": {"xp": 120, "badge": "Финальный проект", "icon": "Rocket", "medal": "APIProject"},
+    },
+    17: {
+        "focus": "алгоритмика для 8 класса",
+        "intro": "Этот модуль укрепляет базовые темы через короткие алгоритмические задачи и простые проверки условий.",
+        "sections": [
+            "Здесь важно быстро читать условие, переводить его в шаги и выбирать нужную конструкцию Python.",
+            "Чем меньше лишнего кода в решении, тем легче отследить ошибку и довести задачу до результата.",
+        ],
+        "example": 'number = int(input())\nif number % 2 == 0:\n    print("even")\nelse:\n    print("odd")',
+        "takeaways": ["Алгоритм сначала описывают шагами", "Условия помогают принимать решения", "Короткие решения проще проверять"],
+        "reward": {"xp": 55, "badge": "8 класс", "icon": "BookOpen", "medal": "Grade8"},
+    },
+    18: {
+        "focus": "переход между 8 и 9 классом",
+        "intro": "Переходный модуль помогает соединить уже знакомые конструкции с более крупными задачами и новыми структурами данных.",
+        "sections": [
+            "В этом блоке полезно повторить условия, циклы, функции и списки, а потом собрать из них практическое решение.",
+            "Чем лучше вы умеете комбинировать базовые темы, тем легче переходить к задачам следующего уровня.",
+        ],
+        "example": 'def total(values):\n    return sum(values)\n\nprint(total([1, 2, 3]))',
+        "takeaways": ["Переходный модуль повторяет базу", "Сложные задачи собираются из простых", "Функции и списки нужны чаще всего"],
+        "reward": {"xp": 65, "badge": "Переход", "icon": "Route", "medal": "Transition"},
+    },
+}
+
+
+def _localized_course_meta(course_id: int, title: str, description: str) -> dict:
+    return COURSE_TRANSLATIONS.get("kz", {}).get(course_id, {
+        "title": title,
+        "description": description,
+        "section": "8/9 сыныпқа дайындық",
+    })
+
+
+def _translate_example(example: str) -> str:
+    value = translate_ru_to_kz(example)
+    example_replacements = [
+        ("Привет, Python!", "Сәлем, Python!"),
+        ("Меня зовут", "Менің атым"),
+        ("Можно участвовать", "Қатысуға болады"),
+        ("Пока рано", "Әлі ерте"),
+        ("Привет", "Сәлем"),
+        ("друг", "дос"),
+        ("Разбор темы", "Тақырыпты талдау"),
+        ("Тақырыпты меңгеру", "Тақырыпты меңгеру"),
+        ("Привет, файл", "Сәлем, файл"),
+        ("Тақырыпты", "Тақырыпты"),
+    ]
+    for source, target in example_replacements:
+        value = value.replace(source, target)
+    return value
+
+
+def _build_theory_content(course_id: int, title: str, description: str, profile: dict, language: str) -> dict:
+    if language == "kz":
+        meta = _localized_course_meta(course_id, title, description)
+        sections = [
+            f"Бұл бөлімде {meta.get('section') or meta.get('title') or title} тақырыбының негізгі идеясын қарастырамыз.",
+        ]
+        sections.extend(
+            translate_ru_to_kz(str(section)) for section in (profile.get("sections") or [])
+        )
+        if not sections:
+            sections = [translate_ru_to_kz(str(description))]
+        return {
+            "intro": str(meta.get("description") or translate_ru_to_kz(str(profile.get("intro") or description))),
+            "sections": sections,
+            "example": _translate_example(str(profile.get("example") or "print('Сәлем, Python!')")),
+            "takeaways": [
+                translate_ru_to_kz(str(item)) for item in (profile.get("takeaways") or [meta.get("section") or title])
+            ],
+            "focus": translate_ru_to_kz(str(profile.get("focus") or description)),
+        }
+
+    return {
+        "intro": str(profile.get("intro") or f"Подробный разбор темы {title} поможет пройти от базовой идеи к уверенной практике."),
+        "sections": list(profile.get("sections") or [description]),
+        "example": str(profile.get("example") or "print('Пример')"),
+        "takeaways": list(profile.get("takeaways") or [profile.get("focus") or description]),
+        "focus": str(profile.get("focus") or description),
+    }
+
+
+def _build_quiz_bank(course_id: int, title: str, description: str, profile: dict, language: str) -> list[dict]:
+    focus = str(profile.get("focus") or description or title)
+    intro = str(profile.get("intro") or description or title)
+    if language == "kz":
+        meta = _localized_course_meta(course_id, title, description)
+        localized_title = str(meta.get("title") or title)
+        localized_focus = translate_ru_to_kz(focus)
+        localized_intro = translate_ru_to_kz(intro)
+        return [
+            {
+                "id": f"course-{course_id}-q1",
+                "question": f"{localized_title} тақырыбының негізгі идеясы қандай?",
+                "options": [
+                    localized_focus,
+                    "Синтаксисті жаттап алып, практика жасамау",
+                    "Кездейсоқ командаларды пайдалану",
+                    "Бағдарлама нәтижесін елемеу",
+                ],
+                "correct_index": 0,
+                "explanation": f"Бұл курс {localized_title} {localized_focus} түсінігіне сүйенеді.",
+            },
+            {
+                "id": f"course-{course_id}-q2",
+                "question": f"«{localized_title}» курсында алдымен нені түсіну керек?",
+                "options": [
+                    localized_intro,
+                    "Бірден үлкен жобаны тексерусіз жазу",
+                    "Тек комментарийлерді қолдану",
+                    "Python-дағы шегіністерді өшіру",
+                ],
+                "correct_index": 0,
+                "explanation": "Алдымен негізгі ойды түсініп, содан кейін оны қысқа мысалмен бекіткен дұрыс.",
+            },
+            {
+                "id": f"course-{course_id}-q3",
+                "question": f"{localized_title} тақырыбын үйренуде қай тәсіл тиімді?",
+                "options": [
+                    "Алдымен теория, кейін қысқа мысал, соңында практика",
+                    "Бірден үлкен жобаға көшу",
+                    "Тек командалардың атын жаттау",
+                    "Теориядан кейін тесттерді өткізіп жіберу",
+                ],
+                "correct_index": 0,
+                "explanation": "Білім теориядан практикаға біртіндеп өткенде жақсы бекітіледі.",
+            },
+            {
+                "id": f"course-{course_id}-q4",
+                "question": f"{localized_title} кезінде қателерден не сақтайды?",
+                "options": [
+                    "Шешімді шағын қадамдарға бөлу",
+                    "Кодты тексерусіз жазу",
+                    "Түсініксіз жерлерді түсіндірмесіз қалдыру",
+                    "Әр қателіктен кейін тақырыпты ауыстыру",
+                ],
+                "correct_index": 0,
+                "explanation": "Қысқа және тексерілетін қадамдар қатені тезірек табуға көмектеседі.",
+            },
+            {
+                "id": f"course-{course_id}-q5",
+                "question": f"{localized_title} тақырыбы меңгерілді екенін не көрсетеді?",
+                "options": [
+                    "Идеяны түсіндіріп, қысқа жұмыс істейтін мысал жаза алу",
+                    "Тақырыптан бір сөз ғана еске түсіру",
+                    "Курс бетін ашу",
+                    "Практиканы өткізіп жіберу",
+                ],
+                "correct_index": 0,
+                "explanation": "Тақырыпты түсінген адам оны түсіндіріп, мысалда қолдана алады.",
+            },
+        ]
+
+    return [
+        {
+            "id": f"course-{course_id}-q1",
+            "question": f"Какова главная идея темы {title}?",
+            "options": [
+                focus,
+                "Только запомнить синтаксис без практики",
+                "Использовать случайные команды",
+                "Игнорировать результат программы",
+            ],
+            "correct_index": 0,
+            "explanation": f"Тема курса {title} строится вокруг понятия: {focus}.",
+        },
+        {
+            "id": f"course-{course_id}-q2",
+            "question": f"Что чаще всего нужно сначала понять в курсе «{title}»?",
+            "options": [
+                intro,
+                "Сразу писать большой проект без проверки шагов",
+                "Использовать только комментарии",
+                "Отключить отступы в Python",
+            ],
+            "correct_index": 0,
+            "explanation": "Сначала важно понять базовую идею, затем закрепить её на маленьких примерах.",
+        },
+        {
+            "id": f"course-{course_id}-q3",
+            "question": f"Какой подход лучше всего работает при изучении темы {title}?",
+            "options": [
+                "Сначала теория, потом короткий пример, затем практика",
+                "Сразу переходить к огромному проекту",
+                "Выучить только названия команд",
+                "Пропускать тесты после теории",
+            ],
+            "correct_index": 0,
+            "explanation": "Быстрее всего знания закрепляются, когда теория сразу проверяется на практике.",
+        },
+        {
+            "id": f"course-{course_id}-q4",
+            "question": f"Что помогает избежать ошибок при работе с темой {title}?",
+            "options": [
+                "Разбивать решение на маленькие шаги",
+                "Писать код без проверки",
+                "Оставлять непонятные участки без комментариев к логике",
+                "Менять тему после каждой ошибки",
+            ],
+            "correct_index": 0,
+            "explanation": "Короткие и проверяемые шаги позволяют быстрее локализовать ошибку.",
+        },
+        {
+            "id": f"course-{course_id}-q5",
+            "question": f"Какой результат показывает, что тема {title} уже усвоена?",
+            "options": [
+                "Можно объяснить идею и написать короткий рабочий пример",
+                "Можно вспомнить одно слово из темы",
+                "Можно открыть страницу курса",
+                "Можно пропустить практику",
+            ],
+            "correct_index": 0,
+            "explanation": "Усвоение темы видно, когда вы умеете объяснить её и применить на примере.",
+        },
+    ]
+
+
+def build_course_content(course_id: int, title: str, description: str, total_lessons: int) -> dict:
+    profile = COURSE_CONTENT_PROFILES.get(course_id, {})
+    reward = dict(profile.get("reward") or {})
+    xp_value = int(reward.get("xp") or max(30, total_lessons * 15))
+
+    return {
+        "theory_content": {
+            "ru": _build_theory_content(course_id, title, description, profile, "ru"),
+            "kz": _build_theory_content(course_id, title, description, profile, "kz"),
+        },
+        "quiz_bank": {
+            "ru": _build_quiz_bank(course_id, title, description, profile, "ru"),
+            "kz": _build_quiz_bank(course_id, title, description, profile, "kz"),
+        },
+        "reward_preview": {
+            "xp": xp_value,
+            "badge": translate_ru_to_kz(str(reward.get("badge") or title)),
+            "icon": reward.get("icon") or "Award",
+            "medal": translate_ru_to_kz(str(reward.get("medal") or "Medal")),
+        },
+    }
+
+
+def ensure_course_content_columns() -> None:
+    from sqlalchemy import inspect, text
+    from app.core.database import _get_engine
+
+    engine = _get_engine()
+    inspector = inspect(engine)
+    if "courses" not in inspector.get_table_names():
+        return
+
+    existing_columns = {column["name"] for column in inspector.get_columns("courses")}
+    required_columns = {
+        "theory_content": "JSON",
+        "quiz_bank": "JSON",
+        "reward_preview": "JSON",
+    }
+
+    with engine.begin() as connection:
+        for column_name, column_type in required_columns.items():
+            if column_name in existing_columns:
+                continue
+            connection.execute(text(f"ALTER TABLE courses ADD COLUMN {column_name} {column_type}"))
 
 
 DEFAULT_MISSIONS = [
@@ -734,7 +1175,7 @@ DEFAULT_MISSIONS = [
         "starter_code": "import pygame\n# Добавь управление стрелками\n",
         "test_cases": [
             {"id": "tc_keys", "type": "code_regex", "value": "K_LEFT|K_RIGHT|key\\.get_pressed", "flags": "m", "label": "Есть обработка клавиш", "points": 1},
-            {"id": "tc_move", "type": "code_regex", "value": "x\\s*[+\-]=|y\\s*[+\-]=", "flags": "m", "label": "Есть изменение координат", "points": 1},
+            {"id": "tc_move", "type": "code_regex", "value": r"x\\s*[+\-]=|y\\s*[+\-]=", "flags": "m", "label": "Есть изменение координат", "points": 1},
             {"id": "tc_runtime", "type": "returncode_equals", "value": 0, "label": "Код выполняется", "points": 1},
         ],
         "hints": [
@@ -1182,24 +1623,36 @@ DEFAULT_ADMIN_SKILLS = [
 
 
 def ensure_default_courses() -> None:
+    from app.core.database import init_db
+    init_db()
     from app.core.database import _get_session_factory
     db = _get_session_factory()()
     try:
         for course_data in DEFAULT_COURSES:
+            content_bundle = build_course_content(
+                int(course_data["id"]),
+                str(course_data["title"]),
+                str(course_data["description"]),
+                int(course_data["total_lessons"]),
+            )
+            seeded_data = {**course_data, **content_bundle}
             existing = db.query(Course).filter(Course.id == course_data["id"]).first()
             if existing:
-                existing.title = course_data["title"]
-                existing.description = course_data["description"]
-                existing.progress = course_data["progress"]
-                existing.total_lessons = course_data["total_lessons"]
-                existing.icon = course_data["icon"]
-                existing.color = course_data["color"]
-                existing.difficulty = course_data["difficulty"]
-                existing.stars = course_data["stars"]
-                existing.is_boss = course_data["is_boss"]
-                existing.locked = course_data["locked"]
+                existing.title = seeded_data["title"]
+                existing.description = seeded_data["description"]
+                existing.theory_content = seeded_data["theory_content"]
+                existing.quiz_bank = seeded_data["quiz_bank"]
+                existing.reward_preview = seeded_data["reward_preview"]
+                existing.progress = seeded_data["progress"]
+                existing.total_lessons = seeded_data["total_lessons"]
+                existing.icon = seeded_data["icon"]
+                existing.color = seeded_data["color"]
+                existing.difficulty = seeded_data["difficulty"]
+                existing.stars = seeded_data["stars"]
+                existing.is_boss = seeded_data["is_boss"]
+                existing.locked = seeded_data["locked"]
             else:
-                db.add(Course(**course_data))
+                db.add(Course(**seeded_data))
 
         db.commit()
     finally:
@@ -1207,6 +1660,8 @@ def ensure_default_courses() -> None:
 
 
 def ensure_default_missions() -> None:
+    from app.core.database import init_db
+    init_db()
     from app.core.database import _get_session_factory
     db = _get_session_factory()()
     try:
@@ -1231,6 +1686,19 @@ def ensure_default_missions() -> None:
 
 
 def ensure_default_leaderboard() -> None:
+    from app.core.database import init_db
+    from sqlalchemy import inspect
+
+    init_db()
+    engine = SessionLocal.kw.get("bind") if hasattr(SessionLocal, "kw") else None
+    if engine is None:
+        from app.core.database import _get_engine
+        engine = _get_engine()
+
+    inspector = inspect(engine)
+    if "leaderboard" not in inspector.get_table_names():
+        return
+
     db = SessionLocal()
     try:
         for entry_data in DEFAULT_LEADERBOARD_ENTRIES:

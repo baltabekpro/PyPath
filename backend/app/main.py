@@ -10,7 +10,8 @@ from app.api.routes import router
 from app.api.auth_routes import router as auth_router
 from app.api.ai_routes import router as ai_router
 from app.core.config import get_settings
-from app.core.bootstrap import ensure_admin_account, ensure_default_courses, ensure_default_missions, ensure_default_leaderboard
+from app.core.bootstrap import ensure_admin_account, ensure_course_content_columns, ensure_default_courses, ensure_default_missions, ensure_default_leaderboard
+from app.core.rate_limit import rate_limiter
 from app.core.errors import (
     http_exception_handler,
     unhandled_exception_handler,
@@ -132,8 +133,10 @@ def create_app() -> FastAPI:
     def startup_seed_data() -> None:
         from app.core.database import init_db
         init_db()
+        rate_limiter.reset()
         if not settings.google_api_key:
             logging.getLogger(__name__).warning("GOOGLE_API_KEY is not configured. AI routes will return fallback responses.")
+        ensure_course_content_columns()
         ensure_default_courses()
         ensure_default_missions()
         ensure_default_leaderboard()

@@ -20,6 +20,7 @@ from app.schemas.requests import (
     MissionCreate,
     MissionUpdate,
     JourneyProgressUpdate,
+    CourseQuizBankGenerateRequest,
 )
 from app.services.database_service import DatabaseService
 from app.api.dependencies import get_db_service, get_current_user_optional, get_current_user, get_request_language
@@ -289,26 +290,13 @@ def update_courses_journey_progress(
 def create_course(
     payload: CourseCreate,
     user: User = Depends(get_current_user),
+    language: str = Depends(get_request_language),
     service: DatabaseService = Depends(get_db_service),
 ):
     """Create new course (content management)"""
     require_content_admin(user)
     course = service.create_course(payload)
-    return {
-        "id": course.id,
-        "title": course.title,
-        "description": course.description,
-        "gradeBand": service._infer_course_meta(course).get("gradeBand"),
-        "section": service._infer_course_meta(course).get("section"),
-        "progress": course.progress,
-        "totalLessons": course.total_lessons,
-        "icon": course.icon,
-        "color": course.color,
-        "difficulty": course.difficulty,
-        "stars": course.stars,
-        "isBoss": course.is_boss,
-        "locked": course.locked,
-    }
+    return service.serialize_course(course, language=language)
 
 
 @router.put("/courses/{course_id}", tags=["Courses"])
@@ -316,6 +304,7 @@ def update_course(
     course_id: int,
     payload: CourseUpdate,
     user: User = Depends(get_current_user),
+    language: str = Depends(get_request_language),
     service: DatabaseService = Depends(get_db_service),
 ):
     """Update existing course (content management)"""
@@ -324,21 +313,7 @@ def update_course(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    return {
-        "id": course.id,
-        "title": course.title,
-        "description": course.description,
-        "gradeBand": service._infer_course_meta(course).get("gradeBand"),
-        "section": service._infer_course_meta(course).get("section"),
-        "progress": course.progress,
-        "totalLessons": course.total_lessons,
-        "icon": course.icon,
-        "color": course.color,
-        "difficulty": course.difficulty,
-        "stars": course.stars,
-        "isBoss": course.is_boss,
-        "locked": course.locked,
-    }
+    return service.serialize_course(course, language=language)
 
 
 @router.delete("/courses/{course_id}", tags=["Courses"])
@@ -353,6 +328,58 @@ def delete_course(
     if not deleted:
         raise HTTPException(status_code=404, detail="Course not found")
     return {"deleted": True, "id": course_id}
+
+
+@router.post("/courses/{course_id}/quiz-bank/generate", tags=["Courses"])
+def generate_course_quiz_bank(
+    course_id: int,
+    payload: CourseQuizBankGenerateRequest,
+    user: User = Depends(get_current_user),
+    language: str = Depends(get_request_language),
+    service: DatabaseService = Depends(get_db_service),
+    ai_service: AIService = Depends(get_ai_service),
+):
+    require_content_admin(user)
+    course = service.get_course_by_id(course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    theory_content = course.theory_content if isinstance(course.theory_content, dict) else {}
+    theory_text_parts = [
+        str(theory_content.get("intro") or course.description or course.title or ""),
+        *[str(item) for item in (theory_content.get("sections") or [])],
+        str(theory_content.get("example") or ""),
+    ]
+    bilingual_questions = ai_service.generate_bilingual_quiz_questions(
+        topic=course.title,
+        theory_content="\n".join(part for part in theory_text_parts if part.strip()),
+        num_questions=payload.numQuestions,
+    )
+    quiz_bank = {
+        lang: [
+            {
+                "id": f"course-{course.id}-{lang}-quiz-{index + 1}",
+                "question": str(item.get("question") or ""),
+                "options": list(item.get("options") or []),
+                "correct_index": int(item.get("correct_index") or 0),
+                "explanation": str(item.get("explanation") or ""),
+            }
+            for index, item in enumerate(items)
+            if isinstance(item, dict)
+        ]
+        for lang, items in bilingual_questions.items()
+    }
+    course.quiz_bank = quiz_bank
+    service.db.commit()
+    service.db.refresh(course)
+    localized = quiz_bank.get(language) or quiz_bank.get("ru") or []
+    return {
+        "courseId": course.id,
+        "quizBank": localized,
+        "quizBankByLanguage": quiz_bank,
+        "count": len(localized),
+        "language": language,
+    }
 
 
 @router.get("/courses/{course_id}", tags=["Courses"])

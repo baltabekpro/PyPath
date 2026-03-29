@@ -12,8 +12,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(init?.headers || {}),
   };
+
+  const initHeaders = init?.headers;
+  if (initHeaders instanceof Headers) {
+    initHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (Array.isArray(initHeaders)) {
+    for (const [key, value] of initHeaders) {
+      headers[key] = value;
+    }
+  } else if (initHeaders) {
+    Object.assign(headers, initHeaders as Record<string, string>);
+  }
 
   // Add Authorization header if token exists
   if (token) {
@@ -150,6 +162,7 @@ export interface QuizGenerateResponse {
   questions: QuizQuestion[];
   topic: string;
   language: string;
+  translations?: Record<'ru' | 'kz', QuizQuestion[]>;
 }
 
 export const aiChat = {

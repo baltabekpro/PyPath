@@ -298,6 +298,23 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                            </div>
                        </div>
 
+                       <div className="grid grid-cols-2 gap-3">
+                           <div className="bg-slate-100 dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
+                               <Star size={20} className="text-amber-400" />
+                               <div>
+                                   <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase">{isKz ? 'Награда' : 'Награда'}</p>
+                                   <p className="font-bold text-slate-900 dark:text-white">+{selectedLevel.rewardPreview?.xp || 0} XP</p>
+                               </div>
+                           </div>
+                           <div className="bg-slate-100 dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
+                               <Skull size={20} className="text-red-400" />
+                               <div>
+                                   <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase">{isKz ? 'Тест' : 'Тест'}</p>
+                                   <p className="font-bold text-slate-900 dark:text-white">{selectedLevel.quizBank?.length || 0} {isKz ? 'сұрақ' : 'вопросов'}</p>
+                               </div>
+                           </div>
+                       </div>
+
                        {typeof selectedLevel.completedLessons === 'number' && (
                            <div className="text-xs text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2">
                                {lt.lessons}: <span className="text-slate-900 dark:text-white font-bold">{selectedLevel.completedLessons}</span> / {selectedLevel.totalLessons}

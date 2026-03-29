@@ -4,7 +4,9 @@ import { APP_LANGUAGE, CURRENT_USER, SKILLS, STATS, PROFILE_UI, UI_TEXTS, getIco
 import { Shield, Target, Flame, Medal, Edit3, Share2, Zap, Trophy, Plus } from 'lucide-react';
 import { View } from '../types';
 import { ActionToast } from './ActionToast';
-import { apiGet } from '../api';
+import { apiGet, apiPut } from '../api';
+
+type GradeTab = 'pre' | '8' | '9';
 
 interface ProfileProps {
   setView: (view: View) => void;
@@ -47,6 +49,7 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
         const [currentUser, setCurrentUser] = useState(CURRENT_USER);
         const [stats, setStats] = useState(STATS);
         const [skills, setSkills] = useState(SKILLS);
+    const [currentGrade, setCurrentGrade] = useState<GradeTab>('8');
         const [lastUpdatedLabel, setLastUpdatedLabel] = useState(isKz ? 'Жаңа ғана жаңартылды' : 'Обновлено только что');
     const [activity, setActivity] = useState<any[]>([]);
     const [chartBundle, setChartBundle] = useState<{ lineByTasks: any[]; topicProgress: any[]; updatedAt?: string | null } | null>(null);
@@ -64,6 +67,8 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             setCurrentUser(userData);
             setStats(statsData);
             setSkills(skillsData);
+                const grade = userData?.settings?.currentGrade;
+                setCurrentGrade(grade === 'pre' || grade === '8' || grade === '9' ? grade : '8');
                     setActivity(activityData || []);
                     setChartBundle(chartData || null);
             setLastUpdatedLabel(new Date().toLocaleString(locale, { hour: '2-digit', minute: '2-digit' }));
@@ -103,6 +108,21 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
             setActionMessage(message);
             setTimeout(() => setActionMessage(''), 2200);
     };
+
+  const saveGrade = async () => {
+      try {
+          const updatedUser = await apiPut<any>('/currentUser', {
+              settings: {
+                  currentGrade,
+              },
+          });
+          setCurrentUser(updatedUser);
+          Object.assign(CURRENT_USER as any, updatedUser);
+          showAction(isKz ? 'Сынып сақталды' : 'Класс сохранён');
+      } catch {
+          showAction(isKz ? 'Сыныпты сақтау мүмкін болмады' : 'Не удалось сохранить класс');
+      }
+  };
 
   useEffect(() => {
       // Small delay to trigger radar animation
@@ -354,6 +374,30 @@ export const Profile: React.FC<ProfileProps> = ({ setView }) => {
                 <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-6 border border-slate-200 dark:border-white/5">
                     <h3 className="font-bold text-slate-900 dark:text-white mb-4">{lt.personalMode}</h3>
                     <div className="space-y-3 text-sm">
+                        <div className="bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl p-3 space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-slate-600 dark:text-gray-400">{isKz ? 'Сынып' : 'Класс'}</span>
+                                <span className="text-slate-900 dark:text-white font-bold">{currentGrade === 'pre' ? (isKz ? 'Дайындық' : 'Подготовка') : `${currentGrade} ${isKz ? 'сынып' : 'класс'}`}</span>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{isKz ? 'Оқу жолы осы сыныпқа бейімделеді.' : 'Учебная дорожка будет адаптирована под этот класс.'}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {(['pre', '8', '9'] as GradeTab[]).map((grade) => (
+                                    <button
+                                        key={grade}
+                                        onClick={() => setCurrentGrade(grade)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentGrade === grade ? 'bg-arcade-primary text-white border-arcade-primary' : 'bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-arcade-primary/60'}`}
+                                    >
+                                        {grade === 'pre' ? (isKz ? 'Дайындық' : 'Подготовка') : `${grade} ${isKz ? 'сынып' : 'класс'}`}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={saveGrade}
+                                className="w-full py-2 rounded-lg bg-arcade-primary text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
+                            >
+                                {isKz ? 'Сыныпты сақтау' : 'Сохранить класс'}
+                            </button>
+                        </div>
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2">
                             <span className="text-slate-600 dark:text-gray-400">{lt.worldRank}</span>
                             <span className="text-slate-900 dark:text-white font-bold">#{currentUser.rank}</span>

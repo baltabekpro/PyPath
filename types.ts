@@ -33,6 +33,7 @@ export interface User {
     sound: boolean;
     role?: string;
     is_admin?: boolean;
+    currentGrade?: 'pre' | '8' | '9';
   };
 }
 
@@ -42,6 +43,26 @@ export interface Course {
   description: string;
   gradeBand?: 'pre' | '8' | '9' | 'common';
   section?: string;
+  theoryContent?: {
+    intro?: string;
+    sections?: string[];
+    example?: string;
+    takeaways?: string[];
+    focus?: string;
+  };
+  quizBank?: Array<{
+    id?: string;
+    question: string;
+    options: string[];
+    correct_index: number;
+    explanation?: string;
+  }>;
+  rewardPreview?: {
+    xp?: number;
+    badge?: string;
+    icon?: string;
+    medal?: string;
+  };
   progress: number;
   totalLessons: number;
   icon: string;

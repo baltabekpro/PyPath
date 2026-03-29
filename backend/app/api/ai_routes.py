@@ -413,12 +413,13 @@ def generate_quiz(
     if effective_language not in ("kz", "ru"):
         effective_language = "ru"
 
-    raw_questions = ai_service.generate_quiz_questions(
+    bilingual_questions = ai_service.generate_bilingual_quiz_questions(
         topic=payload.topic,
         theory_content=payload.theory_content,
-        language=effective_language,
         num_questions=payload.num_questions,
     )
+
+    raw_questions = bilingual_questions.get(effective_language) or bilingual_questions.get("ru") or []
 
     questions = [
         QuizQuestion(
@@ -435,4 +436,17 @@ def generate_quiz(
         questions=questions,
         topic=payload.topic,
         language=effective_language,
+        translations={
+            lang: [
+                QuizQuestion(
+                    question=item.get("question", ""),
+                    options=item.get("options", []),
+                    correct_index=int(item.get("correct_index", 0)),
+                    explanation=item.get("explanation", ""),
+                )
+                for item in items
+                if isinstance(item, dict)
+            ]
+            for lang, items in bilingual_questions.items()
+        },
     )

@@ -367,6 +367,17 @@ class AIService:
             }
         ]
 
+    def generate_bilingual_quiz_questions(
+        self,
+        topic: str,
+        theory_content: str,
+        num_questions: int = 3,
+    ) -> dict[str, list[dict]]:
+        return {
+            "ru": self.generate_quiz_questions(topic, theory_content, language="ru", num_questions=num_questions),
+            "kz": self.generate_quiz_questions(topic, theory_content, language="kz", num_questions=num_questions),
+        }
+
 
 # Singleton instance
 _ai_service: Optional[AIService] = None

@@ -5,7 +5,7 @@
  * Usage:
  *   <QuizBlock topic="Переменные" theoryContent={theoryText} language="ru" />
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, RefreshCw, BookOpen, Loader } from 'lucide-react';
 import { aiChat, QuizQuestion } from '../api';
 import { APP_LANGUAGE } from '../constants';
@@ -15,6 +15,8 @@ interface QuizBlockProps {
   theoryContent?: string;
   numQuestions?: number;
   language?: string;
+  presetQuestions?: QuizQuestion[];
+  onFinished?: (summary: { correct: number; total: number; questions: QuizQuestion[] }) => void;
   /** Optional CSS class for the wrapper element */
   className?: string;
 }
@@ -46,6 +48,8 @@ export const QuizBlock: React.FC<QuizBlockProps> = ({
   theoryContent = '',
   numQuestions = 3,
   language,
+  presetQuestions,
+  onFinished,
   className = '',
 }) => {
   const isKz = (language ?? APP_LANGUAGE) === 'kz';
@@ -59,7 +63,26 @@ export const QuizBlock: React.FC<QuizBlockProps> = ({
   const [error, setError] = useState('');
   const [finished, setFinished] = useState(false);
 
+  useEffect(() => {
+    if (!Array.isArray(presetQuestions) || presetQuestions.length === 0) return;
+    setQuestions(presetQuestions);
+    setAnswers(presetQuestions.map(() => ({ selected: null, state: 'unanswered' as AnswerState })));
+    setStarted(true);
+    setLoading(false);
+    setError('');
+    setFinished(false);
+  }, [presetQuestions]);
+
   const fetchQuestions = async () => {
+    if (Array.isArray(presetQuestions) && presetQuestions.length > 0) {
+      setQuestions(presetQuestions);
+      setAnswers(presetQuestions.map(() => ({ selected: null, state: 'unanswered' as AnswerState })));
+      setStarted(true);
+      setLoading(false);
+      setError('');
+      setFinished(false);
+      return;
+    }
     setLoading(true);
     setError('');
     setStarted(true);
@@ -92,6 +115,12 @@ export const QuizBlock: React.FC<QuizBlockProps> = ({
   };
 
   const correctCount = answers.filter((a) => a.state === 'correct').length;
+
+  useEffect(() => {
+    if (!finished || questions.length === 0) return;
+    if (answers.some((answer) => answer.state === 'unanswered')) return;
+    onFinished?.({ correct: correctCount, total: questions.length, questions });
+  }, [answers, correctCount, finished, onFinished, questions]);
 
   if (!started) {
     return (

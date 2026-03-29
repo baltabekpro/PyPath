@@ -7,6 +7,7 @@ class UserSettingsUpdate(BaseModel):
     theme: str | None = None
     notifications: bool | None = None
     sound: bool | None = None
+    currentGrade: str | None = Field(default=None, description="Current learning grade: pre, 8, or 9")
 
 
 class UserUpdate(BaseModel):
@@ -36,6 +37,9 @@ class MissionSubmit(BaseModel):
 class CourseCreate(BaseModel):
     title: str = Field(min_length=3, max_length=200)
     description: str = Field(min_length=10, max_length=1000)
+    theoryContent: dict | None = None
+    quizBank: list[dict] | None = None
+    rewardPreview: dict | None = None
     totalLessons: int = Field(default=5, ge=1, le=200)
     icon: str = Field(default="Terminal")
     color: str = Field(default="text-arcade-success")
@@ -47,12 +51,21 @@ class CourseCreate(BaseModel):
 class CourseUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=200)
     description: str | None = Field(default=None, min_length=10, max_length=1000)
+    theoryContent: dict | None = None
+    quizBank: list[dict] | None = None
+    rewardPreview: dict | None = None
     totalLessons: int | None = Field(default=None, ge=1, le=200)
     icon: str | None = None
     color: str | None = None
     difficulty: str | None = None
     isBoss: bool | None = None
     locked: bool | None = None
+
+
+class CourseQuizBankGenerateRequest(BaseModel):
+    numQuestions: int = Field(default=5, ge=1, le=10)
+    language: str = Field(default="ru", description="Language for generated questions")
+    overwrite: bool = Field(default=True)
 
 
 class MissionTestCase(BaseModel):

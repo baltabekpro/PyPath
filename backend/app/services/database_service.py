@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.core.locales import COURSE_TRANSLATIONS, MISSION_TRANSLATIONS, normalize_language
+from app.core.locales import COURSE_TRANSLATIONS, MISSION_TRANSLATIONS, normalize_language, translate_ru_to_kz
 from app.models.models import User, Post, Course, Mission, Achievement, LeaderboardEntry
 from app.schemas.requests import (
     UserUpdate,
@@ -114,6 +114,86 @@ class DatabaseService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _get_user_grade(self, user: Optional[User]) -> str:
+        if not user:
+            return "8"
+        settings = self._get_user_settings(user)
+        grade = str(settings.get("currentGrade") or "8")
+        return grade if grade in {"pre", "8", "9"} else "8"
+
+    def _course_grade_rank(self, grade: str | None) -> int:
+        return {"pre": 0, "8": 1, "9": 2}.get(str(grade or "common"), 1)
+
+    def _is_course_visible_for_grade(self, user_grade: str, course_grade: str | None) -> bool:
+        if not course_grade or course_grade == "common":
+            return True
+        return self._course_grade_rank(course_grade) <= self._course_grade_rank(user_grade)
+
+    def _course_content(self, course: Course) -> dict:
+        theory_content = course.theory_content if isinstance(course.theory_content, dict) else {}
+        quiz_bank = course.quiz_bank if isinstance(course.quiz_bank, (list, dict)) else []
+        reward_preview = course.reward_preview if isinstance(course.reward_preview, dict) else {}
+        if isinstance(quiz_bank, dict):
+            quiz_count_source = quiz_bank.get("ru") or quiz_bank.get("kz") or []
+            quiz_count = len(quiz_count_source) if isinstance(quiz_count_source, list) else 0
+        else:
+            quiz_count = len(quiz_bank)
+        return {
+            "theoryContent": theory_content,
+            "quizBank": quiz_bank,
+            "rewardPreview": reward_preview,
+            "quizCount": quiz_count,
+        }
+
+    def _localize_course_content(self, content: dict, language: str) -> dict:
+        language_key = normalize_language(language)
+
+        theory_content = content.get("theoryContent") if isinstance(content.get("theoryContent"), dict) else {}
+        if isinstance(theory_content, dict) and ("ru" in theory_content or "kz" in theory_content):
+            selected_theory = theory_content.get(language_key) or theory_content.get("ru") or theory_content.get("kz") or {}
+        elif language_key == "kz" and isinstance(theory_content, dict):
+            selected_theory = {
+                "intro": translate_ru_to_kz(str(theory_content.get("intro") or "")),
+                "sections": [translate_ru_to_kz(str(item)) for item in (theory_content.get("sections") or [])],
+                "example": translate_ru_to_kz(str(theory_content.get("example") or "")),
+                "takeaways": [translate_ru_to_kz(str(item)) for item in (theory_content.get("takeaways") or [])],
+                "focus": translate_ru_to_kz(str(theory_content.get("focus") or "")),
+            }
+        else:
+            selected_theory = theory_content
+
+        quiz_bank = content.get("quizBank")
+        if isinstance(quiz_bank, dict) and ("ru" in quiz_bank or "kz" in quiz_bank):
+            selected_quiz_bank = quiz_bank.get(language_key) or quiz_bank.get("ru") or quiz_bank.get("kz") or []
+        elif language_key == "kz" and isinstance(quiz_bank, list):
+            selected_quiz_bank = [
+                {
+                    **item,
+                    "question": translate_ru_to_kz(str(item.get("question") or "")),
+                    "options": [translate_ru_to_kz(str(option)) for option in (item.get("options") or [])],
+                    "explanation": translate_ru_to_kz(str(item.get("explanation") or "")),
+                }
+                for item in quiz_bank
+                if isinstance(item, dict)
+            ]
+        else:
+            selected_quiz_bank = quiz_bank if isinstance(quiz_bank, list) else []
+
+        reward_preview = content.get("rewardPreview") if isinstance(content.get("rewardPreview"), dict) else {}
+        if language_key == "kz" and isinstance(reward_preview, dict):
+            reward_preview = {
+                **reward_preview,
+                "badge": translate_ru_to_kz(str(reward_preview.get("badge") or "")),
+                "medal": translate_ru_to_kz(str(reward_preview.get("medal") or "")),
+            }
+
+        return {
+            "theoryContent": selected_theory,
+            "quizBank": selected_quiz_bank,
+            "rewardPreview": reward_preview,
+            "quizCount": len(selected_quiz_bank) if isinstance(selected_quiz_bank, list) else 0,
+        }
+
     # User operations
     def get_user_by_username(self, username: str) -> Optional[User]:
         """Get user by username"""
@@ -146,8 +226,14 @@ class DatabaseService:
             return None
 
         update_dict = update_data.model_dump(exclude_unset=True)
+        settings_update = update_dict.pop("settings", None)
         for key, value in update_dict.items():
             setattr(user, key, value)
+
+        if isinstance(settings_update, dict):
+            settings = dict(user.settings or {})
+            settings.update(settings_update)
+            user.settings = settings
 
         self.db.commit()
         self.db.refresh(user)
@@ -570,6 +656,7 @@ class DatabaseService:
         courses = self._get_courses_ordered()
         progress = self._get_user_course_progress(user, courses) if user else {}
         ordered_ids = [course.id for course in courses]
+        user_grade = self._get_user_grade(user)
 
         current_season = 1
         season_progress: dict = {}
@@ -598,6 +685,7 @@ class DatabaseService:
                 "stars": int(course.stars or 0),
                 "isBoss": bool(course.is_boss),
                 "locked": bool(course.locked),
+                **self._localize_course_content(self._course_content(course), language),
                 "season": season,
                 "status": "locked" if course.locked else ("completed" if int(course.progress or 0) >= 100 else "in_progress"),
                 "completedLessons": 0,
@@ -611,7 +699,7 @@ class DatabaseService:
             if user:
                 user_progress = progress.get(str(course.id), {})
                 season_unlocked = season <= current_season
-                is_locked = (not bool(user_progress.get("unlocked"))) or (not season_unlocked)
+                is_locked = (not bool(user_progress.get("unlocked"))) or (not season_unlocked) or (not self._is_course_visible_for_grade(user_grade, item.get("gradeBand")))
                 is_completed = bool(user_progress.get("completed"))
                 item.update(
                     {
@@ -624,8 +712,11 @@ class DatabaseService:
                         "unlockRequirement": "" if not is_locked else ("Завершите предыдущий сезон" if not season_unlocked else "Завершите предыдущий курс"),
                         "seasonUnlocked": season_unlocked,
                         "seasonCompleted": bool(season_progress.get(str(season), {}).get("completed")),
+                        "rewardPreview": course.reward_preview if isinstance(course.reward_preview, dict) else {},
                     }
                 )
+            else:
+                item["rewardPreview"] = course.reward_preview if isinstance(course.reward_preview, dict) else {}
 
             response.append(self._localize_course_item(item, language))
 
@@ -699,12 +790,13 @@ class DatabaseService:
         return self.db.query(Course).filter(Course.id == course_id).first()
 
     def serialize_course(self, course: Course, language: str = "ru", user: Optional[User] = None) -> dict:
+        course_meta = self._infer_course_meta(course)
         item = {
             "id": course.id,
             "title": course.title,
             "description": course.description,
-            "gradeBand": self._infer_course_meta(course).get("gradeBand"),
-            "section": self._infer_course_meta(course).get("section"),
+            "gradeBand": course_meta.get("gradeBand"),
+            "section": course_meta.get("section"),
             "progress": int(course.progress or 0),
             "totalLessons": int(course.total_lessons or 0),
             "icon": course.icon,
@@ -713,6 +805,8 @@ class DatabaseService:
             "stars": int(course.stars or 0),
             "isBoss": bool(course.is_boss),
             "locked": bool(course.locked),
+            **self._localize_course_content(self._course_content(course), language),
+            "rewardPreview": course.reward_preview if isinstance(course.reward_preview, dict) else {},
         }
 
         if user:
@@ -729,7 +823,7 @@ class DatabaseService:
             if isinstance(settings.get("season_progress"), dict):
                 season_progress = settings.get("season_progress")
             season_unlocked = season <= current_season
-            is_locked = (not bool(user_progress.get("unlocked"))) or (not season_unlocked)
+            is_locked = (not bool(user_progress.get("unlocked"))) or (not season_unlocked) or (not self._is_course_visible_for_grade(self._get_user_grade(user), course_meta.get("gradeBand")))
             is_completed = bool(user_progress.get("completed"))
             item.update(
                 {
@@ -960,21 +1054,31 @@ class DatabaseService:
         for course in courses:
             course_id = int(course.get("id") or 0)
             language_key = normalize_language(language)
+            localized_course_content = self._localize_course_content(
+                {
+                    "theoryContent": course.get("theoryContent") if isinstance(course.get("theoryContent"), dict) else {},
+                    "quizBank": course.get("quizBank") if isinstance(course.get("quizBank"), (list, dict)) else [],
+                    "rewardPreview": course.get("rewardPreview") if isinstance(course.get("rewardPreview"), dict) else {},
+                },
+                language,
+            )
+            theory_content = localized_course_content.get("theoryContent") if isinstance(localized_course_content.get("theoryContent"), dict) else {}
+            quiz_bank = localized_course_content.get("quizBank") if isinstance(localized_course_content.get("quizBank"), list) else []
             theory_entry = theory_by_course.get(course_id, {})
             theory_lines = theory_details_by_course.get(course_id, {})
             default_theory = str(course.get("description") or "").strip() or "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
             default_kz_theory = str(course.get("description") or "").strip() or "Тақырыптың негізгі теориясын оқып, содан кейін практикаға өтіңіз."
-            theory = theory_entry.get(language_key) or theory_entry.get("ru") or (default_kz_theory if language_key == "kz" else default_theory)
+            theory = theory_content.get("intro") or theory_entry.get(language_key) or theory_entry.get("ru") or (default_kz_theory if language_key == "kz" else default_theory)
 
-            details = theory_lines.get(language_key) or theory_lines.get("ru") or [
+            details = theory_content.get("sections") or theory_lines.get(language_key) or theory_lines.get("ru") or [
                 default_kz_theory if language_key == "kz" else default_theory,
                 ("Келесі қадам - практика" if language_key == "kz" else "Следующий шаг - практика"),
                 ("Тапсырмалар арқылы бекітіңіз" if language_key == "kz" else "Закрепите тему через задания"),
             ]
-            example = theory_lines.get("example", {}).get(language_key) or theory_lines.get("example", {}).get("ru") or (
+            example = theory_content.get("example") or theory_lines.get("example", {}).get(language_key) or theory_lines.get("example", {}).get("ru") or (
                 "print('Тақырыпты меңгеру')" if language_key == "kz" else "print('Разбор темы')"
             )
-            hint = theory_lines.get("hint", {}).get(language_key) or theory_lines.get("hint", {}).get("ru") or (
+            hint = (theory_content.get("takeaways") or [None])[0] or theory_lines.get("hint", {}).get(language_key) or theory_lines.get("hint", {}).get("ru") or (
                 "Теорияны оқып, бірден кодтаңыз" if language_key == "kz" else "Прочитайте теорию и сразу закрепите кодом"
             )
 
@@ -1016,6 +1120,7 @@ class DatabaseService:
                     "theoryDetails": details,
                     "theoryExample": example,
                     "theoryHint": hint,
+                    "quizBank": quiz_bank,
                     "practices": practices,
                 }
             )
@@ -1101,6 +1206,9 @@ class DatabaseService:
             id=next_id,
             title=payload.title,
             description=payload.description,
+            theory_content=payload.theoryContent or {},
+            quiz_bank=payload.quizBank or [],
+            reward_preview=payload.rewardPreview or {},
             progress=0,
             total_lessons=payload.totalLessons,
             icon=payload.icon,
@@ -1124,6 +1232,9 @@ class DatabaseService:
         field_map = {
             "totalLessons": "total_lessons",
             "isBoss": "is_boss",
+            "theoryContent": "theory_content",
+            "quizBank": "quiz_bank",
+            "rewardPreview": "reward_preview",
         }
         for key, value in data.items():
             setattr(course, field_map.get(key, key), value)

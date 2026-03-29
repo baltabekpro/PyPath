@@ -56,3 +56,4 @@ class QuizGenerateResponse(BaseModel):
     questions: list[QuizQuestion]
     topic: str
     language: str
+    translations: dict[str, list[QuizQuestion]] | None = None

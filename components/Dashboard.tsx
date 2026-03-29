@@ -4,7 +4,6 @@ import { APP_LANGUAGE, COURSES, CURRENT_USER, DASHBOARD_UI, MISSIONS, STATS, UI_
 import { View } from '../types';
 import { apiGet } from '../api';
 
-const ACTIVE_GRADE_KEY = 'courseJourneyActiveGradeV1';
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
 const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
@@ -140,7 +139,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const summary9 = buildJourneySummary('9');
 
     const openJourneyTheory = (grade: 'pre' | '8' | '9', topicId: string) => {
-        localStorage.setItem(ACTIVE_GRADE_KEY, grade);
         localStorage.setItem(ACTIVE_TOPIC_KEY, topicId);
         localStorage.setItem(ACTIVE_PAGE_KEY, 'theory');
         localStorage.setItem(AUTO_OPEN_THEORY_KEY, 'true');
