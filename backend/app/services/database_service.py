@@ -208,12 +208,31 @@ class DatabaseService:
 
     def _infer_course_meta(self, course: Course) -> dict:
         title = str(course.title or '').lower()
-        if 'глава 1' in title or 'глава 2' in title:
+        chapter_match = re.search(r"глава\s*(\d+)", title)
+        chapter_number = int(chapter_match.group(1)) if chapter_match else None
+
+        if chapter_number in {1, 2}:
             return {"gradeBand": "pre", "section": "Подготовка к 8/9: базовые шаги"}
-        if 'глава 3' in title or 'глава 4' in title:
+        if chapter_number in {3, 4}:
             return {"gradeBand": "8", "section": "8 класс: условия и циклы"}
-        if 'глава 5' in title or 'глава 6' in title or 'босс' in title:
+        if chapter_number in {5, 6} or 'босс' in title:
             return {"gradeBand": "9", "section": "9 класс: функции и проект"}
+        if chapter_number in {7, 8, 9}:
+            return {"gradeBand": "9", "section": "10 класс: массивы"}
+        if chapter_number in {10, 11}:
+            return {"gradeBand": "9", "section": "11 класс: PyGame"}
+        if chapter_number == 12:
+            return {"gradeBand": "9", "section": "11 класс: финальный проект"}
+        if chapter_number in {13, 14}:
+            return {"gradeBand": "9", "section": "12 класс: данные и файлы"}
+        if chapter_number == 15:
+            return {"gradeBand": "9", "section": "12 класс: ООП"}
+        if chapter_number == 16:
+            return {"gradeBand": "9", "section": "12 класс: capstone"}
+        if chapter_number == 17:
+            return {"gradeBand": "8", "section": "8 класс: практический Python"}
+        if chapter_number == 18:
+            return {"gradeBand": "pre", "section": "8/9 класс: переходный модуль"}
         return {"gradeBand": "common", "section": "Общий модуль"}
 
     def _localize_course_item(self, item: dict, language: str) -> dict:
@@ -732,6 +751,7 @@ class DatabaseService:
     def get_course_journey(self, user: Optional[User] = None, language: str = "ru") -> list[dict]:
         """Return structured journey topics: theory first, then 6/7 practices."""
         courses = self.get_courses(user, language)
+        missions = self.get_missions(language)
         topics: list[dict] = []
 
         theory_by_course = {
@@ -939,26 +959,45 @@ class DatabaseService:
 
         for course in courses:
             course_id = int(course.get("id") or 0)
-            if course_id not in theory_by_course:
-                continue
-
             language_key = normalize_language(language)
             theory_entry = theory_by_course.get(course_id, {})
             theory_lines = theory_details_by_course.get(course_id, {})
-            theory = theory_entry.get(language_key) or theory_entry.get("ru") or "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
-            details = theory_lines.get(language_key) or theory_lines.get("ru") or []
-            example = theory_lines.get("example", {}).get(language_key) or theory_lines.get("example", {}).get("ru") or "print('Разбор темы')"
-            hint = theory_lines.get("hint", {}).get(language_key) or theory_lines.get("hint", {}).get("ru") or ""
+            default_theory = str(course.get("description") or "").strip() or "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
+            default_kz_theory = str(course.get("description") or "").strip() or "Тақырыптың негізгі теориясын оқып, содан кейін практикаға өтіңіз."
+            theory = theory_entry.get(language_key) or theory_entry.get("ru") or (default_kz_theory if language_key == "kz" else default_theory)
+
+            details = theory_lines.get(language_key) or theory_lines.get("ru") or [
+                default_kz_theory if language_key == "kz" else default_theory,
+                ("Келесі қадам - практика" if language_key == "kz" else "Следующий шаг - практика"),
+                ("Тапсырмалар арқылы бекітіңіз" if language_key == "kz" else "Закрепите тему через задания"),
+            ]
+            example = theory_lines.get("example", {}).get(language_key) or theory_lines.get("example", {}).get("ru") or (
+                "print('Тақырыпты меңгеру')" if language_key == "kz" else "print('Разбор темы')"
+            )
+            hint = theory_lines.get("hint", {}).get(language_key) or theory_lines.get("hint", {}).get("ru") or (
+                "Теорияны оқып, бірден кодтаңыз" if language_key == "kz" else "Прочитайте теорию и сразу закрепите кодом"
+            )
+
+            related = [m for m in missions if self._parse_course_id_from_chapter(m.get("chapter")) == course_id]
 
             practices = []
-            for index, practice in enumerate(practice_catalog_by_course.get(course_id, []), start=1):
-                locale_practice = practice.get(language_key) or practice.get("ru") or {}
-                title = str(locale_practice.get("title") or f"Практика {index}")
-                description = str(locale_practice.get("description") or "")
+            for index, mission in enumerate(related, start=1):
+                title = str(mission.get("title") or f"Практика {index}")
+                description = str(mission.get("description") or "").rstrip(".")
                 practice_line = f"{index}. {title}"
                 if description:
                     practice_line = f"{practice_line} — {description}"
                 practices.append(practice_line)
+
+            if not practices:
+                for index, practice in enumerate(practice_catalog_by_course.get(course_id, []), start=1):
+                    locale_practice = practice.get(language_key) or practice.get("ru") or {}
+                    title = str(locale_practice.get("title") or f"Практика {index}")
+                    description = str(locale_practice.get("description") or "")
+                    practice_line = f"{index}. {title}"
+                    if description:
+                        practice_line = f"{practice_line} — {description}"
+                    practices.append(practice_line)
 
             if not practices:
                 fallback_count = 7 if course.get("gradeBand") == "9" else 6

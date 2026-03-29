@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, AlertTriangle, Smartphone, ArrowRight, Check, RefreshCw, Save, Loader2, Mail, AtSign, FileText } from 'lucide-react';
 import { APP_LANGUAGE, CURRENT_USER, SETTINGS_UI, UI_TEXTS, getIconComponent } from '../constants';
 import { ActionToast } from './ActionToast';
-import { apiPut, authApi, notificationsApi } from '../api';
+import { apiGet, apiPut, authApi, notificationsApi } from '../api';
 
 type SettingsTab = 'profile' | 'appearance' | 'notifications';
 
@@ -84,6 +84,27 @@ export const Settings: React.FC = () => {
         const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
+    const loadCurrentUser = async () => {
+        try {
+            const currentUser = await apiGet<any>('/currentUser');
+            setFormData({
+                name: currentUser?.name ?? CURRENT_USER.name,
+                email: currentUser?.email ?? '',
+                bio: currentUser?.bio ?? '',
+                avatar: currentUser?.avatar ?? CURRENT_USER.avatar,
+            });
+        } catch {
+            setFormData({
+                name: CURRENT_USER.name,
+                email: CURRENT_USER.email || '',
+                bio: CURRENT_USER.bio || '',
+                avatar: CURRENT_USER.avatar,
+            });
+        }
+    };
+
+    loadCurrentUser();
+
     const savedNotifications = localStorage.getItem('notifications');
         if (savedNotifications) {
             try {
@@ -92,15 +113,6 @@ export const Settings: React.FC = () => {
             } catch {
             }
         }
-
-    const savedAvatar = localStorage.getItem('avatar');
-    if (savedAvatar) setFormData(prev => ({ ...prev, avatar: savedAvatar }));
-
-    const savedProfile = localStorage.getItem('profile');
-    if (savedProfile) {
-      const profile = JSON.parse(savedProfile);
-      setFormData(prev => ({ ...prev, ...profile }));
-    }
 
         const loadPreferences = async () => {
             try {
