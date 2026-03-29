@@ -6,7 +6,6 @@ import { apiGet } from '../api';
 
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
-const AUTO_OPEN_THEORY_KEY = 'courseJourneyAutoOpenTheoryV1';
 
 interface DashboardProps {
   setView: (view: View) => void;
@@ -114,7 +113,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const openJourneyTheory = (grade: 'pre' | '8' | '9', topicId: string) => {
         localStorage.setItem(ACTIVE_TOPIC_KEY, topicId);
         localStorage.setItem(ACTIVE_PAGE_KEY, 'theory');
-        localStorage.setItem(AUTO_OPEN_THEORY_KEY, 'true');
         setView(View.COURSE_JOURNEY);
     };
 
