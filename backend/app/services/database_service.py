@@ -1622,9 +1622,11 @@ class DatabaseService:
 
         return results
 
-    def _course_practice_checks(self, topic_id: str, practice_index: int, practice_name: str, language: str) -> tuple[str, list[dict]]:
+    def _course_practice_checks(self, topic_id: str, topic_title: str, practice_index: int, practice_name: str, language: str) -> tuple[str, list[dict]]:
         language_key = normalize_language(language)
         starter_code = '# Кодты мұнда жаз\n' if language_key == 'kz' else '# Write your code here\n'
+        topic_title_lower = topic_title.lower()
+        practice_text_lower = f'{topic_title} {practice_name}'.lower()
 
         def normalized(value: str) -> str:
             return value.lower()
@@ -1645,9 +1647,34 @@ class DatabaseService:
             {
                 'id': 'code_written',
                 'description': 'Код жазылған' if language_key == 'kz' else 'Код написан',
-                'checkFunction': lambda code: bool(code and code.strip()),
+                'checkFunction': lambda code: bool(code and code.strip()) and any(
+                    line.strip() and not line.strip().startswith('#')
+                    for line in code.splitlines()
+                ),
             },
         ]
+
+        if any(keyword in practice_text_lower for keyword in ('if / else', 'if/else', 'услови', 'шарт')):
+            checks_by_index = {
+                0: [
+                    {'id': 'has_if_else', 'description': 'if және else қолданылған' if language_key == 'kz' else 'Использованы if и else', 'checkFunction': lambda code: has_all(code, ['if', 'else'])},
+                    {'id': 'has_compare', 'description': 'Жас салыстырылады' if language_key == 'kz' else 'Есть сравнение возраста', 'checkFunction': lambda code: has_any(code, ['>=', '<=', '>', '<'])},
+                    {'id': 'has_output', 'description': 'Экранға жауап шығарылады' if language_key == 'kz' else 'Есть вывод ответа', 'checkFunction': lambda code: has_any(code, ['print('])},
+                ],
+                1: [
+                    {'id': 'has_even_check', 'description': 'Жұп/тақ тексерісі бар' if language_key == 'kz' else 'Есть проверка чётности', 'checkFunction': lambda code: has_any(code, ['% 2', '%2'])},
+                    {'id': 'has_if', 'description': 'if қолданылған' if language_key == 'kz' else 'Использован if', 'checkFunction': lambda code: has_any(code, ['if '])},
+                ],
+                2: [{'id': 'compare_values', 'description': 'Екі мән салыстырылады' if language_key == 'kz' else 'Сравниваются два значения', 'checkFunction': lambda code: has_any(code, ['>', '<', '>=', '<='])}],
+                3: [{'id': 'grade_condition', 'description': 'Баға шарты бар' if language_key == 'kz' else 'Есть условие для оценки', 'checkFunction': lambda code: has_any(code, ['>=', '<=', 'elif', 'if'])}],
+                4: [{'id': 'nested_if', 'description': 'Кірістірілген if бар' if language_key == 'kz' else 'Есть вложенный if', 'checkFunction': lambda code: count(code, 'if') >= 2 or has_any(code, ['elif'])}],
+                5: [{'id': 'access_condition', 'description': 'Қолжетімділік шарты бар' if language_key == 'kz' else 'Есть условие доступа', 'checkFunction': lambda code: has_all(code, ['if', 'else'])}],
+            }
+            description = f'{practice_name}: ' + ('шарт арқылы шешілетін тапсырма' if language_key == 'kz' else 'задача на условие')
+            return description, [
+                {'id': item['id'], 'description': item['description'], 'passed': bool(item['checkFunction'])} if False else item
+                for item in checks_by_index.get(practice_index, generic_checks)
+            ]
 
         checks_by_index: dict[int, list[dict]]
         description: str
@@ -1668,7 +1695,7 @@ class DatabaseService:
                 5: [{'id': 'calculation', 'description': 'Нәтиже есептелген' if language_key == 'kz' else 'Результат вычислен', 'checkFunction': lambda code: has_any(code, ['+', '-', '*', '/'])}],
             }
             description = f'{practice_name}: ' + ('тақырып бойынша практика' if language_key == 'kz' else 'практика по теме')
-        elif 'if' in topic_id:
+        elif 'if' in topic_id or 'услов' in topic_title_lower:
             checks_by_index = {
                 0: [
                     {'id': 'has_if_else', 'description': 'if және else қолданылған' if language_key == 'kz' else 'Использованы if и else', 'checkFunction': lambda code: has_all(code, ['if', 'else'])},
@@ -1761,7 +1788,8 @@ class DatabaseService:
             }
 
         practice_name = str(practices[payload.practiceIndex])
-        description, tests = self._course_practice_checks(str(payload.topicId), payload.practiceIndex, practice_name, language)
+        topic_title = str(topic.get('title') or '')
+        description, tests = self._course_practice_checks(str(payload.topicId), topic_title, payload.practiceIndex, practice_name, language)
         code = payload.code or ''
 
         test_results = []

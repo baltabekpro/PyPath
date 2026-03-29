@@ -225,6 +225,36 @@ def test_courses_journey_practice_submit_passes_valid_code(client: TestClient) -
     assert all(result["passed"] is True for result in payload["testResults"])
 
 
+def test_courses_journey_practice_submit_rejects_starter_template(client: TestClient) -> None:
+    response = client.post(
+        "/courses/journey/practice/submit",
+        json={
+            "topicId": "course-3",
+            "practiceIndex": 0,
+            "code": "# Write your code here\n",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is False
+    assert any(result["passed"] is False for result in payload["testResults"])
+
+
+def test_courses_journey_practice_submit_checks_if_else_topic(client: TestClient) -> None:
+    response = client.post(
+        "/courses/journey/practice/submit",
+        json={
+            "topicId": "course-3",
+            "practiceIndex": 0,
+            "code": "age = 12\nif age >= 10:\n    print('Можно')\nelse:\n    print('Пока рано')",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert all(result["passed"] is True for result in payload["testResults"])
+
+
 # ---------------------------------------------------------------------------
 # Registration tests
 # ---------------------------------------------------------------------------
