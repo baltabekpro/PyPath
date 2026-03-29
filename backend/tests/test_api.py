@@ -194,6 +194,37 @@ def test_courses_journey_progress_enforces_sequential_practice(client: TestClien
     assert payload["course-3"]["completedPractices"] == [0]
 
 
+def test_courses_journey_practice_submit_rejects_blank_code(client: TestClient) -> None:
+    response = client.post(
+        "/courses/journey/practice/submit",
+        json={
+            "topicId": "course-1",
+            "practiceIndex": 0,
+            "code": "",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is False
+    assert payload["testResults"]
+    assert all(result["passed"] is False for result in payload["testResults"])
+
+
+def test_courses_journey_practice_submit_passes_valid_code(client: TestClient) -> None:
+    response = client.post(
+        "/courses/journey/practice/submit",
+        json={
+            "topicId": "course-1",
+            "practiceIndex": 0,
+            "code": "name = 'A'\nprint(name)",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert all(result["passed"] is True for result in payload["testResults"])
+
+
 # ---------------------------------------------------------------------------
 # Registration tests
 # ---------------------------------------------------------------------------

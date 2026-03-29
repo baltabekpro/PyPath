@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, Code, ChevronRight, Play, Trophy, X, AlertCircle, Check } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
-import { apiGet, apiPut } from '../api';
+import { apiGet, apiPost, apiPut } from '../api';
 import { AIChat } from './AIChat';
 
 interface SimpleLearningProps {
@@ -30,152 +30,27 @@ type ProgressMap = Record<string, TopicProgress>;
 type PracticeDetails = {
   description: string;
   starterCode: string;
-  tests: {
-    description: string;
-    checkFunction: (code: string) => boolean;
-  }[];
+};
+
+type PracticeSubmitResponse = {
+  success: boolean;
+  message: string;
+  description?: string;
+  starterCode?: string;
+  testResults?: { id?: string; passed: boolean; message: string }[];
 };
 
 const ACTIVE_TOPIC_KEY = 'courseJourneyActiveTopicV1';
 const ACTIVE_PAGE_KEY = 'courseJourneyActivePageV1';
 const AUTO_OPEN_QUIZ_KEY = 'courseJourneyAutoOpenQuizV1';
 
-const getPracticeDetails = (topicId: string, practiceIndex: number, practiceName: string): PracticeDetails => {
+const getPracticeDetails = (practiceName: string): PracticeDetails => {
   const isKz = APP_LANGUAGE === 'kz';
-
-  const normalized = (value: string) => value.toLowerCase();
-  const hasAll = (value: string, tokens: string[]) => tokens.every((token) => normalized(value).includes(token.toLowerCase()));
-  const hasAny = (value: string, tokens: string[]) => tokens.some((token) => normalized(value).includes(token.toLowerCase()));
-  const count = (value: string, token: string) => normalized(value).split(token.toLowerCase()).length - 1;
-
-  const starterCode = '# Кодты мұнда жаз\n';
-  const genericChecks = [
-    {
-      description: isKz ? 'Код жазылған' : 'Код написан',
-      checkFunction: (code: string) => code.trim().length > 0,
-    },
-  ];
-
-  if (topicId.includes('pre-variables') || topicId === 'course-1' || topicId.includes('variables')) {
-    const checksByIndex: Record<number, PracticeDetails['tests']> = {
-      0: [
-        { description: isKz ? 'Екі айнымалы бар' : 'Есть две переменные', checkFunction: (code) => hasAny(code, ['=', 'print(']) },
-        { description: isKz ? 'Нәтиже экранға шығарылады' : 'Результат выводится на экран', checkFunction: (code) => hasAny(code, ['print(']) },
-      ],
-      1: [
-        { description: isKz ? 'Қосу операторы қолданылған' : 'Использован оператор сложения', checkFunction: (code) => hasAny(code, ['+']) },
-        { description: isKz ? 'Экранға шығару бар' : 'Есть вывод на экран', checkFunction: (code) => hasAny(code, ['print(']) },
-      ],
-      2: [{ description: isKz ? 'Жолдар біріктірілген' : 'Строки объединены', checkFunction: (code) => hasAny(code, ['+', 'print(']) }],
-      3: [{ description: isKz ? 'Түрлендіру қолданылады' : 'Используется преобразование', checkFunction: (code) => hasAny(code, ['str(', 'int(']) }],
-      4: [{ description: isKz ? 'type() шақырылған' : 'Вызван type()', checkFunction: (code) => hasAny(code, ['type(']) }],
-      5: [{ description: isKz ? 'Нәтиже есептелген' : 'Результат вычислен', checkFunction: (code) => hasAny(code, ['+', '-', '*', '/']) }],
-    };
-
-    return {
-      description: isKz ? `${practiceName}: тақырып бойынша практика` : `${practiceName}: практика по теме`,
-      starterCode,
-      tests: checksByIndex[practiceIndex] || genericChecks,
-    };
-  }
-
-  if (topicId.includes('if')) {
-    const checksByIndex: Record<number, PracticeDetails['tests']> = {
-      0: [
-        { description: isKz ? 'if және else қолданылған' : 'Использованы if и else', checkFunction: (code) => hasAll(code, ['if', 'else']) },
-        { description: isKz ? 'Жас салыстырылады' : 'Есть сравнение возраста', checkFunction: (code) => hasAny(code, ['>=', '<=', '>', '<']) },
-        { description: isKz ? 'Экранға жауап шығарылады' : 'Есть вывод ответа', checkFunction: (code) => hasAny(code, ['print(']) },
-      ],
-      1: [
-        { description: isKz ? 'Жұп/тақ тексерісі бар' : 'Есть проверка чётности', checkFunction: (code) => hasAny(code, ['% 2', '%2']) },
-        { description: isKz ? 'if қолданылған' : 'Использован if', checkFunction: (code) => hasAny(code, ['if ']) },
-      ],
-      2: [{ description: isKz ? 'Екі мән салыстырылады' : 'Сравниваются два значения', checkFunction: (code) => hasAny(code, ['>', '<', '>=', '<=']) }],
-      3: [{ description: isKz ? 'Баға шарты бар' : 'Есть условие для оценки', checkFunction: (code) => hasAny(code, ['>=', '<=', 'elif', 'if']) }],
-      4: [{ description: isKz ? 'Кірістірілген if бар' : 'Есть вложенный if', checkFunction: (code) => count(code, 'if') >= 2 || hasAny(code, ['elif']) }],
-      5: [{ description: isKz ? 'Қолжетімділік шарты бар' : 'Есть условие доступа', checkFunction: (code) => hasAll(code, ['if', 'else']) }],
-    };
-
-    return {
-      description: isKz ? `${practiceName}: шарт арқылы шешілетін тапсырма` : `${practiceName}: задача на условие`,
-      starterCode,
-      tests: checksByIndex[practiceIndex] || genericChecks,
-    };
-  }
-
-  if (topicId.includes('loop')) {
-    const checksByIndex: Record<number, PracticeDetails['tests']> = {
-      0: [{ description: isKz ? 'range() қолданылған' : 'Используется range()', checkFunction: (code) => hasAny(code, ['range(']) }],
-      1: [
-        { description: isKz ? 'Қосынды жиналады' : 'Собирается сумма', checkFunction: (code) => hasAny(code, ['+=', 'sum']) },
-        { description: isKz ? 'Цикл қолданылған' : 'Использован цикл', checkFunction: (code) => hasAny(code, ['for ', 'while ']) },
-      ],
-      2: [
-        { description: isKz ? 'Көбейту бар' : 'Есть умножение', checkFunction: (code) => hasAny(code, ['*']) },
-        { description: isKz ? 'Цикл қолданылған' : 'Использован цикл', checkFunction: (code) => hasAny(code, ['for ', 'while ']) },
-      ],
-      3: [{ description: isKz ? 'Максимум салыстыру арқылы табылады' : 'Максимум ищется через сравнение', checkFunction: (code) => hasAny(code, ['if ', '>', '<']) }],
-      4: [
-        { description: isKz ? 'while қолданылған' : 'Используется while', checkFunction: (code) => hasAny(code, ['while ']) },
-        { description: isKz ? 'Санағыш өзгертіледі' : 'Счётчик изменяется', checkFunction: (code) => hasAny(code, ['+=', '-=']) },
-      ],
-      5: [{ description: isKz ? 'Циклден шығу бар' : 'Есть выход из цикла', checkFunction: (code) => hasAny(code, ['break', 'while ']) }],
-    };
-
-    return {
-      description: isKz ? `${practiceName}: цикл бойынша практика` : `${practiceName}: практика по циклам`,
-      starterCode,
-      tests: checksByIndex[practiceIndex] || genericChecks,
-    };
-  }
-
-  if (topicId.includes('func')) {
-    const checksByIndex: Record<number, PracticeDetails['tests']> = {
-      0: [
-        { description: isKz ? 'def қолданылған' : 'Использован def', checkFunction: (code) => hasAny(code, ['def ']) },
-        { description: isKz ? 'Экранға шығару бар' : 'Есть вывод на экран', checkFunction: (code) => hasAny(code, ['print(']) },
-      ],
-      1: [{ description: isKz ? 'Қосу қайтарылады' : 'Возвращается сумма', checkFunction: (code) => hasAny(code, ['return', '+']) }],
-      2: [{ description: isKz ? 'Аудан есептеледі' : 'Считается площадь', checkFunction: (code) => hasAny(code, ['return', '*']) }],
-      3: [{ description: isKz ? 'Жай сан шарты бар' : 'Есть условие простого числа', checkFunction: (code) => hasAny(code, ['%', 'for ', 'if ']) }],
-      4: [{ description: isKz ? 'Әдепкі параметр қолданылған' : 'Есть параметр по умолчанию', checkFunction: (code) => hasAny(code, ['=']) }],
-      5: [{ description: isKz ? 'Функция анықталған' : 'Функция определена', checkFunction: (code) => hasAny(code, ['def ']) }],
-    };
-
-    return {
-      description: isKz ? `${practiceName}: функциялармен жұмыс` : `${practiceName}: работа с функциями`,
-      starterCode,
-      tests: checksByIndex[practiceIndex] || genericChecks,
-    };
-  }
-
-  if (topicId.includes('list')) {
-    const checksByIndex: Record<number, PracticeDetails['tests']> = {
-      0: [{ description: isKz ? 'Тізімге қосу бар' : 'Есть добавление в список', checkFunction: (code) => hasAny(code, ['append(', '[']) }],
-      1: [{ description: isKz ? 'Жою операциясы бар' : 'Есть операция удаления', checkFunction: (code) => hasAny(code, ['remove(', 'pop(']) }],
-      2: [{ description: isKz ? 'Срез қолданылған' : 'Используется срез', checkFunction: (code) => hasAny(code, [':']) }],
-      3: [{ description: isKz ? 'Жиілік есептеледі' : 'Считается частота', checkFunction: (code) => hasAny(code, ['count(', 'for ']) }],
-      4: [{ description: isKz ? 'Сөздік жасалған' : 'Создан словарь', checkFunction: (code) => hasAny(code, ['{', ':']) }],
-      5: [{ description: isKz ? 'Журналға қосу бар' : 'Есть добавление в журнал', checkFunction: (code) => hasAny(code, ['append(', 'for ']) }],
-      6: [{ description: isKz ? 'Іздеу шарты бар' : 'Есть условие поиска', checkFunction: (code) => hasAny(code, ['in ', 'get(']) }],
-    };
-
-    return {
-      description: isKz ? `${practiceName}: коллекциялармен жұмыс` : `${practiceName}: работа с коллекциями`,
-      starterCode,
-      tests: checksByIndex[practiceIndex] || genericChecks,
-    };
-  }
+  const starterCode = isKz ? '# Кодты мұнда жаз\n' : '# Write your code here\n';
 
   return {
-    description: isKz ? `${practiceName}: тақырып бойынша практика` : `${practiceName}: практика по теме`,
+    description: `${practiceName}: ${isKz ? 'практика' : 'практика'}`,
     starterCode,
-    tests: [
-      {
-        description: isKz ? 'Код жазылған' : 'Код написан',
-        checkFunction: (code) => code.trim().length > 0,
-      },
-    ],
   };
 };
 
@@ -241,6 +116,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isOracleOpen, setIsOracleOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const applyPracticePrefill = (allTopics: Topic[], sourceProgress: ProgressMap) => {
     const topicId = localStorage.getItem(PRACTICE_TOPIC_KEY);
@@ -267,7 +143,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
       return;
     }
 
-    const details = getPracticeDetails(topic.id, parsedIndex, topic.practices[parsedIndex]);
+    const details = getPracticeDetails(topic.practices[parsedIndex]);
     setSelectedTopic(topic);
     setSelectedPracticeIndex(parsedIndex);
     setUserCode(details.starterCode);
@@ -357,7 +233,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     if (!selectedTopic) return;
 
     const practiceName = selectedTopic.practices[practiceIndex];
-    const details = getPracticeDetails(selectedTopic.id, practiceIndex, practiceName);
+    const details = getPracticeDetails(practiceName);
 
     setSelectedPracticeIndex(practiceIndex);
     setUserCode(details.starterCode);
@@ -374,37 +250,46 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     setView(View.COURSE_JOURNEY);
   };
 
-  const runTests = () => {
+  const runTests = async () => {
     if (!selectedTopic || selectedPracticeIndex === null) return;
 
-    const practiceName = selectedTopic.practices[selectedPracticeIndex];
-    const details = getPracticeDetails(selectedTopic.id, selectedPracticeIndex, practiceName);
+    setIsSubmitting(true);
 
-    const results = details.tests.map((test) => {
-      const passed = test.checkFunction(userCode);
-      return { passed, message: test.description };
-    });
-
-    setTestResults(results);
-
-    const allPassed = results.every((r) => r.passed);
-    setIsSuccess(allPassed);
-
-    if (allPassed) {
-      const topicProgress = progress[selectedTopic.id] || { theoryOpened: true, completedPractices: [] };
-      const newCompletedPractices = [...new Set([...topicProgress.completedPractices, selectedPracticeIndex])];
-
-      void saveTopicProgress(selectedTopic.id, {
-        ...topicProgress,
-        completedPractices: newCompletedPractices,
+    try {
+      const response = await apiPost<PracticeSubmitResponse>('/courses/journey/practice/submit', {
+        topicId: selectedTopic.id,
+        practiceIndex: selectedPracticeIndex,
+        code: userCode,
       });
+
+      const results = Array.isArray(response.testResults) ? response.testResults : [];
+      setTestResults(results.map((item) => ({ passed: Boolean(item.passed), message: item.message })));
+
+      const allPassed = Boolean(response.success);
+      setIsSuccess(allPassed);
+
+      if (allPassed) {
+        const topicProgress = progress[selectedTopic.id] || { theoryOpened: true, completedPractices: [] };
+        const newCompletedPractices = [...new Set([...topicProgress.completedPractices, selectedPracticeIndex])];
+
+        void saveTopicProgress(selectedTopic.id, {
+          ...topicProgress,
+          completedPractices: newCompletedPractices,
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : (isKz ? 'Тексеру кезінде қате шықты' : 'Ошибка при проверке');
+      setTestResults([{ passed: false, message }]);
+      setIsSuccess(false);
     }
+
+    setIsSubmitting(false);
   };
 
   const selectedPracticeDetails = useMemo(
     () => (
       selectedTopic && selectedPracticeIndex !== null
-        ? getPracticeDetails(selectedTopic.id, selectedPracticeIndex, selectedTopic.practices[selectedPracticeIndex])
+        ? getPracticeDetails(selectedTopic.practices[selectedPracticeIndex])
         : null
     ),
     [selectedPracticeIndex, selectedTopic],
@@ -625,12 +510,13 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
                   </div>
 
                   {/* Run Button */}
-                  <button
-                    onClick={runTests}
-                    className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 flex items-center justify-center gap-2"
-                  >
+                    <button
+                      onClick={runTests}
+                      disabled={isSubmitting}
+                      className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
                     <Play size={18} />
-                    {text.runCode}
+                    {isSubmitting ? (isKz ? 'Тексерілуде...' : 'Проверяется...') : text.runCode}
                   </button>
 
                   {/* Test Results */}

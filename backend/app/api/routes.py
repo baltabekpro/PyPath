@@ -20,6 +20,7 @@ from app.schemas.requests import (
     MissionCreate,
     MissionUpdate,
     JourneyProgressUpdate,
+    JourneyPracticeSubmit,
     CourseQuizBankGenerateRequest,
 )
 from app.services.database_service import DatabaseService
@@ -284,6 +285,17 @@ def update_courses_journey_progress(
 ):
     """Persist user-specific progress for one journey topic."""
     return service.save_course_journey_progress(user, payload.topicId, payload.progress.model_dump())
+
+
+@router.post("/courses/journey/practice/submit", tags=["Courses"])
+def submit_courses_journey_practice(
+    payload: JourneyPracticeSubmit,
+    user: Optional[User] = Depends(get_current_user_optional),
+    language: str = Depends(get_request_language),
+    service: DatabaseService = Depends(get_db_service),
+):
+    """Validate a course journey practice submission on the server."""
+    return service.submit_course_practice(payload, user, language)
 
 
 @router.post("/courses", status_code=201, tags=["Courses"])

@@ -20,6 +20,7 @@ from app.schemas.requests import (
     CourseUpdate,
     MissionCreate,
     MissionUpdate,
+    JourneyPracticeSubmit,
 )
 
 
@@ -1620,6 +1621,180 @@ class DatabaseService:
             )
 
         return results
+
+    def _course_practice_checks(self, topic_id: str, practice_index: int, practice_name: str, language: str) -> tuple[str, list[dict]]:
+        language_key = normalize_language(language)
+        starter_code = '# Кодты мұнда жаз\n' if language_key == 'kz' else '# Write your code here\n'
+
+        def normalized(value: str) -> str:
+            return value.lower()
+
+        def has_all(value: str, tokens: list[str]) -> bool:
+            lowered = normalized(value)
+            return all(token.lower() in lowered for token in tokens)
+
+        def has_any(value: str, tokens: list[str]) -> bool:
+            lowered = normalized(value)
+            return any(token.lower() in lowered for token in tokens)
+
+        def count(value: str, token: str) -> int:
+            lowered = normalized(value)
+            return lowered.count(token.lower())
+
+        generic_checks = [
+            {
+                'id': 'code_written',
+                'description': 'Код жазылған' if language_key == 'kz' else 'Код написан',
+                'checkFunction': lambda code: bool(code and code.strip()),
+            },
+        ]
+
+        checks_by_index: dict[int, list[dict]]
+        description: str
+
+        if topic_id in {'course-1', 'pre-variables'} or 'variables' in topic_id:
+            checks_by_index = {
+                0: [
+                    {'id': 'has_assignment', 'description': 'Екі айнымалы бар' if language_key == 'kz' else 'Есть две переменные', 'checkFunction': lambda code: has_any(code, ['=', 'print('])},
+                    {'id': 'has_output', 'description': 'Нәтиже экранға шығарылады' if language_key == 'kz' else 'Результат выводится на экран', 'checkFunction': lambda code: has_any(code, ['print('])},
+                ],
+                1: [
+                    {'id': 'has_addition', 'description': 'Қосу операторы қолданылған' if language_key == 'kz' else 'Использован оператор сложения', 'checkFunction': lambda code: has_any(code, ['+'])},
+                    {'id': 'has_output', 'description': 'Экранға шығару бар' if language_key == 'kz' else 'Есть вывод на экран', 'checkFunction': lambda code: has_any(code, ['print('])},
+                ],
+                2: [{'id': 'join_strings', 'description': 'Жолдар біріктірілген' if language_key == 'kz' else 'Строки объединены', 'checkFunction': lambda code: has_any(code, ['+', 'print('])}],
+                3: [{'id': 'conversion', 'description': 'Түрлендіру қолданылады' if language_key == 'kz' else 'Используется преобразование', 'checkFunction': lambda code: has_any(code, ['str(', 'int('])}],
+                4: [{'id': 'type_check', 'description': 'type() шақырылған' if language_key == 'kz' else 'Вызван type()', 'checkFunction': lambda code: has_any(code, ['type('])}],
+                5: [{'id': 'calculation', 'description': 'Нәтиже есептелген' if language_key == 'kz' else 'Результат вычислен', 'checkFunction': lambda code: has_any(code, ['+', '-', '*', '/'])}],
+            }
+            description = f'{practice_name}: ' + ('тақырып бойынша практика' if language_key == 'kz' else 'практика по теме')
+        elif 'if' in topic_id:
+            checks_by_index = {
+                0: [
+                    {'id': 'has_if_else', 'description': 'if және else қолданылған' if language_key == 'kz' else 'Использованы if и else', 'checkFunction': lambda code: has_all(code, ['if', 'else'])},
+                    {'id': 'has_compare', 'description': 'Жас салыстырылады' if language_key == 'kz' else 'Есть сравнение возраста', 'checkFunction': lambda code: has_any(code, ['>=', '<=', '>', '<'])},
+                    {'id': 'has_output', 'description': 'Экранға жауап шығарылады' if language_key == 'kz' else 'Есть вывод ответа', 'checkFunction': lambda code: has_any(code, ['print('])},
+                ],
+                1: [
+                    {'id': 'has_even_check', 'description': 'Жұп/тақ тексерісі бар' if language_key == 'kz' else 'Есть проверка чётности', 'checkFunction': lambda code: has_any(code, ['% 2', '%2'])},
+                    {'id': 'has_if', 'description': 'if қолданылған' if language_key == 'kz' else 'Использован if', 'checkFunction': lambda code: has_any(code, ['if '])},
+                ],
+                2: [{'id': 'compare_values', 'description': 'Екі мән салыстырылады' if language_key == 'kz' else 'Сравниваются два значения', 'checkFunction': lambda code: has_any(code, ['>', '<', '>=', '<='])}],
+                3: [{'id': 'grade_condition', 'description': 'Баға шарты бар' if language_key == 'kz' else 'Есть условие для оценки', 'checkFunction': lambda code: has_any(code, ['>=', '<=', 'elif', 'if'])}],
+                4: [{'id': 'nested_if', 'description': 'Кірістірілген if бар' if language_key == 'kz' else 'Есть вложенный if', 'checkFunction': lambda code: count(code, 'if') >= 2 or has_any(code, ['elif'])}],
+                5: [{'id': 'access_condition', 'description': 'Қолжетімділік шарты бар' if language_key == 'kz' else 'Есть условие доступа', 'checkFunction': lambda code: has_all(code, ['if', 'else'])}],
+            }
+            description = f'{practice_name}: ' + ('шарт арқылы шешілетін тапсырма' if language_key == 'kz' else 'задача на условие')
+        elif 'loop' in topic_id:
+            checks_by_index = {
+                0: [{'id': 'range_used', 'description': 'range() қолданылған' if language_key == 'kz' else 'Используется range()', 'checkFunction': lambda code: has_any(code, ['range('])}],
+                1: [
+                    {'id': 'sum_accumulated', 'description': 'Қосынды жиналады' if language_key == 'kz' else 'Собирается сумма', 'checkFunction': lambda code: has_any(code, ['+=', 'sum'])},
+                    {'id': 'loop_used', 'description': 'Цикл қолданылған' if language_key == 'kz' else 'Использован цикл', 'checkFunction': lambda code: has_any(code, ['for ', 'while '])},
+                ],
+                2: [
+                    {'id': 'multiplication', 'description': 'Көбейту бар' if language_key == 'kz' else 'Есть умножение', 'checkFunction': lambda code: has_any(code, ['*'])},
+                    {'id': 'loop_used', 'description': 'Цикл қолданылған' if language_key == 'kz' else 'Использован цикл', 'checkFunction': lambda code: has_any(code, ['for ', 'while '])},
+                ],
+                3: [{'id': 'max_compare', 'description': 'Максимум салыстыру арқылы табылады' if language_key == 'kz' else 'Максимум ищется через сравнение', 'checkFunction': lambda code: has_any(code, ['if ', '>', '<'])}],
+                4: [
+                    {'id': 'while_used', 'description': 'while қолданылған' if language_key == 'kz' else 'Используется while', 'checkFunction': lambda code: has_any(code, ['while '])},
+                    {'id': 'counter_changed', 'description': 'Санағыш өзгертіледі' if language_key == 'kz' else 'Счётчик изменяется', 'checkFunction': lambda code: has_any(code, ['+=', '-='])},
+                ],
+                5: [{'id': 'loop_exit', 'description': 'Циклден шығу бар' if language_key == 'kz' else 'Есть выход из цикла', 'checkFunction': lambda code: has_any(code, ['break', 'while '])}],
+            }
+            description = f'{practice_name}: ' + ('цикл бойынша практика' if language_key == 'kz' else 'практика по циклам')
+        elif 'func' in topic_id:
+            checks_by_index = {
+                0: [
+                    {'id': 'def_used', 'description': 'def қолданылған' if language_key == 'kz' else 'Использован def', 'checkFunction': lambda code: has_any(code, ['def '])},
+                    {'id': 'has_output', 'description': 'Экранға шығару бар' if language_key == 'kz' else 'Есть вывод на экран', 'checkFunction': lambda code: has_any(code, ['print('])},
+                ],
+                1: [{'id': 'sum_returned', 'description': 'Қосу қайтарылады' if language_key == 'kz' else 'Возвращается сумма', 'checkFunction': lambda code: has_any(code, ['return', '+'])}],
+                2: [{'id': 'area_calculated', 'description': 'Аудан есептеледі' if language_key == 'kz' else 'Считается площадь', 'checkFunction': lambda code: has_any(code, ['return', '*'])}],
+                3: [{'id': 'prime_condition', 'description': 'Жай сан шарты бар' if language_key == 'kz' else 'Есть условие простого числа', 'checkFunction': lambda code: has_any(code, ['%', 'for ', 'if '])}],
+                4: [{'id': 'default_param', 'description': 'Әдепкі параметр қолданылған' if language_key == 'kz' else 'Есть параметр по умолчанию', 'checkFunction': lambda code: has_any(code, ['='])}],
+                5: [{'id': 'function_defined', 'description': 'Функция анықталған' if language_key == 'kz' else 'Функция определена', 'checkFunction': lambda code: has_any(code, ['def '])}],
+            }
+            description = f'{practice_name}: ' + ('функциялармен жұмыс' if language_key == 'kz' else 'работа с функциями')
+        elif 'list' in topic_id:
+            checks_by_index = {
+                0: [{'id': 'append_used', 'description': 'Тізімге қосу бар' if language_key == 'kz' else 'Есть добавление в список', 'checkFunction': lambda code: has_any(code, ['append(', '['])}],
+                1: [{'id': 'remove_used', 'description': 'Жою операциясы бар' if language_key == 'kz' else 'Есть операция удаления', 'checkFunction': lambda code: has_any(code, ['remove(', 'pop('])}],
+                2: [{'id': 'slice_used', 'description': 'Срез қолданылған' if language_key == 'kz' else 'Используется срез', 'checkFunction': lambda code: has_any(code, [':'])}],
+                3: [{'id': 'frequency_counted', 'description': 'Жиілік есептеледі' if language_key == 'kz' else 'Считается частота', 'checkFunction': lambda code: has_any(code, ['count(', 'for '])}],
+                4: [{'id': 'dict_created', 'description': 'Сөздік жасалған' if language_key == 'kz' else 'Создан словарь', 'checkFunction': lambda code: has_any(code, ['{', ':'])}],
+                5: [{'id': 'journal_updated', 'description': 'Журналға қосу бар' if language_key == 'kz' else 'Есть добавление в журнал', 'checkFunction': lambda code: has_any(code, ['append(', 'for '])}],
+                6: [{'id': 'search_condition', 'description': 'Іздеу шарты бар' if language_key == 'kz' else 'Есть условие поиска', 'checkFunction': lambda code: has_any(code, ['in ', 'get('])}],
+            }
+            description = f'{practice_name}: ' + ('коллекциялармен жұмыс' if language_key == 'kz' else 'работа с коллекциями')
+        else:
+            checks_by_index = {}
+            description = f'{practice_name}: ' + ('тақырып бойынша практика' if language_key == 'kz' else 'практика по теме')
+
+        checks = checks_by_index.get(practice_index, generic_checks)
+        return description, [
+            {'id': item['id'], 'description': item['description'], 'passed': bool(item['checkFunction'])} if False else item
+            for item in checks
+        ]
+
+    def submit_course_practice(self, payload: JourneyPracticeSubmit, user: Optional[User] = None, language: str = 'ru') -> dict:
+        topics = self.get_course_journey(user, language)
+        topic = next((item for item in topics if str(item.get('id')) == str(payload.topicId)), None)
+        if not topic:
+            return {
+                'success': False,
+                'message': 'Topic not found',
+                'testResults': [],
+                'starterCode': '',
+                'description': '',
+            }
+
+        practices = topic.get('practices') if isinstance(topic, dict) else []
+        if not isinstance(practices, list) or payload.practiceIndex < 0 or payload.practiceIndex >= len(practices):
+            return {
+                'success': False,
+                'message': 'Practice not found',
+                'testResults': [],
+                'starterCode': '',
+                'description': '',
+            }
+
+        practice_name = str(practices[payload.practiceIndex])
+        description, tests = self._course_practice_checks(str(payload.topicId), payload.practiceIndex, practice_name, language)
+        code = payload.code or ''
+
+        test_results = []
+        all_passed = True
+        for test in tests:
+            if not isinstance(test, dict):
+                continue
+            check_function = test.get('checkFunction')
+            passed = bool(check_function(code)) if callable(check_function) else False
+            test_results.append({
+                'id': test.get('id', 'unknown'),
+                'passed': passed,
+                'message': test.get('description', 'Check'),
+            })
+            if not passed:
+                all_passed = False
+
+        if not code.strip():
+            all_passed = False
+            if not test_results:
+                test_results.append({
+                    'id': 'code_written',
+                    'passed': False,
+                    'message': 'Код написан' if normalize_language(language) == 'kz' else 'Код написан',
+                })
+
+        return {
+            'success': all_passed,
+            'message': 'Задание выполнено' if all_passed else 'Проверьте код и попробуйте снова',
+            'description': description,
+            'starterCode': '# Кодты мұнда жаз\n' if normalize_language(language) == 'kz' else '# Write your code here\n',
+            'testResults': test_results,
+        }
 
     # Achievement operations
     def get_achievements(self, category: str = "all", user: Optional[User] = None) -> list[dict]:

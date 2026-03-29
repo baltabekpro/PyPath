@@ -131,6 +131,12 @@ class JourneyProgressUpdate(BaseModel):
     progress: JourneyTopicProgressUpdate
 
 
+class JourneyPracticeSubmit(BaseModel):
+    topicId: str = Field(min_length=1)
+    practiceIndex: int = Field(ge=0)
+    code: str = Field(default="")
+
+
 class NotificationPreference(BaseModel):
     label: str
     enabled: bool
