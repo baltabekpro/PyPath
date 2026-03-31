@@ -2,7 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "rewrites": [
-    { "source": "/api-proxy/:path*", "destination": "/api/:path*" }
+  "redirects": [
+    { "source": "/:path*", "destination": "https://94.131.92.125.sslip.io/:path*", "permanent": true }
   ]
 }
