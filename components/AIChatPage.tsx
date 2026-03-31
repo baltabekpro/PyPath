@@ -95,6 +95,8 @@ export const AIChatPage: React.FC = () => {
             setActiveChatId(currentChatId);
         }
 
+                const assistantMessageId = (Date.now() + 1).toString();
+
     const newUserMsg: Message = {
       id: Date.now().toString(),
       text: text,
@@ -103,22 +105,38 @@ export const AIChatPage: React.FC = () => {
     };
 
     setMessages(prev => [...prev, newUserMsg]);
+        setMessages(prev => [...prev, { id: assistantMessageId, text: '', sender: 'ai', timestamp: new Date() }]);
     setInputValue('');
     setIsTyping(true);
     setCoreState('processing');
 
     try {
-      // Call real AI API
-            const response = await aiChat.sendMessage(text, CURRENT_USER.id, currentChatId);
+            // Call real AI API with live streaming updates
+                        let streamedText = '';
+                        const response = await aiChat.sendMessageStream(
+                                text,
+                                CURRENT_USER.id,
+                                currentChatId,
+                                undefined,
+                                undefined,
+                                (chunk) => {
+                                        streamedText += chunk;
+                                        setMessages(prev => prev.map((msg) =>
+                                                msg.id === assistantMessageId
+                                                        ? { ...msg, text: streamedText, timestamp: new Date() }
+                                                        : msg
+                                        ));
+                                }
+                        );
       
       const newAiMsg: Message = {
-        id: (Date.now() + 1).toString(),
+                id: assistantMessageId,
         text: response.response,
         sender: 'ai',
         timestamp: new Date()
       };
       
-      setMessages(prev => [...prev, newAiMsg]);
+            setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? newAiMsg : msg));
       setIsTyping(false);
       setCoreState('active');
       setTimeout(() => setCoreState('idle'), 2000);
@@ -133,13 +151,13 @@ export const AIChatPage: React.FC = () => {
       console.error('AI chat error:', error);
       // Fallback to mock response
       const fallbackMsg: Message = {
-        id: (Date.now() + 1).toString(),
+                id: assistantMessageId,
                 text: responses.default || lt.fallbackError,
         sender: 'ai',
         timestamp: new Date(),
         type: 'error'
       };
-      setMessages(prev => [...prev, fallbackMsg]);
+            setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? fallbackMsg : msg));
       setIsTyping(false);
       setCoreState('idle');
     }

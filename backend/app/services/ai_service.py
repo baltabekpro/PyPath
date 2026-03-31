@@ -1,10 +1,14 @@
-"""AI service for Google Gemini integration"""
+"""AI service for OpenRouter chat completions."""
 import json
+import logging
 import re
 from typing import List, Dict, Optional
 from datetime import datetime
-import google.generativeai as genai
+import httpx
 from app.core.config import get_settings
+
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -41,25 +45,30 @@ def _language_instruction(language: str) -> str:
 # ---------------------------------------------------------------------------
 
 class AIService:
-    """Service for AI chat using Google Gemini"""
+    """Service for AI chat using OpenRouter."""
+
+    _MAX_CONTINUATION_ATTEMPTS = 2
 
     def __init__(self):
         settings = get_settings()
-        genai.configure(api_key=settings.google_api_key)
-
-        generation_config = genai.types.GenerationConfig(
-            max_output_tokens=1024,
-            temperature=0.7,
-            top_p=0.95,
-            top_k=40,
+        self.api_key = settings.openrouter_api_key.strip()
+        self.model_name = settings.openrouter_model.strip() or "stepfun/step-3.5-flash:free"
+        self.referer = settings.openrouter_referer.strip() or "https://py-path.vercel.app"
+        self.title = settings.openrouter_title.strip() or "PyPath"
+        self.client = httpx.Client(
+            base_url="https://openrouter.ai/api/v1",
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "HTTP-Referer": self.referer,
+                "X-Title": self.title,
+                "Content-Type": "application/json",
+            },
         )
-
-        self.model = genai.GenerativeModel(
-            settings.gemini_model,
-            generation_config=generation_config,
-        )
-        self.chat_sessions: Dict[str, genai.ChatSession] = {}
         self.message_history: Dict[str, List[Dict[str, str]]] = {}
+
+        if not self.api_key:
+            logger.warning("OPENROUTER_API_KEY is not configured. AI routes will return fallback responses.")
 
         # Base system prompt (language-neutral preamble)
         self._base_system_prompt = """Ты - Оракул Кода, AI ассистент образовательной платформы PyPath для изучения Python.
@@ -97,26 +106,178 @@ class AIService:
         lang_instruction = _language_instruction(language)
         return f"{self._base_system_prompt}\n\n{lang_instruction}"
 
-    def _session_key_with_lang(self, user_id: str, language: str) -> str:
-        """Session keys are per user+language so the language constraint persists."""
-        return f"{user_id}::{language}"
+    @staticmethod
+    def _extract_text_from_choice(choice: dict) -> str:
+        message = choice.get("message") or {}
+        content = message.get("content", "")
+        if isinstance(content, list):
+            chunks: list[str] = []
+            for part in content:
+                if isinstance(part, dict):
+                    chunks.append(str(part.get("text") or ""))
+                else:
+                    chunks.append(str(part))
+            content = "".join(chunks)
+        return str(content or "").strip()
 
-    def get_or_create_session(self, user_id: str, language: str = "ru") -> genai.ChatSession:
-        """Get existing chat session or create new one, scoped to the given language."""
-        key = self._session_key_with_lang(user_id, language)
-        if key not in self.chat_sessions:
-            system_prompt = self._build_system_prompt(language)
+    @staticmethod
+    def _finish_reason(choice: dict) -> str:
+        return str(choice.get("finish_reason") or "").strip().lower()
+
+    def _call_openrouter(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float,
+        max_tokens: int,
+    ) -> tuple[str, str]:
+        payload = {
+            "model": self.model_name,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+
+        response = self.client.post("/chat/completions", json=payload)
+        response.raise_for_status()
+        data = response.json()
+        choices = data.get("choices") or []
+        if not choices:
+            return "", ""
+
+        choice = choices[0] if isinstance(choices[0], dict) else {}
+        return self._extract_text_from_choice(choice), self._finish_reason(choice)
+
+    def _build_conversation_messages(
+        self,
+        session_key: str,
+        user_message: str,
+        language: str,
+        context: Optional[dict] = None,
+    ) -> list[dict[str, str]]:
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": self._build_system_prompt(language)},
+        ]
+
+        for item in self.message_history.get(session_key, [])[-20:]:
+            sender = item.get("sender")
+            text = str(item.get("text") or "").strip()
+            if sender not in {"user", "ai"} or not text:
+                continue
+            messages.append({
+                "role": "user" if sender == "user" else "assistant",
+                "content": text,
+            })
+
+        content = user_message.strip()
+        if isinstance(context, dict) and context:
+            try:
+                content = f"{content}\n\nКонтекст экрана обучения:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
+            except Exception:
+                pass
+
+        messages.append({"role": "user", "content": content})
+        return messages
+
+    def _append_history_message(self, session_key: str, sender: str, text: str) -> None:
+        if not text.strip():
+            return
+        self.message_history.setdefault(session_key, []).append({
+            "id": f"{int(datetime.now().timestamp() * 1000)}_{'u' if sender == 'user' else 'a'}",
+            "sender": sender,
+            "text": text,
+            "timestamp": datetime.now().isoformat(),
+        })
+
+    def _complete_chat(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float,
+        max_tokens: int,
+        language: str,
+    ) -> str:
+        parts: list[str] = []
+        current_messages = list(messages)
+        continuation_prompt = (
+            "Продолжи предыдущий ответ с того места, где он оборвался. "
+            "Не повторяй уже сказанное. Сохраняй тот же язык и стиль."
+            if language == "ru"
+            else "Алдыңғы жауап үзілген жерден жалғастыр. "
+            "Айтылғанды қайталама. Сол тіл мен стильді сақта."
+        )
+
+        attempts = 0
+        while attempts <= self._MAX_CONTINUATION_ATTEMPTS:
+            text, finish_reason = self._call_openrouter(current_messages, temperature=temperature, max_tokens=max_tokens)
+            if text:
+                parts.append(text)
+
+            if finish_reason not in {"length", "max_tokens"}:
+                break
+
+            attempts += 1
+            if attempts > self._MAX_CONTINUATION_ATTEMPTS:
+                break
+
+            current_messages = current_messages + [
+                {"role": "assistant", "content": text},
+                {"role": "user", "content": continuation_prompt},
+            ]
+
+        return " ".join(part.strip() for part in parts if part.strip()).strip()
+
+    def _fallback_message(self, language: str, quota: bool = False) -> str:
+        if quota:
             if language == "kz":
-                greeting = "Түсіндім! Python оқуда студенттерге көмектесуге дайынмын. Бастайық! 🚀"
-            else:
-                greeting = "Понял! Я готов помогать студентам изучать Python. Буду объяснять концепции понятно, давать подсказки вместо готовых решений и мотивировать на обучение. Давай начнем! 🚀"
-            self.chat_sessions[key] = self.model.start_chat(
-                history=[
-                    {"role": "user", "parts": [system_prompt]},
-                    {"role": "model", "parts": [greeting]},
-                ]
-            )
-        return self.chat_sessions[key]
+                return "AI қазір сұраныстар шегіне жетті. Бірнеше минуттан кейін қайта көріңіз."
+            return "AI сейчас временно недоступен из-за лимита запросов. Попробуй снова через несколько минут."
+        if language == "kz":
+            return "Кешіріңіз, AI қазір қолжетімді емес. Кейінірек қайталаңыз."
+        return "Извини, AI сейчас временно недоступен. Попробуй ещё раз чуть позже."
+
+    def _openrouter_stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float,
+        max_tokens: int,
+    ) -> tuple[object, dict[str, str]]:
+        payload = {
+            "model": self.model_name,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+
+        state = {"finish_reason": ""}
+
+        def iterator():
+            with self.client.stream("POST", "/chat/completions", json=payload) as response:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if not line:
+                        continue
+                    if line.startswith("data:"):
+                        data_text = line[5:].strip()
+                        if data_text == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(data_text)
+                        except Exception:
+                            continue
+                        choices = data.get("choices") or []
+                        if not choices:
+                            continue
+                        choice = choices[0] if isinstance(choices[0], dict) else {}
+                        state["finish_reason"] = self._finish_reason(choice) or state["finish_reason"]
+                        delta = choice.get("delta") or {}
+                        content = delta.get("content")
+                        if content:
+                            yield str(content)
+
+        return iterator(), state
 
     def chat(self, user_id: str, message: str, language: str | None = None, context: Optional[dict] = None) -> str:
         """Send message and get AI response.
@@ -126,47 +287,116 @@ class AIService:
         2. Auto-detection from the user's ``message`` text.
         Defaults to ``"ru"`` when neither source provides a clear signal.
         """
-        # Determine effective language
         if not language:
             language = detect_language(message)
         language = language if language in ("kz", "ru") else "ru"
 
+        session_key = user_id
+
         try:
-            session = self.get_or_create_session(user_id, language)
-            self.message_history.setdefault(user_id, []).append({
-                "id": f"{int(datetime.now().timestamp() * 1000)}_u",
-                "sender": "user",
-                "text": message,
-                "timestamp": datetime.now().isoformat(),
-            })
-            # Prepend a per-message language reminder so the model cannot drift
-            lang_reminder = _language_instruction(language)
-            context_block = ""
-            if isinstance(context, dict) and context:
-                try:
-                    context_block = f"\n\nКонтекст экрана обучения:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
-                except Exception:
-                    context_block = ""
-            augmented = f"{lang_reminder}{context_block}\n\nСообщение пользователя:\n{message}"
-            response = session.send_message(augmented)
-            self.message_history.setdefault(user_id, []).append({
-                "id": f"{int(datetime.now().timestamp() * 1000)}_a",
-                "sender": "ai",
-                "text": response.text,
-                "timestamp": datetime.now().isoformat(),
-            })
-            return response.text
+            messages = self._build_conversation_messages(session_key, message, language, context)
+            response_text = self._complete_chat(messages, temperature=0.7, max_tokens=2048, language=language)
+            if not response_text:
+                raise RuntimeError("Empty response from OpenRouter")
+
+            self._append_history_message(session_key, "user", message)
+            self._append_history_message(session_key, "ai", response_text)
+            return response_text
+        except httpx.HTTPStatusError as exc:
+            logger.warning("OpenRouter request failed for user_id=%s language=%s: %s", user_id, language, exc)
+            if exc.response.status_code == 429:
+                return self._fallback_message(language, quota=True)
+            return self._fallback_message(language)
         except Exception:
-            if language == "kz":
-                return "Кешіріңіз, AI қазір қолжетімді емес. Кейінірек қайталаңыз."
-            return "Извини, AI сейчас временно недоступен. Попробуй ещё раз чуть позже."
+            logger.exception("AI chat failed for user_id=%s language=%s", user_id, language)
+            return self._fallback_message(language)
+
+    def stream_chat(
+        self,
+        user_id: str,
+        message: str,
+        language: str | None = None,
+        context: Optional[dict] = None,
+    ):
+        if not language:
+            language = detect_language(message)
+        language = language if language in ("kz", "ru") else "ru"
+
+        session_key = user_id
+        messages = self._build_conversation_messages(session_key, message, language, context)
+        continuation_prompt = (
+            "Продолжи предыдущий ответ с того места, где он оборвался. "
+            "Не повторяй уже сказанное. Сохраняй тот же язык и стиль."
+            if language == "ru"
+            else "Алдыңғы жауап үзілген жерден жалғастыр. "
+            "Айтылғанды қайталама. Сол тіл мен стильді сақта."
+        )
+
+        def generator():
+            collected_parts: list[str] = []
+            completed = False
+            current_messages = list(messages)
+
+            try:
+                attempts = 0
+                while attempts <= self._MAX_CONTINUATION_ATTEMPTS:
+                    stream, state = self._openrouter_stream(
+                        current_messages,
+                        temperature=0.7,
+                        max_tokens=2048,
+                    )
+                    segment_parts: list[str] = []
+                    for chunk in stream:
+                        if chunk:
+                            segment_parts.append(chunk)
+                            collected_parts.append(chunk)
+                            yield chunk
+
+                    segment_text = "".join(segment_parts).strip()
+                    if state.get("finish_reason") not in {"length", "max_tokens"}:
+                        completed = True
+                        break
+
+                    attempts += 1
+                    if attempts > self._MAX_CONTINUATION_ATTEMPTS:
+                        completed = True
+                        break
+
+                    current_messages = current_messages + [
+                        {"role": "assistant", "content": segment_text},
+                        {"role": "user", "content": continuation_prompt},
+                    ]
+
+                if not collected_parts:
+                    raise RuntimeError("Empty streamed response from OpenRouter")
+
+                completed = True
+            except httpx.HTTPStatusError as exc:
+                logger.warning("OpenRouter stream failed for user_id=%s language=%s: %s", user_id, language, exc)
+                fallback = self._fallback_message(language, quota=exc.response.status_code == 429)
+                collected_parts = [fallback]
+                completed = True
+                yield fallback
+            except Exception:
+                logger.exception("AI stream failed for user_id=%s language=%s", user_id, language)
+                fallback = self._fallback_message(language)
+                collected_parts = [fallback]
+                completed = True
+                yield fallback
+            finally:
+                if completed:
+                    final_text = "".join(collected_parts).strip()
+                    if final_text:
+                        self._append_history_message(session_key, "user", message)
+                        self._append_history_message(session_key, "ai", final_text)
+
+        return generator()
 
     def reset_session(self, user_id: str) -> None:
         """Reset all chat sessions for a user."""
-        for key in list(self.chat_sessions.keys()):
-            if key.startswith(f"{user_id}::") or key == user_id:
-                del self.chat_sessions[key]
-        self.message_history[user_id] = []
+        for key in list(self.message_history.keys()):
+            if key.startswith(f"{user_id}:") or key == user_id:
+                del self.message_history[key]
 
     def get_history(self, user_id: str) -> List[Dict[str, str]]:
         """Get stored chat history for user"""
@@ -252,8 +482,15 @@ class AIService:
 Не пиши полное готовое решение. Будь кратким и практичным."""
 
         try:
-            response = self.model.generate_content(prompt)
-            text = (response.text or "").strip()
+            text = self._complete_chat(
+                [
+                    {"role": "system", "content": self._build_system_prompt(language)},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.4,
+                max_tokens=1024,
+                language=language,
+            )
             if text:
                 return text
         except Exception:
@@ -333,9 +570,15 @@ class AIService:
 Верни только JSON массив без дополнительного текста."""
 
         try:
-            response = self.model.generate_content(prompt)
-            text = (response.text or "").strip()
-            # Strip possible markdown code fences
+            text = self._complete_chat(
+                [
+                    {"role": "system", "content": self._build_system_prompt(language)},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=2048,
+                language=language,
+            )
             text = re.sub(r"^```(?:json)?\s*", "", text)
             text = re.sub(r"\s*```$", "", text)
             import json

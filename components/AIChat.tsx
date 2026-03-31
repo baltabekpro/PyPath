@@ -106,14 +106,31 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => 
 
     // Add User Message
     const userMsg: Message = { id: Date.now().toString(), text, sender: 'user' };
+    const assistantMessageId = (Date.now() + 1).toString();
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setOracleState('analyzing');
     setIsTyping(true);
 
+    setMessages(prev => [...prev, { id: assistantMessageId, text: '', sender: 'ai', type: 'text' }]);
+
     try {
-            // Call real AI API
-            const response = await aiChat.sendMessage(text, CURRENT_USER.id, undefined, undefined, context);
+            let streamedText = '';
+            const response = await aiChat.sendMessageStream(
+                text,
+                CURRENT_USER.id,
+                undefined,
+                undefined,
+                context,
+                (chunk) => {
+                    streamedText += chunk;
+                    setMessages(prev => prev.map((msg) =>
+                        msg.id === assistantMessageId
+                            ? { ...msg, text: streamedText }
+                            : msg
+                    ));
+                }
+            );
       
       // Determine message type based on keywords
       let msgType: 'text' | 'hint' | 'error' = 'text';
@@ -131,13 +148,13 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => 
       }
 
       const aiMsg: Message = { 
-        id: (Date.now() + 1).toString(), 
+                id: assistantMessageId, 
         text: response.response, 
         sender: 'ai', 
         type: msgType 
       };
       
-      setMessages(prev => [...prev, aiMsg]);
+            setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? aiMsg : msg));
       setIsTyping(false);
       if (msgType === 'text') {
         setOracleState('idle');
@@ -146,12 +163,12 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => 
       console.error('AI chat error:', error);
       // Fallback to mock response on error
       const fallbackMsg: Message = { 
-        id: (Date.now() + 1).toString(), 
+                id: assistantMessageId, 
                 text: responses.default || lt.fallbackError,
         sender: 'ai',
         type: 'error'
       };
-      setMessages(prev => [...prev, fallbackMsg]);
+            setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? fallbackMsg : msg));
       setIsTyping(false);
       setOracleState('idle');
     }

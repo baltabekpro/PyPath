@@ -67,6 +67,88 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function requestStream(path: string, init?: RequestInit, onChunk?: (chunk: string) => void): Promise<string> {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  const initHeaders = init?.headers;
+  if (initHeaders instanceof Headers) {
+    initHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (Array.isArray(initHeaders)) {
+    for (const [key, value] of initHeaders) {
+      headers[key] = value;
+    }
+  } else if (initHeaders) {
+    Object.assign(headers, initHeaders as Record<string, string>);
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  headers['X-App-Language'] = getAppLanguage();
+
+  const response = await fetch(buildUrl(path), {
+    ...init,
+    headers,
+  });
+
+  if (!response.ok) {
+    let message = `API request failed: ${response.status}`;
+    try {
+      const raw = await response.text();
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          const detail = parsed?.detail || parsed?.message;
+          if (typeof detail === 'string' && detail.trim()) {
+            message = detail;
+          } else {
+            message = raw;
+          }
+        } catch {
+          message = raw;
+        }
+      }
+    } catch {
+    }
+
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+
+  if (!response.body) {
+    return '';
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    if (chunk) {
+      fullText += chunk;
+      onChunk?.(chunk);
+    }
+  }
+
+  const tail = decoder.decode();
+  if (tail) {
+    fullText += tail;
+    onChunk?.(tail);
+  }
+
+  return fullText;
+}
+
 export const apiGet = <T,>(path: string) => request<T>(path, { method: 'GET' });
 
 export const apiPost = <T,>(path: string, body?: unknown) =>
@@ -191,6 +273,12 @@ export interface QuizGenerateResponse {
 export const aiChat = {
   sendMessage: (message: string, userId?: string, chatId?: string, language?: string, context?: AIChatContext) =>
     apiPost<ChatResponse>('/ai/chat', { message, user_id: userId, chat_id: chatId, language, context }),
+
+  sendMessageStream: (message: string, userId?: string, chatId?: string, language?: string, context?: AIChatContext, onChunk?: (chunk: string) => void) =>
+    requestStream('/ai/chat/stream', {
+      method: 'POST',
+      body: JSON.stringify({ message, user_id: userId, chat_id: chatId, language, context }),
+    }, onChunk).then((response) => ({ response, timestamp: new Date().toISOString() })),
 
   quickAction: (actionType: string, userId?: string, chatId?: string, language?: string) =>
     apiPost<ChatResponse>('/ai/quick-action', { action_type: actionType, user_id: userId, chat_id: chatId, language }),

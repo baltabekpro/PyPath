@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
         },
         {
             "name": "AI Chat",
-            "description": "AI-ассистент на базе Google Gemini для помощи в обучении",
+            "description": "AI-ассистент на базе OpenRouter для помощи в обучении",
         },
         {
             "name": "System",
@@ -87,13 +87,13 @@ def create_app() -> FastAPI:
 * Практические миссии и задания
 * Социальное сообщество (посты, друзья, лидерборд)
 * Система достижений и наград
-* AI Помощник на базе Google Gemini
+* AI Помощник на базе OpenRouter
 
 ## Технологический стек:
 * FastAPI + Uvicorn
 * SQLAlchemy + Alembic
 * JWT + BCrypt
-* Google Generative AI (Gemini)
+* OpenRouter-compatible chat completions
         """,
         version=settings.app_version,
         debug=settings.debug,
@@ -134,8 +134,8 @@ def create_app() -> FastAPI:
         from app.core.database import init_db
         init_db()
         rate_limiter.reset()
-        if not settings.google_api_key:
-            logging.getLogger(__name__).warning("GOOGLE_API_KEY is not configured. AI routes will return fallback responses.")
+        if not settings.openrouter_api_key:
+            logging.getLogger(__name__).warning("OPENROUTER_API_KEY is not configured. AI routes will return fallback responses.")
         ensure_course_content_columns()
         ensure_default_courses()
         ensure_default_missions()

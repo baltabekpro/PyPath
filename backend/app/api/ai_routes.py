@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 
 from app.models.models import User
 from app.api.dependencies import get_current_user_optional, get_db_service, get_request_language
@@ -183,7 +184,7 @@ def chat_with_ai(
     2. ``X-App-Language`` request header
     3. Auto-detection from message text
 
-    Powered by Google Gemini
+    Powered by OpenRouter-compatible chat completions
     """
     identity = user.id if user else (payload.user_id or _client_ip(request))
     _enforce_rate_limit(request, key=f"ai:chat:{identity}", limit=60, window_seconds=60)
@@ -234,6 +235,64 @@ def chat_with_ai(
             status_code=500,
             detail="AI service temporarily unavailable"
         )
+
+
+@router.post("/chat/stream")
+def chat_with_ai_stream(
+    payload: ChatMessage,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    ai_service: AIService = Depends(get_ai_service),
+    service: DatabaseService = Depends(get_db_service),
+    header_language: str = Depends(get_request_language),
+):
+    """Stream AI assistant response token-by-token to the client."""
+    identity = user.id if user else (payload.user_id or _client_ip(request))
+    _enforce_rate_limit(request, key=f"ai:chat:{identity}", limit=60, window_seconds=60)
+
+    _raw_lang = payload.language or header_language
+    effective_language = _raw_lang if _raw_lang in ("kz", "ru") else detect_language(payload.message)
+
+    user_id = user.id if user else payload.user_id
+    session_key = f"{user_id}:{payload.chat_id}" if payload.chat_id else user_id
+
+    def stream_with_persistence():
+        collected_chunks: list[str] = []
+        for chunk in ai_service.stream_chat(
+            session_key,
+            payload.message,
+            language=effective_language,
+            context=payload.context,
+        ):
+            collected_chunks.append(chunk)
+            yield chunk
+
+        if user:
+            response_text = "".join(collected_chunks).strip()
+            if response_text:
+                now_ms = int(datetime.now().timestamp() * 1000)
+                chats, _ = _get_persisted_chats(user)
+                chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
+                chat["updatedAt"] = _now_iso()
+                chat_messages = chat.get("messages") or []
+                chat_messages.extend([
+                    {
+                        "id": f"{now_ms}_u",
+                        "sender": "user",
+                        "text": payload.message,
+                        "timestamp": _now_iso(),
+                    },
+                    {
+                        "id": f"{now_ms}_a",
+                        "sender": "ai",
+                        "text": response_text,
+                        "timestamp": _now_iso(),
+                    },
+                ])
+                chat["messages"] = chat_messages[-200:]
+                _save_persisted_chats(user, chats, resolved_chat_id, service)
+
+    return StreamingResponse(stream_with_persistence(), media_type="text/plain; charset=utf-8")
 
 
 @router.post("/quick-action", response_model=ChatResponse)
@@ -335,8 +394,8 @@ def ai_status(ai_service: AIService = Depends(get_ai_service)):
     settings = get_settings()
     return {
         "status": "online",
-        "model": settings.gemini_model,
-        "active_sessions": len(ai_service.chat_sessions)
+        "model": settings.openrouter_model,
+        "active_sessions": len(ai_service.message_history),
     }
 
 

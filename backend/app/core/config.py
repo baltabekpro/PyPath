@@ -28,9 +28,11 @@ class Settings(BaseSettings):
         ]
     )
     
-    # Google Gemini AI
-    google_api_key: str = ""
-    gemini_model: str = "gemini-3-flash-preview"
+    # OpenRouter AI
+    openrouter_api_key: str = ""
+    openrouter_model: str = "stepfun/step-3.5-flash:free"
+    openrouter_referer: str = "https://py-path.vercel.app"
+    openrouter_title: str = "PyPath"
 
     # Bootstrap admin account
     admin_username: str = "admin_pypath"
