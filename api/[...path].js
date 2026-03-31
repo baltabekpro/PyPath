@@ -11,32 +11,22 @@ const hopByHopHeaders = new Set([
   'upgrade',
 ]);
 
+function normalizePath(reqUrl) {
+  const url = new URL(reqUrl || '/', 'http://localhost');
+  return `${url.pathname.replace(/^\/api/, '') || '/'}${url.search}`;
+}
+
 function copyHeaders(source) {
   const headers = {};
-  for (const [key, value] of source.entries()) {
-    if (!hopByHopHeaders.has(key.toLowerCase())) {
-      headers[key] = value;
-    }
+  for (const [key, value] of Object.entries(source)) {
+    if (!hopByHopHeaders.has(key.toLowerCase()) && value !== undefined) headers[key] = value;
   }
   return headers;
 }
 
-function getForwardPath(reqUrl) {
-  const original = reqUrl || '/';
-  const url = new URL(original, 'http://localhost');
-  const path = url.pathname.replace(/^\/api\//, '/');
-  return `${path}${url.search}`;
-}
-
 export default async function handler(req, res) {
-  const forwardPath = getForwardPath(req.url);
-  const targetUrl = new URL(forwardPath, BACKEND_BASE_URL);
-
-  const init = {
-    method: req.method,
-    headers: copyHeaders(req.headers),
-  };
-
+  const targetUrl = new URL(normalizePath(req.url), BACKEND_BASE_URL);
+  const init = { method: req.method, headers: copyHeaders(req.headers) };
   delete init.headers.host;
   delete init.headers['content-length'];
 
@@ -44,21 +34,18 @@ export default async function handler(req, res) {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const body = Buffer.concat(chunks);
-    if (body.length > 0) init.body = body;
+    if (body.length) init.body = body;
   }
 
   try {
     const upstream = await fetch(targetUrl, init);
-    const buffer = Buffer.from(await upstream.arrayBuffer());
-
+    const body = Buffer.from(await upstream.arrayBuffer());
     res.statusCode = upstream.status;
     upstream.headers.forEach((value, key) => {
-      if (!hopByHopHeaders.has(key.toLowerCase())) {
-        res.setHeader(key, value);
-      }
+      if (!hopByHopHeaders.has(key.toLowerCase())) res.setHeader(key, value);
     });
     res.setHeader('X-Proxy-By', 'vercel-api-proxy');
-    res.end(buffer);
+    res.end(body);
   } catch (error) {
     res.statusCode = 502;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
