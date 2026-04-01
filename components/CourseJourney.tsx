@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle, X } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, Lock, PlayCircle, Trophy, X } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { apiGet } from '../api';
@@ -48,6 +48,20 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     unlockPracticeHint: isKz ? 'Алдымен теорияны ашыңыз, содан кейін практикалық тапсырмалар белсенді болады.' : 'Сначала откройте теорию, после этого практические задания станут активными.',
     practiceOrderHint: isKz ? 'Практика ретімен ашылады: алдымен 1-тапсырма, кейін 2 және ары қарай.' : 'Практика открывается по порядку: сначала 1 задание, затем 2 и далее.',
     oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
+    stage: isKz ? 'Курс кезеңі' : 'Этап курса',
+    stageTheory: isKz ? 'Теорияны ашу' : 'Открыть теорию',
+    stagePractice: isKz ? 'Практиканы аяқтау' : 'Завершить практику',
+    stageQuiz: isKz ? 'Финалдық тест' : 'Финальный тест',
+    stageDone: isKz ? 'Курс аяқталды' : 'Курс завершен',
+    progressInTopic: isKz ? 'Осы курс прогресі' : 'Прогресс этого курса',
+    nextStep: isKz ? 'Келесі қадам' : 'Что дальше',
+    nextTopicUnlocked: isKz ? 'Келесі курс ашылды:' : 'Следующий курс открыт:',
+    noNextTopic: isKz ? 'Бұл деңгейдегі соңғы курс аяқталды. Енді профиль мен жетістіктер бөлімін тексеріңіз.' : 'Это последний курс в уровне. Теперь можно проверить профиль и достижения.',
+    finishQuizHint: isKz ? 'Финалдық тестті тапсырып, медаль мен келесі курстың ашылғанын алыңыз.' : 'Завершите финальный тест, чтобы получить медаль и открыть следующий курс.',
+    chooseTopic: isKz ? 'Курстар тізбегі' : 'Цепочка курсов',
+    unlocked: isKz ? 'Ашық' : 'Открыт',
+    locked: isKz ? 'Құлыптаулы' : 'Закрыт',
+    rewardEarned: isKz ? 'Медаль алынды' : 'Медаль получена',
   };
 
   const [grade, setGrade] = useState<GradeTab>('8');
@@ -109,6 +123,39 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     : { theoryOpened: false, completedPractices: [], quizCompleted: false };
   const allPracticesCompleted = Boolean(selectedTopic) && topicProgress.completedPractices.length >= (selectedTopic?.practices?.length || 0);
 
+  const isTopicCompleted = (topicId: string) => {
+    const topic = topics.find((item) => item.id === topicId);
+    if (!topic) return false;
+    const state = progress[topicId] || { theoryOpened: false, completedPractices: [], quizCompleted: false };
+    const practicesDone = state.completedPractices.length >= topic.practices.length;
+    const quizRequired = Boolean(topic.quizBank?.length);
+    return state.theoryOpened && practicesDone && (!quizRequired || Boolean(state.quizCompleted));
+  };
+
+  const unlockedTopicIds = useMemo(() => {
+    return topics
+      .filter((topic, index) => index === 0 || isTopicCompleted(topics[index - 1].id))
+      .map((topic) => topic.id);
+  }, [topics, progress]);
+
+  const selectedTopicIndex = selectedTopic ? topics.findIndex((topic) => topic.id === selectedTopic.id) : -1;
+  const currentTopicCompleted = selectedTopic ? isTopicCompleted(selectedTopic.id) : false;
+  const nextTopic = selectedTopicIndex >= 0 && selectedTopicIndex < topics.length - 1 ? topics[selectedTopicIndex + 1] : null;
+  const nextTopicUnlocked = nextTopic ? unlockedTopicIds.includes(nextTopic.id) : false;
+  const quizRequired = Boolean(selectedTopic?.quizBank?.length);
+  const totalTopicSteps = selectedTopic ? 1 + selectedTopic.practices.length + (quizRequired ? 1 : 0) : 1;
+  const completedTopicSteps = (topicProgress.theoryOpened ? 1 : 0)
+    + topicProgress.completedPractices.length
+    + (quizRequired && topicProgress.quizCompleted ? 1 : 0);
+  const topicPercent = Math.max(0, Math.min(100, Math.round((completedTopicSteps / totalTopicSteps) * 100)));
+  const currentStageText = !topicProgress.theoryOpened
+    ? text.stageTheory
+    : !allPracticesCompleted
+      ? text.stagePractice
+      : quizRequired && !topicProgress.quizCompleted
+        ? text.stageQuiz
+        : text.stageDone;
+
   useEffect(() => {
     if (!selectedTopic || topicProgress.theoryOpened) return;
     openTheory();
@@ -126,6 +173,16 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     if (!selectedTopicId) return;
     localStorage.setItem(ACTIVE_TOPIC_KEY, selectedTopicId);
   }, [selectedTopicId]);
+
+  useEffect(() => {
+    if (!topics.length) return;
+    if (selectedTopicId && unlockedTopicIds.includes(selectedTopicId)) return;
+
+    const fallback = unlockedTopicIds[unlockedTopicIds.length - 1] || topics[0].id;
+    if (fallback) {
+      setSelectedTopicId(fallback);
+    }
+  }, [selectedTopicId, topics, unlockedTopicIds]);
 
   useEffect(() => {
     localStorage.setItem(ACTIVE_PAGE_KEY, activePage);
@@ -258,10 +315,68 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
         </div>
 
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 md:p-6 space-y-6">
+          <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">{text.chooseTopic}</h2>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{selectedTopicIndex + 1}/{topics.length}</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {topics.map((topic, index) => {
+                const unlocked = index === 0 || isTopicCompleted(topics[index - 1].id);
+                const completed = isTopicCompleted(topic.id);
+                const active = selectedTopic?.id === topic.id;
+
+                return (
+                  <button
+                    key={topic.id}
+                    onClick={() => unlocked && setSelectedTopicId(topic.id)}
+                    disabled={!unlocked}
+                    className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${active
+                      ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                      : completed
+                        ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-900/10'
+                        : unlocked
+                          ? 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/40 opacity-70 cursor-not-allowed'}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{topic.title}</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 inline-flex items-center gap-1">
+                        {!unlocked ? <Lock size={11} /> : completed ? <Trophy size={11} className="text-emerald-600" /> : null}
+                        {!unlocked ? text.locked : completed ? text.completed : text.unlocked}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{topic.section}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
             <h1 className="text-2xl md:text-3xl font-black mb-2">{selectedTopic.title}</h1>
             {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400">{saveNote || text.saving}</p>}
+            <div className="mt-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/40 p-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{text.stage}</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{currentStageText}</p>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500" style={{ width: `${topicPercent}%` }} />
+              </div>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{text.progressInTopic}: {topicPercent}%</p>
+            </div>
+            {currentTopicCompleted && (
+              <div className="mt-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
+                <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{text.rewardEarned}</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+                  {nextTopic
+                    ? (nextTopicUnlocked ? `${text.nextTopicUnlocked} ${nextTopic.title}` : text.finishQuizHint)
+                    : text.noNextTopic}
+                </p>
+              </div>
+            )}
           </div>
 
           {activePage === 'theory' && (

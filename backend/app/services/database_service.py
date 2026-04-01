@@ -1146,8 +1146,64 @@ class DatabaseService:
             sanitized[str(topic_id)] = {
                 "theoryOpened": bool(value.get("theoryOpened")),
                 "completedPractices": normalized,
+                "quizCompleted": bool(value.get("quizCompleted")),
+                "quizScore": int(value.get("quizScore")) if isinstance(value.get("quizScore"), int) else None,
+                "quizTotal": int(value.get("quizTotal")) if isinstance(value.get("quizTotal"), int) else None,
             }
         return sanitized
+
+    def _sync_course_progress_from_journey(self, user: Optional[User], settings: dict, topic_id: str, topic_state: dict, topic_max_practices: int) -> None:
+        if not user or not isinstance(settings, dict):
+            return
+
+        course_match = re.search(r"(\d+)", str(topic_id))
+        if not course_match:
+            return
+
+        try:
+            course_id = int(course_match.group(1))
+        except (TypeError, ValueError):
+            return
+
+        courses = self._get_courses_ordered()
+        if not courses:
+            return
+
+        raw_course_progress = settings.get("course_progress") if isinstance(settings.get("course_progress"), dict) else {}
+        progress = self._normalize_user_course_progress(raw_course_progress, courses)
+        topic_key = str(course_id)
+        if topic_key not in progress:
+            return
+
+        entry = progress.get(topic_key)
+        if not isinstance(entry, dict):
+            return
+
+        completed_practices = topic_state.get("completedPractices")
+        completed_count = len(completed_practices) if isinstance(completed_practices, list) else 0
+        theory_opened = bool(topic_state.get("theoryOpened"))
+        quiz_completed = bool(topic_state.get("quizCompleted"))
+        is_course_completed = theory_opened and completed_count >= topic_max_practices and quiz_completed
+
+        if is_course_completed:
+            entry["completedLessons"] = int(entry.get("totalLessons", 1) or 1)
+            entry["progress"] = 100
+            entry["stars"] = max(int(entry.get("stars", 0) or 0), 3)
+            entry["completed"] = True
+            entry["unlocked"] = True
+            entry["updatedAt"] = datetime.utcnow().isoformat()
+
+            ordered_ids = sorted(int(key) for key in progress.keys())
+            if course_id in ordered_ids:
+                current_index = ordered_ids.index(course_id)
+                if current_index < len(ordered_ids) - 1:
+                    next_key = str(ordered_ids[current_index + 1])
+                    next_entry = progress.get(next_key)
+                    if isinstance(next_entry, dict):
+                        next_entry["unlocked"] = True
+                        next_entry["updatedAt"] = datetime.utcnow().isoformat()
+
+        settings["course_progress"] = progress
 
     def save_course_journey_progress(self, user: Optional[User], topic_id: str, progress: dict) -> dict:
         if not user:
@@ -1176,8 +1232,20 @@ class DatabaseService:
         )
 
         theory_opened = bool(progress.get("theoryOpened") if isinstance(progress, dict) else False)
+        quiz_completed = bool(progress.get("quizCompleted") if isinstance(progress, dict) else False)
+        quiz_score = progress.get("quizScore") if isinstance(progress, dict) else None
+        quiz_total = progress.get("quizTotal") if isinstance(progress, dict) else None
+
+        if not isinstance(quiz_score, int):
+            quiz_score = None
+        if not isinstance(quiz_total, int):
+            quiz_total = None
+
         if not theory_opened:
             normalized = []
+            quiz_completed = False
+            quiz_score = None
+            quiz_total = None
         else:
             # Keep only contiguous completion from the first practice (0,1,2...).
             contiguous: list[int] = []
@@ -1190,12 +1258,22 @@ class DatabaseService:
                     break
             normalized = contiguous
 
+            # Final quiz can be marked complete only after all practices are complete.
+            if len(normalized) < topic_max_practices:
+                quiz_completed = False
+                quiz_score = None
+                quiz_total = None
+
         all_progress[str(topic_id)] = {
             "theoryOpened": theory_opened,
             "completedPractices": normalized,
+            "quizCompleted": quiz_completed,
+            "quizScore": quiz_score,
+            "quizTotal": quiz_total,
             "updatedAt": datetime.utcnow().isoformat(),
         }
 
+        self._sync_course_progress_from_journey(user, settings, topic_id, all_progress[str(topic_id)], topic_max_practices)
         settings["journey_progress"] = all_progress
         self._save_user_settings(user, settings)
         return self.get_course_journey_progress(user)

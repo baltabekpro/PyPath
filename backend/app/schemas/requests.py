@@ -124,6 +124,9 @@ class MissionCodeUpdate(BaseModel):
 class JourneyTopicProgressUpdate(BaseModel):
     theoryOpened: bool = False
     completedPractices: list[int] = Field(default_factory=list)
+    quizCompleted: bool = False
+    quizScore: int | None = Field(default=None, ge=0)
+    quizTotal: int | None = Field(default=None, ge=0)
 
 
 class JourneyProgressUpdate(BaseModel):
