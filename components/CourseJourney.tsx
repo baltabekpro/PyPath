@@ -246,15 +246,15 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     if (!selectedTopic) return;
     console.log('[CourseJourney] finishQuiz called', { selectedTopic: selectedTopic.id, correct: summary.correct, total: summary.total });
     setLatestQuizSummary({ correct: summary.correct, total: summary.total });
+    setIsQuizOpen(false);
+    setShowCelebration(true);
+    console.log('[CourseJourney] After setShowCelebration(true)');
     upsertTopicProgress(selectedTopic.id, (current) => ({
       ...current,
       quizCompleted: true,
       quizScore: summary.correct,
       quizTotal: summary.total,
     }));
-    setIsQuizOpen(false);
-    console.log('[CourseJourney] About to show celebration');
-    setShowCelebration(true);
   };
 
   const goToNextTopic = () => {
@@ -590,9 +590,10 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
       )}
 
       {showCelebration && selectedTopic && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          {console.log('[CourseJourney] Rendering celebration modal', { showCelebration, selectedTopic: selectedTopic?.id })}
-          <div className="w-full max-w-md rounded-3xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-6 text-center">
+        <>
+          {console.log('[CourseJourney] RENDERING MODAL NOW')}
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" style={{pointerEvents: 'auto'}}>
+            <div className="w-full max-w-md rounded-3xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-6 text-center">
             <div className="mx-auto mb-3 size-14 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center">
               <Trophy size={28} className="text-emerald-600" />
             </div>
@@ -621,7 +622,8 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
