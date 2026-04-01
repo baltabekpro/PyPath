@@ -598,34 +598,34 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
           {console.log('[CourseJourney] RENDERING MODAL NOW')}
           <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" style={{pointerEvents: 'auto'}}>
             <div className="w-full max-w-md rounded-3xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-6 text-center">
-            <div className="mx-auto mb-3 size-14 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center">
-              <Trophy size={28} className="text-emerald-600" />
-            </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">{text.celebrationTitle}</h3>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{text.celebrationBody}</p>
-            {latestQuizSummary && (
-              <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                {text.quizResult}: {latestQuizSummary.correct}/{latestQuizSummary.total}
-              </p>
-            )}
+              <div className="mx-auto mb-3 size-14 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center">
+                <Trophy size={28} className="text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">{text.celebrationTitle}</h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{text.celebrationBody}</p>
+              {latestQuizSummary && (
+                <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {text.quizResult}: {latestQuizSummary.correct}/{latestQuizSummary.total}
+                </p>
+              )}
 
-            <div className="mt-5 flex items-center justify-center gap-2">
-              {nextTopic ? (
+              <div className="mt-5 flex items-center justify-center gap-2">
+                {nextTopic ? (
+                  <button
+                    onClick={goToNextTopic}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700"
+                  >
+                    {text.nextCourse}
+                  </button>
+                ) : null}
                 <button
-                  onClick={goToNextTopic}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700"
+                  onClick={() => setShowCelebration(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-200 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  {text.nextCourse}
+                  {text.stayHere}
                 </button>
-              ) : null}
-              <button
-                onClick={() => setShowCelebration(false)}
-                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-200 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                {text.stayHere}
-              </button>
+              </div>
             </div>
-          </div>
           </div>
         </>
       )}
