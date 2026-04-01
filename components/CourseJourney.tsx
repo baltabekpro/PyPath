@@ -84,6 +84,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [latestQuizSummary, setLatestQuizSummary] = useState<{ correct: number; total: number } | null>(null);
+  const [coursesCompletion, setCoursesCompletion] = useState<Record<number, boolean>>({});
 
   const {
     topicsByGrade,
@@ -116,6 +117,33 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     };
 
     void loadGrade();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCoursesCompletion = async () => {
+      try {
+        const courses = await apiGet<Array<{ id: number; progress?: number; completed?: boolean }>>('/courses');
+        if (!mounted || !Array.isArray(courses)) return;
+
+        const nextMap = courses.reduce<Record<number, boolean>>((acc, course) => {
+          const id = Number(course.id);
+          if (!Number.isFinite(id)) return acc;
+          acc[id] = Boolean(course.completed) || Number(course.progress) >= 100;
+          return acc;
+        }, {});
+
+        setCoursesCompletion(nextMap);
+      } catch {
+      }
+    };
+
+    void loadCoursesCompletion();
 
     return () => {
       mounted = false;
@@ -154,7 +182,9 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   }, [topics, progress]);
 
   const selectedTopicIndex = selectedTopic ? topics.findIndex((topic) => topic.id === selectedTopic.id) : -1;
-  const currentTopicCompleted = selectedTopic ? isTopicCompleted(selectedTopic.id) : false;
+  const selectedCourseId = selectedTopic ? Number(String(selectedTopic.id).replace(/[^0-9]/g, '')) : NaN;
+  const selectedCourseCompletedOnServer = Number.isFinite(selectedCourseId) ? Boolean(coursesCompletion[selectedCourseId]) : false;
+  const currentTopicCompleted = selectedTopic ? (isTopicCompleted(selectedTopic.id) || selectedCourseCompletedOnServer) : false;
   const nextTopic = selectedTopicIndex >= 0 && selectedTopicIndex < topics.length - 1 ? topics[selectedTopicIndex + 1] : null;
   const nextTopicUnlocked = nextTopic ? unlockedTopicIds.includes(nextTopic.id) : false;
   const quizRequired = Boolean(selectedTopic?.quizBank?.length);
@@ -167,13 +197,15 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const quizPercent = hasQuizResult
     ? Math.round(((topicProgress.quizScore || 0) / (topicProgress.quizTotal || 1)) * 100)
     : 0;
-  const currentStageText = !topicProgress.theoryOpened
-    ? text.stageTheory
-    : !allPracticesCompleted
-      ? text.stagePractice
-      : quizRequired && !topicProgress.quizCompleted
-        ? text.stageQuiz
-        : text.stageDone;
+  const currentStageText = currentTopicCompleted
+    ? text.stageDone
+    : !topicProgress.theoryOpened
+      ? text.stageTheory
+      : !allPracticesCompleted
+        ? text.stagePractice
+        : quizRequired && !topicProgress.quizCompleted
+          ? text.stageQuiz
+          : text.stageDone;
 
   useEffect(() => {
     if (!selectedTopic || topicProgress.theoryOpened) return;
