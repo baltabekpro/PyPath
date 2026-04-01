@@ -87,6 +87,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const [coursesCompletion, setCoursesCompletion] = useState<Record<number, boolean>>({});
 
   const {
+    topicsData,
     topicsByGrade,
     progress,
     isSaving,
@@ -100,6 +101,35 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   });
 
   const topics = topicsByGrade[grade] || [];
+
+  useEffect(() => {
+    const rawCourseId = localStorage.getItem('activeCourseId');
+    if (!rawCourseId || !topicsData.length) return;
+
+    const numericCourseId = String(Number(rawCourseId));
+    if (!numericCourseId || numericCourseId === 'NaN') {
+      localStorage.removeItem('activeCourseId');
+      return;
+    }
+
+    const targetTopic = topicsData.find((topic) => {
+      const rawTopicId = String(topic.id);
+      const topicNumericId = rawTopicId.replace(/[^0-9]/g, '');
+      return rawTopicId === `course-${numericCourseId}` || topicNumericId === numericCourseId;
+    });
+
+    localStorage.removeItem('activeCourseId');
+    if (!targetTopic) return;
+
+    if (grade !== targetTopic.grade) {
+      setGrade(targetTopic.grade);
+    }
+
+    if (selectedTopicId !== targetTopic.id) {
+      setSelectedTopicId(targetTopic.id);
+      setActivePage('theory');
+    }
+  }, [grade, selectedTopicId, topicsData]);
 
   useEffect(() => {
     let mounted = true;
