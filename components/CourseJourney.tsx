@@ -68,6 +68,13 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     retakeHint: isKz ? 'Тестті шексіз рет қайта тапсыруға болады. Ең соңғы нәтиже сақталады.' : 'Тест можно пересдавать неограниченно. Сохраняется последний результат.',
     coursePassed: isKz ? 'Курс өтті' : 'Курс пройден',
     courseNotPassed: isKz ? 'Курс әлі өтпеген' : 'Курс еще не пройден',
+    testPassedBadge: isKz ? 'Тест өтті' : 'Тест пройден',
+    retakeQuiz: isKz ? 'Тестті қайта тапсыру' : 'Пересдать тест',
+    quizOpen: isKz ? 'Финалдық тест' : 'Финальный тест',
+    celebrationTitle: isKz ? 'Керемет! Курс аяқталды' : 'Отлично! Курс завершен',
+    celebrationBody: isKz ? 'Сіз медаль алдыңыз. Келесі курсқа өте аласыз.' : 'Вы получили медаль. Можно переходить к следующему курсу.',
+    nextCourse: isKz ? 'Келесі курс' : 'Следующий курс',
+    stayHere: isKz ? 'Осы курста қалу' : 'Остаться здесь',
   };
 
   const [grade, setGrade] = useState<GradeTab>('8');
@@ -75,6 +82,8 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const [activePage, setActivePage] = useState<LearningPage>(getStoredPage);
   const [isOracleOpen, setIsOracleOpen] = useState(false);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [latestQuizSummary, setLatestQuizSummary] = useState<{ correct: number; total: number } | null>(null);
 
   const {
     topicsByGrade,
@@ -235,6 +244,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
 
   const finishQuiz = (summary: { correct: number; total: number; questions: Array<{ question: string }>; }) => {
     if (!selectedTopic) return;
+    setLatestQuizSummary({ correct: summary.correct, total: summary.total });
     upsertTopicProgress(selectedTopic.id, (current) => ({
       ...current,
       quizCompleted: true,
@@ -242,6 +252,14 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
       quizTotal: summary.total,
     }));
     setIsQuizOpen(false);
+    setShowCelebration(true);
+  };
+
+  const goToNextTopic = () => {
+    if (!nextTopic) return;
+    setSelectedTopicId(nextTopic.id);
+    setActivePage('theory');
+    setShowCelebration(false);
   };
 
   const oracleContext = useMemo(() => {
@@ -457,10 +475,15 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                     <button
                       onClick={openQuiz}
                       disabled={!topicProgress.theoryOpened || !allPracticesCompleted}
-                      className="px-4 py-2 rounded-xl bg-arcade-primary text-white text-sm font-bold hover:bg-arcade-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed ${topicProgress.quizCompleted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-arcade-primary hover:bg-arcade-primary/90'}`}
                     >
-                      {isKz ? 'Финалдық тест' : 'Финальный тест'}
+                      {topicProgress.quizCompleted ? text.retakeQuiz : text.quizOpen}
                     </button>
+                    {topicProgress.quizCompleted && (
+                      <span className="px-3 py-1.5 rounded-lg bg-emerald-600/10 text-emerald-700 dark:text-emerald-200 text-xs font-semibold border border-emerald-200 dark:border-emerald-800/60">
+                        {text.testPassedBadge}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -560,6 +583,40 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               onFinished={finishQuiz}
               className="mt-8"
             />
+          </div>
+        </div>
+      )}
+
+      {showCelebration && selectedTopic && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-6 text-center">
+            <div className="mx-auto mb-3 size-14 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center">
+              <Trophy size={28} className="text-emerald-600" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">{text.celebrationTitle}</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{text.celebrationBody}</p>
+            {latestQuizSummary && (
+              <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                {text.quizResult}: {latestQuizSummary.correct}/{latestQuizSummary.total}
+              </p>
+            )}
+
+            <div className="mt-5 flex items-center justify-center gap-2">
+              {nextTopic ? (
+                <button
+                  onClick={goToNextTopic}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700"
+                >
+                  {text.nextCourse}
+                </button>
+              ) : null}
+              <button
+                onClick={() => setShowCelebration(false)}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-200 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {text.stayHere}
+              </button>
+            </div>
           </div>
         </div>
       )}
