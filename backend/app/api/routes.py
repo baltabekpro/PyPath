@@ -734,16 +734,3 @@ def get_admin_users(
         for u in users
     ]
 
-
-@router.post("/admin/reset-all-progress", tags=["Admin"])
-def reset_all_user_progress(
-    user: User = Depends(get_current_user),
-    service: DatabaseService = Depends(get_db_service),
-):
-    """Reset all user progress (admin only).
-    
-    Clears journey_progress and course_progress for all users.
-    """
-    require_content_admin(user)
-    return service.reset_all_user_progress()
-
