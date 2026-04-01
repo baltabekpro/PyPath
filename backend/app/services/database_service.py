@@ -212,6 +212,32 @@ class DatabaseService:
         """Get all registered users (admin only)."""
         return self.db.query(User).order_by(User.created_at.desc()).offset(skip).limit(limit).all()
 
+    def reset_all_user_progress(self) -> dict:
+        """Reset journey_progress and course_progress for all users."""
+        users = self.db.query(User).all()
+        count = 0
+        
+        for user in users:
+            if not user.settings:
+                user.settings = {}
+            
+            # Clear progress data
+            user.settings.pop("journey_progress", None)
+            user.settings.pop("course_progress", None)
+            
+            # Mark as modified for SQLAlchemy to track JSON column changes
+            flag_modified(user, "settings")
+            count += 1
+        
+        # Commit all changes
+        self.db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Reset progress for {count} users",
+            "usersReset": count
+        }
+
     def create_user(self, user_data: dict) -> User:
         """Create new user"""
         user = User(**user_data)
