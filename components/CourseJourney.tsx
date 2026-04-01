@@ -62,6 +62,12 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     unlocked: isKz ? 'Ашық' : 'Открыт',
     locked: isKz ? 'Құлыптаулы' : 'Закрыт',
     rewardEarned: isKz ? 'Медаль алынды' : 'Медаль получена',
+    completionRule: isKz ? 'Курс аяқталуы үшін: теория + барлық практика + финалдық тест.' : 'Курс засчитывается после: теория + все практики + финальный тест.',
+    quizResult: isKz ? 'Тест нәтижесі' : 'Результат теста',
+    quizNotTaken: isKz ? 'Тест әлі тапсырылмаған' : 'Тест еще не пройден',
+    retakeHint: isKz ? 'Тестті шексіз рет қайта тапсыруға болады. Ең соңғы нәтиже сақталады.' : 'Тест можно пересдавать неограниченно. Сохраняется последний результат.',
+    coursePassed: isKz ? 'Курс өтті' : 'Курс пройден',
+    courseNotPassed: isKz ? 'Курс әлі өтпеген' : 'Курс еще не пройден',
   };
 
   const [grade, setGrade] = useState<GradeTab>('8');
@@ -148,6 +154,10 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     + topicProgress.completedPractices.length
     + (quizRequired && topicProgress.quizCompleted ? 1 : 0);
   const topicPercent = Math.max(0, Math.min(100, Math.round((completedTopicSteps / totalTopicSteps) * 100)));
+  const hasQuizResult = typeof topicProgress.quizScore === 'number' && typeof topicProgress.quizTotal === 'number' && topicProgress.quizTotal > 0;
+  const quizPercent = hasQuizResult
+    ? Math.round(((topicProgress.quizScore || 0) / (topicProgress.quizTotal || 1)) * 100)
+    : 0;
   const currentStageText = !topicProgress.theoryOpened
     ? text.stageTheory
     : !allPracticesCompleted
@@ -367,6 +377,18 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{text.progressInTopic}: {topicPercent}%</p>
             </div>
+
+            <div className="mt-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4 space-y-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">{text.completionRule}</p>
+              <p className={`text-sm font-semibold ${currentTopicCompleted ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                {currentTopicCompleted ? text.coursePassed : text.courseNotPassed}
+              </p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                {text.quizResult}: {hasQuizResult ? `${topicProgress.quizScore}/${topicProgress.quizTotal} (${quizPercent}%)` : text.quizNotTaken}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{text.retakeHint}</p>
+            </div>
+
             {currentTopicCompleted && (
               <div className="mt-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
                 <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{text.rewardEarned}</p>
