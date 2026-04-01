@@ -244,6 +244,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
 
   const finishQuiz = (summary: { correct: number; total: number; questions: Array<{ question: string }>; }) => {
     if (!selectedTopic) return;
+    console.log('[CourseJourney] finishQuiz called', { selectedTopic: selectedTopic.id, correct: summary.correct, total: summary.total });
     setLatestQuizSummary({ correct: summary.correct, total: summary.total });
     upsertTopicProgress(selectedTopic.id, (current) => ({
       ...current,
@@ -252,6 +253,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
       quizTotal: summary.total,
     }));
     setIsQuizOpen(false);
+    console.log('[CourseJourney] About to show celebration');
     setShowCelebration(true);
   };
 
@@ -589,6 +591,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
 
       {showCelebration && selectedTopic && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          {console.log('[CourseJourney] Rendering celebration modal', { showCelebration, selectedTopic: selectedTopic?.id })}
           <div className="w-full max-w-md rounded-3xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 shadow-2xl p-6 text-center">
             <div className="mx-auto mb-3 size-14 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center">
               <Trophy size={28} className="text-emerald-600" />
