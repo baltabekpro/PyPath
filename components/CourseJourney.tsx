@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, Lock, PlayCircle, Trophy, X } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, GraduationCap, PlayCircle, Trophy, X } from 'lucide-react';
 import { View } from '../types';
 import { APP_LANGUAGE } from '../constants';
 import { apiGet } from '../api';
@@ -37,7 +37,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     preTab: isKz ? '8/9 дейін' : 'До 8/9',
     classLabel: isKz ? 'сынып' : 'класс',
     theoryAndPractices: isKz ? 'Теория + {count} практика' : 'Теория + {count} практик',
-    completed: isKz ? 'Орындалды: {done}/{total}' : 'Выполнено: {done}/{total}',
     saving: isKz ? 'Прогресс сақталуда...' : 'Сохраняем прогресс...',
     saved: isKz ? 'Прогресс сақталды' : 'Прогресс сохранен',
     syncLater: isKz ? 'Теория ашылды, прогресс кейін синхрондалады' : 'Теория открыта, прогресс сохранится при следующей синхронизации',
@@ -58,11 +57,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     nextTopicUnlocked: isKz ? 'Келесі курс ашылды:' : 'Следующий курс открыт:',
     noNextTopic: isKz ? 'Бұл деңгейдегі соңғы курс аяқталды. Енді профиль мен жетістіктер бөлімін тексеріңіз.' : 'Это последний курс в уровне. Теперь можно проверить профиль и достижения.',
     finishQuizHint: isKz ? 'Финалдық тестті тапсырып, медаль мен келесі курстың ашылғанын алыңыз.' : 'Завершите финальный тест, чтобы получить медаль и открыть следующий курс.',
-    chooseTopic: isKz ? 'Курстар тізбегі' : 'Цепочка курсов',
-    unlocked: isKz ? 'Ашық' : 'Открыт',
-    locked: isKz ? 'Құлыптаулы' : 'Закрыт',
     rewardEarned: isKz ? 'Медаль алынды' : 'Медаль получена',
-    completionRule: isKz ? 'Курс аяқталуы үшін: теория + барлық практика + финалдық тест.' : 'Курс засчитывается после: теория + все практики + финальный тест.',
     quizResult: isKz ? 'Тест нәтижесі' : 'Результат теста',
     quizNotTaken: isKz ? 'Тест әлі тапсырылмаған' : 'Тест еще не пройден',
     retakeHint: isKz ? 'Тестті шексіз рет қайта тапсыруға болады. Ең соңғы нәтиже сақталады.' : 'Тест можно пересдавать неограниченно. Сохраняется последний результат.',
@@ -405,44 +400,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
         </div>
 
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 md:p-6 space-y-6">
-          <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">{text.chooseTopic}</h2>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{selectedTopicIndex + 1}/{topics.length}</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {topics.map((topic, index) => {
-                const unlocked = index === 0 || isTopicCompleted(topics[index - 1].id);
-                const completed = isTopicCompleted(topic.id);
-                const active = selectedTopic?.id === topic.id;
-
-                return (
-                  <button
-                    key={topic.id}
-                    onClick={() => unlocked && setSelectedTopicId(topic.id)}
-                    disabled={!unlocked}
-                    className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${active
-                      ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
-                      : completed
-                        ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-900/10'
-                        : unlocked
-                          ? 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'
-                          : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/40 opacity-70 cursor-not-allowed'}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{topic.title}</span>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 inline-flex items-center gap-1">
-                        {!unlocked ? <Lock size={11} /> : completed ? <Trophy size={11} className="text-emerald-600" /> : null}
-                        {!unlocked ? text.locked : completed ? text.completed : text.unlocked}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{topic.section}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
             <h1 className="text-2xl md:text-3xl font-black mb-2">{selectedTopic.title}</h1>
@@ -456,17 +413,6 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                 <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500" style={{ width: `${topicPercent}%` }} />
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{text.progressInTopic}: {topicPercent}%</p>
-            </div>
-
-            <div className="mt-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4 space-y-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{text.completionRule}</p>
-              <p className={`text-sm font-semibold ${currentTopicCompleted ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
-                {currentTopicCompleted ? text.coursePassed : text.courseNotPassed}
-              </p>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {text.quizResult}: {hasQuizResult ? `${topicProgress.quizScore}/${topicProgress.quizTotal} (${quizPercent}%)` : text.quizNotTaken}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{text.retakeHint}</p>
             </div>
 
             {currentTopicCompleted && (
