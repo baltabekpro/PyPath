@@ -76,6 +76,7 @@ export const QuizBlock: React.FC<QuizBlockProps> = ({
   const fetchQuestions = async () => {
     if (Array.isArray(presetQuestions) && presetQuestions.length > 0) {
       console.log('[QuizBlock] Using preset questions:', presetQuestions.length);
+      console.log('[QuizBlock] Using preset questions:', presetQuestions.length);
       setQuestions(presetQuestions);
       setAnswers(presetQuestions.map(() => ({ selected: null, state: 'unanswered' as AnswerState })));
       setStarted(true);
@@ -121,7 +122,6 @@ export const QuizBlock: React.FC<QuizBlockProps> = ({
   useEffect(() => {
     if (!finished || questions.length === 0) return;
     if (answers.some((answer) => answer.state === 'unanswered')) return;
-    console.log('[QuizBlock] Calling onFinished with', { correct: correctCount, total: questions.length });
     onFinished?.({ correct: correctCount, total: questions.length, questions });
   }, [answers, correctCount, finished, onFinished, questions]);
 
