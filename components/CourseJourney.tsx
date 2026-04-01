@@ -85,6 +85,10 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [latestQuizSummary, setLatestQuizSummary] = useState<{ correct: number; total: number } | null>(null);
 
+  useEffect(() => {
+    console.log('[CourseJourney] showCelebration changed:', showCelebration);
+  }, [showCelebration]);
+
   const {
     topicsByGrade,
     progress,
