@@ -200,6 +200,15 @@ export interface ChatResponse {
   timestamp: string;
 }
 
+export interface ScaffoldedChatResponse {
+  response: string;
+  timestamp: string;
+  scaffolding_applied: boolean;
+  request_type: string;
+  rules_applied: string[];
+  validation_passed: boolean;
+}
+
 export interface AIChatContext {
   screen?: string;
   page?: string;
@@ -279,6 +288,9 @@ export const aiChat = {
       method: 'POST',
       body: JSON.stringify({ message, user_id: userId, chat_id: chatId, language, context }),
     }, onChunk).then((response) => ({ response, timestamp: new Date().toISOString() })),
+
+  sendMessageWithScaffolding: (message: string, userId?: string, chatId?: string, language?: string, context?: AIChatContext) =>
+    apiPost<ScaffoldedChatResponse>('/ai/chat/scaffolding', { message, user_id: userId, chat_id: chatId, language, context, enable_scaffolding: true }),
 
   quickAction: (actionType: string, userId?: string, chatId?: string, language?: string) =>
     apiPost<ChatResponse>('/ai/quick-action', { action_type: actionType, user_id: userId, chat_id: chatId, language }),

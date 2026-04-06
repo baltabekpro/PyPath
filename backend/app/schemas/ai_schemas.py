@@ -58,3 +58,50 @@ class QuizGenerateResponse(BaseModel):
     topic: str
     language: str
     translations: dict[str, list[QuizQuestion]] | None = None
+
+
+class ScaffoldedChatMessage(BaseModel):
+    """Chat message with scaffolding support."""
+    message: str = Field(..., min_length=1, max_length=2000, description="User message")
+    user_id: str = Field(default="guest", description="User ID for session management")
+    chat_id: str | None = Field(default=None, description="Chat ID for multi-chat sessions")
+    language: str | None = Field(default=None, description="Preferred response language: 'ru' or 'kz'")
+    context: dict | None = Field(default=None, description="Optional structured learning context")
+    enable_scaffolding: bool = Field(default=True, description="Enable scaffolding validation")
+
+
+class ScaffoldedChatResponse(BaseModel):
+    """AI chat response with scaffolding metadata."""
+    response: str = Field(..., description="AI response text")
+    timestamp: str = Field(..., description="Response timestamp")
+    scaffolding_applied: bool = Field(..., description="Whether scaffolding was applied")
+    request_type: str = Field(..., description="Classified request type")
+    rules_applied: list[str] = Field(..., description="List of scaffolding rules applied")
+    validation_passed: bool = Field(..., description="Whether response passed validation")
+
+
+class ScaffoldingStatusResponse(BaseModel):
+    """Current scaffolding configuration status."""
+    enabled: bool = Field(..., description="Whether scaffolding is enabled")
+    rules: list[dict] = Field(..., description="List of active scaffolding rules")
+    system_prompt_preview: str = Field(..., description="Preview of system prompt with scaffolding")
+
+
+class ValidationLogEntry(BaseModel):
+    """Single validation log entry."""
+    timestamp: str
+    user_id: str
+    request_type: str
+    validation_passed: bool
+    rules_applied: list[str]
+    rules_violated: list[str]
+    code_line_count: int
+    has_leading_question: bool
+    is_complete_solution: bool
+    confidence_score: float
+
+
+class ValidationLogsResponse(BaseModel):
+    """Response containing validation logs."""
+    logs: list[ValidationLogEntry] = Field(..., description="List of validation log entries")
+    total_count: int = Field(..., description="Total number of logs returned")

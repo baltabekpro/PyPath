@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ShieldAlert, Save, Trash2, RefreshCw, Users } from 'lucide-react';
+import { ShieldAlert, Save, Trash2, RefreshCw, Users, Code } from 'lucide-react';
 import { APP_LANGUAGE } from '../constants';
 import { apiDelete, apiGet, apiPost, apiPut } from '../api';
+import { DemonstrationPanel } from './DemonstrationPanel';
 
-type Tab = 'courses' | 'missions' | 'users';
+type Tab = 'courses' | 'missions' | 'users' | 'demo';
 
 interface AdminPanelProps {
   isAdmin: boolean;
@@ -113,12 +114,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
     adminBadge: isKz ? 'Әкімші' : 'Админ',
     userBadge: isKz ? 'Пайдаланушы' : 'Юзер',
     noUsers: isKz ? 'Пайдаланушылар жоқ' : 'Нет пользователей',
+    demo: isKz ? 'Демонстрация' : 'Демонстрация',
   };
   const formFieldClass = 'w-full bg-white dark:bg-[#0c120e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:border-arcade-primary focus:outline-none shadow-inner transition-colors placeholder-slate-500 dark:placeholder-slate-400';
   const [activeTab, setActiveTab] = useState<Tab>('courses');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showDemoPanel, setShowDemoPanel] = useState(false);
 
   const [courses, setCourses] = useState<any[]>([]);
   const [missions, setMissions] = useState<any[]>([]);
@@ -476,6 +479,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
         >
           <Users size={14} /> {t.users}
         </button>
+        <button
+          onClick={() => setShowDemoPanel(true)}
+          className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
+        >
+          <Code size={14} /> {t.demo}
+        </button>
       </div>
 
       {activeTab === 'courses' && (
@@ -634,6 +643,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin }) => {
           )}
         </div>
       )}
+
+      <DemonstrationPanel visible={showDemoPanel} onClose={() => setShowDemoPanel(false)} />
     </div>
   );
 };

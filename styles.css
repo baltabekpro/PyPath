@@ -1,4 +1,23 @@
- .custom-scrollbar {
+/* Typography System - Noto Sans with Full Cyrillic Support */
+/* Universal font with complete support for Russian and Kazakh (including ә, і, ң, ғ, ү, ұ, қ, ө, һ) */
+/* Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.4, 7.5 */
+
+/* Import Noto Sans from Google Fonts with Cyrillic Extended subset */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700;800;900&subset=cyrillic,cyrillic-ext&display=swap');
+
+/* Primary font family with fallbacks */
+body, input, textarea, button {
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Kazakh-specific text with localized font features */
+.kazakh-text {
+  font-feature-settings: "locl" 1;
+}
+
+.custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #94a3b8 transparent;
 }

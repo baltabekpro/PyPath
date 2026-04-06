@@ -36,12 +36,27 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Convert errors to JSON-serializable format
+    errors = []
+    for error in exc.errors():
+        serializable_error = {
+            "loc": error.get("loc", []),
+            "msg": str(error.get("msg", "")),
+            "type": error.get("type", ""),
+        }
+        # Handle ctx field which might contain non-serializable objects
+        if "ctx" in error:
+            ctx = error["ctx"]
+            if isinstance(ctx, dict):
+                serializable_error["ctx"] = {k: str(v) for k, v in ctx.items()}
+        errors.append(serializable_error)
+    
     return problem_response(
         status=422,
         title="Validation Error",
         detail="Request validation failed",
         instance=str(request.url.path),
-        extra={"errors": exc.errors()},
+        extra={"errors": errors},
     )
 
 

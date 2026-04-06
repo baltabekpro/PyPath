@@ -4,8 +4,12 @@ import logging
 import re
 from typing import List, Dict, Optional
 from datetime import datetime
+from dataclasses import dataclass
 import httpx
 from app.core.config import get_settings
+from .scaffolding_engine import ScaffoldingEngine, RequestType
+from .response_validator import ResponseValidator, ValidationResult
+from .validation_logger import ValidationLogger
 
 
 logger = logging.getLogger(__name__)
@@ -16,6 +20,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Characters that are unique to Kazakh (not present in Russian/English)
+# All 9 Kazakh extended characters: ә, і, ң, ғ, ү, ұ, қ, ө, һ
 _KZ_UNIQUE_CHARS = re.compile(r"[әіңғүұқөһ]", re.IGNORECASE)
 
 
@@ -30,14 +35,46 @@ def _language_instruction(language: str) -> str:
     """Return a strict language instruction string for the given language code."""
     if language == "kz":
         return (
-            "МАҢЫЗДЫ: Бұл хабарламаға ТЕК ҚАЗАҚ тілінде жауап бер. "
-            "Орысша немесе ағылшынша сөздер қоспа. "
-            "Барлық жауап қазақ тілінде болуы МІНДЕТТІ."
+            "ӨТЕ МАҢЫЗДЫ - ТІЛ ТАЛАПТАРЫ:\n"
+            "1. Бұл хабарламаға ТЕК ҚАНА ҚАЗАҚ тілінде жауап бер\n"
+            "2. Орысша, ағылшынша немесе басқа тілдердің сөздерін МҮЛДЕМ қоспа\n"
+            "3. Барлық түсіндірулер, мысалдар және кеңестер ТҰТАС қазақ тілінде болуы МІНДЕТТІ\n"
+            "4. Код блоктарынан тыс ЕШҚАНДАЙ орыс немесе ағылшын сөздері болмауы керек\n"
+            "5. Егер қазақша термин білмесең, қазақша сипаттап бер, бірақ басқа тілге ауыспа\n"
+            "ЕСКЕРТУ: Аралас тілді қолдану ҚАТАҢ ТЫЙЫМ САЛЫНҒАН!"
         )
     return (
-        "ВАЖНО: Отвечай СТРОГО на русском языке. "
-        "Не используй казахский или английский язык в ответе."
+        "КРИТИЧЕСКИ ВАЖНО - ЯЗЫКОВЫЕ ТРЕБОВАНИЯ:\n"
+        "1. Отвечай ИСКЛЮЧИТЕЛЬНО на русском языке\n"
+        "2. НЕ используй казахские, английские или другие иностранные слова ВООБЩЕ\n"
+        "3. Все объяснения, примеры и советы должны быть ПОЛНОСТЬЮ на русском языке\n"
+        "4. Вне блоков кода НЕ ДОЛЖНО быть казахских или английских слов\n"
+        "5. Если не знаешь русский термин, опиши его по-русски, но не переходи на другой язык\n"
+        "ПРЕДУПРЕЖДЕНИЕ: Смешивание языков СТРОГО ЗАПРЕЩЕНО!"
     )
+
+
+# ---------------------------------------------------------------------------
+# Data models for scaffolding
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ScaffoldedResponse:
+    """Response with scaffolding validation metadata."""
+    response: str
+    timestamp: str
+    scaffolding_applied: bool
+    request_type: RequestType
+    validation_result: ValidationResult
+    rules_applied: list[str]
+
+
+@dataclass
+class ScaffoldingStatus:
+    """Current scaffolding configuration status."""
+    enabled: bool
+    rules: list[dict]
+    system_prompt_preview: str
 
 
 # ---------------------------------------------------------------------------
@@ -69,6 +106,11 @@ class AIService:
 
         if not self.api_key:
             logger.warning("OPENROUTER_API_KEY is not configured. AI routes will return fallback responses.")
+
+        # Initialize scaffolding components
+        self.scaffolding_engine = ScaffoldingEngine()
+        self.response_validator = ResponseValidator()
+        self.validation_logger = ValidationLogger()
 
         # Base system prompt (language-neutral preamble)
         self._base_system_prompt = """Ты - Оракул Кода, AI ассистент образовательной платформы PyPath для изучения Python.
@@ -310,6 +352,228 @@ class AIService:
         except Exception:
             logger.exception("AI chat failed for user_id=%s language=%s", user_id, language)
             return self._fallback_message(language)
+
+    def chat_with_scaffolding(
+        self,
+        user_id: str,
+        message: str,
+        language: str | None = None,
+        context: Optional[dict] = None
+    ) -> ScaffoldedResponse:
+        """Send message and get AI response with scaffolding validation.
+        
+        This method integrates the scaffolding engine to build mentor-mode system prompts,
+        validates responses to ensure they don't contain complete solutions, and logs
+        all interactions for verification.
+        
+        Args:
+            user_id: The user's unique identifier
+            message: The user's message text
+            language: Optional language code ('kz' or 'ru'), auto-detected if not provided
+            context: Optional context dictionary with additional information
+            
+        Returns:
+            ScaffoldedResponse with validation metadata
+        """
+        # Detect language if not provided
+        if not language:
+            language = detect_language(message)
+        language = language if language in ("kz", "ru") else "ru"
+        
+        # Classify request type
+        request_type = self.scaffolding_engine.classify_request_type(message)
+        
+        # Get active scaffolding rules
+        active_rules = self.scaffolding_engine.get_scaffolding_rules()
+        
+        session_key = user_id
+        
+        try:
+            # Build scaffolding-enhanced system prompt
+            scaffolding_prompt = self.scaffolding_engine.build_mentor_prompt(language, context)
+            
+            # Build conversation messages with scaffolding prompt
+            messages: list[dict[str, str]] = [
+                {"role": "system", "content": scaffolding_prompt},
+            ]
+            
+            # Add conversation history
+            for item in self.message_history.get(session_key, [])[-20:]:
+                sender = item.get("sender")
+                text = str(item.get("text") or "").strip()
+                if sender not in {"user", "ai"} or not text:
+                    continue
+                messages.append({
+                    "role": "user" if sender == "user" else "assistant",
+                    "content": text,
+                })
+            
+            # Add current user message
+            content = message.strip()
+            if isinstance(context, dict) and context:
+                try:
+                    content = f"{content}\n\nКонтекст экрана обучения:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
+                except Exception:
+                    pass
+            
+            messages.append({"role": "user", "content": content})
+            
+            # Get AI response
+            original_response = self._complete_chat(messages, temperature=0.7, max_tokens=2048, language=language)
+            if not original_response:
+                raise RuntimeError("Empty response from OpenRouter")
+            
+            # Validate response against scaffolding rules
+            validation_result = self.response_validator.validate_response(
+                original_response,
+                request_type,
+                active_rules
+            )
+            
+            # Log interaction
+            self.validation_logger.log_interaction(
+                user_id=user_id,
+                request_type=request_type,
+                validation_result=validation_result,
+                rules_applied=validation_result.rules_applied
+            )
+            
+            # Determine final response text
+            if not validation_result.passed:
+                logger.warning(
+                    "Scaffolding validation failed for user_id=%s: rules_violated=%s",
+                    user_id,
+                    validation_result.rules_violated
+                )
+                response_text = self._get_fallback_hint(language, request_type)
+            else:
+                response_text = original_response
+            
+            # Update conversation history
+            self._append_history_message(session_key, "user", message)
+            self._append_history_message(session_key, "ai", response_text)
+            
+            # Return scaffolded response
+            return ScaffoldedResponse(
+                response=response_text,
+                timestamp=datetime.now().isoformat(),
+                scaffolding_applied=True,
+                request_type=request_type,
+                validation_result=validation_result,
+                rules_applied=validation_result.rules_applied
+            )
+            
+        except httpx.HTTPStatusError as exc:
+            logger.warning("OpenRouter request failed for user_id=%s language=%s: %s", user_id, language, exc)
+            fallback_text = self._fallback_message(language, quota=exc.response.status_code == 429)
+            
+            # Create minimal validation result for fallback
+            validation_result = ValidationResult(
+                passed=True,
+                request_type=request_type,
+                rules_applied=[],
+                rules_violated=[],
+                code_line_count=0,
+                has_leading_question=False,
+                is_complete_solution=False,
+                confidence_score=0.0
+            )
+            
+            return ScaffoldedResponse(
+                response=fallback_text,
+                timestamp=datetime.now().isoformat(),
+                scaffolding_applied=False,
+                request_type=request_type,
+                validation_result=validation_result,
+                rules_applied=[]
+            )
+        except Exception:
+            logger.exception("AI chat with scaffolding failed for user_id=%s language=%s", user_id, language)
+            fallback_text = self._fallback_message(language)
+            
+            # Create minimal validation result for fallback
+            validation_result = ValidationResult(
+                passed=True,
+                request_type=request_type,
+                rules_applied=[],
+                rules_violated=[],
+                code_line_count=0,
+                has_leading_question=False,
+                is_complete_solution=False,
+                confidence_score=0.0
+            )
+            
+            return ScaffoldedResponse(
+                response=fallback_text,
+                timestamp=datetime.now().isoformat(),
+                scaffolding_applied=False,
+                request_type=request_type,
+                validation_result=validation_result,
+                rules_applied=[]
+            )
+
+    def get_scaffolding_status(self) -> ScaffoldingStatus:
+        """Get current scaffolding configuration status.
+        
+        Returns:
+            ScaffoldingStatus with current configuration
+        """
+        # Get active rules
+        active_rules = self.scaffolding_engine.get_scaffolding_rules()
+        
+        # Convert rules to dictionaries
+        rules_dict = [
+            {
+                "id": rule.id,
+                "description": rule.description,
+                "constraint_type": rule.constraint_type.value,
+                "max_code_lines": rule.max_code_lines,
+                "max_paragraph_count": rule.max_paragraph_count,
+                "requires_question": rule.requires_question,
+                "active": rule.active
+            }
+            for rule in active_rules
+        ]
+        
+        # Get system prompt preview (Russian version)
+        system_prompt_preview = self.scaffolding_engine.build_mentor_prompt("ru")
+        
+        return ScaffoldingStatus(
+            enabled=True,
+            rules=rules_dict,
+            system_prompt_preview=system_prompt_preview
+        )
+
+    def _get_fallback_hint(self, language: str, request_type: RequestType) -> str:
+        """Get fallback hint when validation fails.
+        
+        Args:
+            language: Language code ('kz' or 'ru')
+            request_type: The type of request
+            
+        Returns:
+            Fallback hint message
+        """
+        if language == "kz":
+            hints = {
+                RequestType.HINT: "Міне кеңес: тапсырманы кішкентай бөліктерге бөліп, әр бөлікті жеке шешіп көр. Қандай бөліктен бастағың келеді?",
+                RequestType.SOLUTION: "Толық шешімді бере алмаймын, бірақ бағыт көрсете аламын. Алдымен не істеу керектігін ойлап көр. Қандай қадамдар қажет?",
+                RequestType.EXPLANATION: "Бұл тұжырымдаманы түсіндірейін. Негізгі идея: [концепция]. Сен бұны қалай қолдануға болады деп ойлайсың?",
+                RequestType.ERROR_HELP: "Қатені табу үшін кодты жолдап тексер. Қай жерде күтпеген нәтиже шығады? Не болуы керек еді?",
+                RequestType.THEORY: "Бұл теорияны қарапайым сөзбен түсіндірейін. Негізгі принцип: [принцип]. Мысал келтіре аласың ба?",
+                RequestType.MOTIVATION: "Сен дұрыс жолдасың! Қиындық - бұл өсудің белгісі. Қандай нақты сұрақтарың бар?"
+            }
+            return hints.get(request_type, "Қалай көмектесе аламын? Нақты сұрақ қой.")
+        
+        hints = {
+            RequestType.HINT: "Вот подсказка: раздели задачу на маленькие части и реши каждую отдельно. С какой части хочешь начать?",
+            RequestType.SOLUTION: "Не могу дать полное решение, но могу направить. Сначала подумай, что нужно сделать. Какие шаги потребуются?",
+            RequestType.EXPLANATION: "Объясню эту концепцию. Основная идея: [концепция]. Как ты думаешь, как это можно применить?",
+            RequestType.ERROR_HELP: "Чтобы найти ошибку, проверь код построчно. Где получается неожиданный результат? Что должно было быть?",
+            RequestType.THEORY: "Объясню эту теорию простыми словами. Основной принцип: [принцип]. Можешь привести пример?",
+            RequestType.MOTIVATION: "Ты на правильном пути! Трудности - это признак роста. Какие конкретные вопросы у тебя есть?"
+        }
+        return hints.get(request_type, "Чем могу помочь? Задай конкретный вопрос.")
 
     def stream_chat(
         self,

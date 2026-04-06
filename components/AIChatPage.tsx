@@ -1,14 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Plus } from 'lucide-react';
+import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Plus, Code } from 'lucide-react';
 import { AI_CHAT_PAGE_DATA, APP_LANGUAGE, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 import { aiChat } from '../api';
+import { DemonstrationPanel } from './DemonstrationPanel';
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
-  type?: 'log' | 'response' | 'error';
+  type?: 'log' | 'response' | 'error' | 'hint';
+  scaffoldingMetadata?: {
+    requestType?: string;
+    rulesApplied?: string[];
+    validationPassed?: boolean;
+  };
 }
 
 interface ChatSummary {
@@ -25,6 +31,8 @@ export const AIChatPage: React.FC = () => {
         fallbackError: isKz ? 'Кешіріңіз, қате орын алды. Қайтадан көріңіз!' : 'Извини, произошла ошибка. Попробуй еще раз!',
         newChat: isKz ? 'Жаңа чат' : 'Новый чат',
         noChats: isKz ? 'Чаттар әлі жоқ. Бастау үшін + басыңыз.' : 'Чатов пока нет. Нажмите + чтобы начать.',
+        demoPanel: isKz ? 'Демонстрация' : 'Демонстрация',
+        mentorMode: isKz ? 'Ментор режимі' : 'Режим ментора',
     };
   const [messages, setMessages] = useState<Message[]>([]);
     const [chats, setChats] = useState<ChatSummary[]>([]);
@@ -32,6 +40,8 @@ export const AIChatPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [coreState, setCoreState] = useState<'idle' | 'processing' | 'active'>('idle');
+    const [enableScaffolding, setEnableScaffolding] = useState(false);
+    const [showDemoPanel, setShowDemoPanel] = useState(false);
     const abilities = AI_CHAT_PAGE_DATA?.abilities ?? [];
     const responses = AI_CHAT_PAGE_DATA?.responses ?? {};
         const text = UI_TEXTS?.aiChatPage ?? {};
@@ -111,35 +121,64 @@ export const AIChatPage: React.FC = () => {
     setCoreState('processing');
 
     try {
-            // Call real AI API with live streaming updates
-                        let streamedText = '';
-                        const response = await aiChat.sendMessageStream(
-                                text,
-                                CURRENT_USER.id,
-                                currentChatId,
-                                undefined,
-                                undefined,
-                                (chunk) => {
-                                        streamedText += chunk;
-                                        setMessages(prev => prev.map((msg) =>
-                                                msg.id === assistantMessageId
-                                                        ? { ...msg, text: streamedText, timestamp: new Date() }
-                                                        : msg
-                                        ));
-                                }
-                        );
-      
-      const newAiMsg: Message = {
-                id: assistantMessageId,
-        text: response.response,
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      
-            setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? newAiMsg : msg));
-      setIsTyping(false);
-      setCoreState('active');
-      setTimeout(() => setCoreState('idle'), 2000);
+            // Use scaffolding endpoint if enabled
+            if (enableScaffolding) {
+                const response = await aiChat.sendMessageWithScaffolding(
+                    text,
+                    CURRENT_USER.id,
+                    currentChatId,
+                    undefined,
+                    undefined
+                );
+                
+                const newAiMsg: Message = {
+                    id: assistantMessageId,
+                    text: response.response,
+                    sender: 'ai',
+                    timestamp: new Date(),
+                    type: response.request_type === 'hint' ? 'hint' : 'response',
+                    scaffoldingMetadata: {
+                        requestType: response.request_type,
+                        rulesApplied: response.rules_applied,
+                        validationPassed: response.validation_passed,
+                    }
+                };
+                
+                setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? newAiMsg : msg));
+                setIsTyping(false);
+                setCoreState('active');
+                setTimeout(() => setCoreState('idle'), 2000);
+            } else {
+                // Call real AI API with live streaming updates
+                let streamedText = '';
+                const response = await aiChat.sendMessageStream(
+                    text,
+                    CURRENT_USER.id,
+                    currentChatId,
+                    undefined,
+                    undefined,
+                    (chunk) => {
+                        streamedText += chunk;
+                        setMessages(prev => prev.map((msg) =>
+                            msg.id === assistantMessageId
+                                ? { ...msg, text: streamedText, timestamp: new Date() }
+                                : msg
+                        ));
+                    }
+                );
+          
+                const newAiMsg: Message = {
+                    id: assistantMessageId,
+                    text: response.response,
+                    sender: 'ai',
+                    timestamp: new Date()
+                };
+          
+                setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? newAiMsg : msg));
+                setIsTyping(false);
+                setCoreState('active');
+                setTimeout(() => setCoreState('idle'), 2000);
+            }
 
             try {
                 const history = await aiChat.getHistory(CURRENT_USER.id);
@@ -280,8 +319,42 @@ export const AIChatPage: React.FC = () => {
                           {coreState === 'processing' ? text.processing : text.ready}
                       </span>
                   </div>
+                  {enableScaffolding && (
+                      <>
+                          <div className="h-4 w-px bg-slate-300 dark:bg-cyan-900/50"></div>
+                          <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 px-3 py-1 rounded-lg">
+                              <span className="size-2 bg-green-500 rounded-full animate-pulse"></span>
+                              <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                                  {lt.mentorMode}
+                              </span>
+                          </div>
+                      </>
+                  )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                  {CURRENT_USER.role === 'admin' && (
+                      <>
+                          <button
+                              onClick={() => setEnableScaffolding(!enableScaffolding)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                  enableScaffolding
+                                      ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
+                                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600'
+                              }`}
+                              title={enableScaffolding ? 'Отключить режим ментора' : 'Включить режим ментора'}
+                          >
+                              <Zap size={14} className="inline mr-1" />
+                              {enableScaffolding ? (isKz ? 'Ментор қосулы' : 'Ментор вкл') : (isKz ? 'Ментор өшірулі' : 'Ментор выкл')}
+                          </button>
+                          <button
+                              onClick={() => setShowDemoPanel(true)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-100 dark:bg-cyan-900/20 text-indigo-600 dark:text-cyan-400 border border-indigo-300 dark:border-cyan-500/30 hover:bg-indigo-200 dark:hover:bg-cyan-500/20 transition-all"
+                          >
+                              <Code size={14} className="inline mr-1" />
+                              {lt.demoPanel}
+                          </button>
+                      </>
+                  )}
                   <span className="text-[10px] text-indigo-600 dark:text-cyan-600 font-mono">{AI_CHAT_PAGE_DATA?.version || text.version}</span>
               </div>
           </header>
@@ -358,12 +431,42 @@ export const AIChatPage: React.FC = () => {
                                   }
                               </div>
 
+                              {/* Scaffolding badges for AI responses */}
+                              {msg.sender === 'ai' && msg.scaffoldingMetadata && enableScaffolding && (
+                                  <div className="flex flex-wrap gap-1.5 ml-1 mb-2">
+                                      {msg.scaffoldingMetadata.requestType && (
+                                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                                              {msg.scaffoldingMetadata.requestType === 'hint' ? (isKz ? 'Кеңес' : 'Подсказка') :
+                                               msg.scaffoldingMetadata.requestType === 'error_help' ? (isKz ? 'Қате көмегі' : 'Помощь с ошибкой') :
+                                               msg.scaffoldingMetadata.requestType === 'explanation' ? (isKz ? 'Түсіндірме' : 'Объяснение') :
+                                               msg.scaffoldingMetadata.requestType}
+                                          </span>
+                                      )}
+                                      {msg.scaffoldingMetadata.validationPassed !== undefined && (
+                                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                              msg.scaffoldingMetadata.validationPassed 
+                                                  ? 'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400'
+                                                  : 'bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-400'
+                                          }`}>
+                                              {msg.scaffoldingMetadata.validationPassed ? (isKz ? '✓ Тексерілді' : '✓ Проверено') : (isKz ? '⚠ Ескерту' : '⚠ Предупреждение')}
+                                          </span>
+                                      )}
+                                      {msg.scaffoldingMetadata.rulesApplied && msg.scaffoldingMetadata.rulesApplied.length > 0 && (
+                                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                                              {msg.scaffoldingMetadata.rulesApplied.length} {isKz ? 'ереже' : 'правил'}
+                                          </span>
+                                      )}
+                                  </div>
+                              )}
+
                               {/* Bubble */}
                               <div className={`
                                   max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed shadow-xl backdrop-blur-sm border
                                   ${msg.sender === 'user'
                                       ? 'bg-indigo-100 dark:bg-indigo-600/20 border-indigo-300 dark:border-indigo-500/30 text-indigo-900 dark:text-indigo-100 rounded-tr-none'
-                                      : 'bg-white dark:bg-[#0F172A]/80 border-slate-200 dark:border-cyan-500/20 text-slate-800 dark:text-slate-200 dark:text-cyan-50 rounded-tl-none'
+                                      : msg.type === 'hint'
+                                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500/30 text-blue-900 dark:text-blue-100 rounded-tl-none'
+                                          : 'bg-white dark:bg-[#0F172A]/80 border-slate-200 dark:border-cyan-500/20 text-slate-800 dark:text-slate-200 dark:text-cyan-50 rounded-tl-none'
                                   }
                               `}>
                                   {msg.sender === 'ai' && <div className="text-[10px] font-bold text-indigo-600 dark:text-cyan-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Terminal size={10}/> {text.responseOutput}</div>}
@@ -423,6 +526,9 @@ export const AIChatPage: React.FC = () => {
 
           </div>
       </main>
+
+      {/* Demonstration Panel */}
+      <DemonstrationPanel visible={showDemoPanel} onClose={() => setShowDemoPanel(false)} />
     </div>
   );
 };

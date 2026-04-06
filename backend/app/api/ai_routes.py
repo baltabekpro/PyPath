@@ -15,6 +15,11 @@ from app.schemas.ai_schemas import (
     QuizGenerateResponse,
     QuizQuestion,
     SessionResetRequest,
+    ScaffoldedChatMessage,
+    ScaffoldedChatResponse,
+    ScaffoldingStatusResponse,
+    ValidationLogEntry,
+    ValidationLogsResponse,
 )
 from app.services.ai_service import get_ai_service, AIService, detect_language
 from app.services.database_service import DatabaseService
@@ -452,6 +457,231 @@ def ai_history(
         and str(item.get("text") or "").strip()
     ]
     return {"items": in_memory, "active_chat_id": None, "chats": []}
+
+
+@router.post("/generate-quiz", response_model=QuizGenerateResponse, tags=["AI Chat"])
+def generate_quiz(
+    payload: QuizGenerateRequest,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    ai_service: AIService = Depends(get_ai_service),
+    header_language: str = Depends(get_request_language),
+):
+    """Generate quiz questions to reinforce a learning topic.
+
+    After a theory section is shown to the user, call this endpoint to get
+    auto-generated multiple-choice questions that test comprehension.
+
+    Returns a list of ``QuizQuestion`` objects with ``question``, ``options``
+    (4 choices), ``correct_index`` and ``explanation``.
+    """
+    identity = user.id if user else _client_ip(request)
+    _enforce_rate_limit(request, key=f"ai:quiz:{identity}", limit=30, window_seconds=60)
+
+    effective_language = payload.language or header_language or "ru"
+    if effective_language not in ("kz", "ru"):
+        effective_language = "ru"
+
+    bilingual_questions = ai_service.generate_bilingual_quiz_questions(
+        topic=payload.topic,
+        theory_content=payload.theory_content,
+        num_questions=payload.num_questions,
+    )
+
+    raw_questions = bilingual_questions.get(effective_language) or bilingual_questions.get("ru") or []
+
+    questions = [
+        QuizQuestion(
+            question=q.get("question", ""),
+            options=q.get("options", []),
+            correct_index=int(q.get("correct_index", 0)),
+            explanation=q.get("explanation", ""),
+        )
+        for q in raw_questions
+        if isinstance(q, dict)
+    ]
+
+    return QuizGenerateResponse(
+        questions=questions,
+        topic=payload.topic,
+        language=effective_language,
+        translations={
+            lang: [
+                QuizQuestion(
+                    question=item.get("question", ""),
+                    options=item.get("options", []),
+                    correct_index=int(item.get("correct_index", 0)),
+                    explanation=item.get("explanation", ""),
+                )
+                for item in items
+                if isinstance(item, dict)
+            ]
+            for lang, items in bilingual_questions.items()
+        },
+    )
+
+
+@router.post("/chat/scaffolding", response_model=ScaffoldedChatResponse)
+def chat_with_scaffolding(
+    payload: ScaffoldedChatMessage,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    ai_service: AIService = Depends(get_ai_service),
+    service: DatabaseService = Depends(get_db_service),
+    header_language: str = Depends(get_request_language),
+):
+    """
+    Send message to AI assistant with scaffolding validation
+
+    This endpoint uses the scaffolding engine to ensure the AI provides hints
+    and guidance rather than complete solutions. The response includes metadata
+    about which scaffolding rules were applied and whether validation passed.
+
+    The AI assistant responds in the same language as the user's message.
+    Language is determined by (in priority order):
+    1. ``language`` field in the request body
+    2. ``X-App-Language`` request header
+    3. Auto-detection from message text
+
+    Powered by OpenRouter-compatible chat completions with scaffolding validation
+    """
+    identity = user.id if user else (payload.user_id or _client_ip(request))
+    _enforce_rate_limit(request, key=f"ai:chat:scaffolding:{identity}", limit=60, window_seconds=60)
+
+    # Resolve effective language: explicit > header > auto-detect from text
+    _raw_lang = payload.language or header_language
+    effective_language = _raw_lang if _raw_lang in ("kz", "ru") else detect_language(payload.message)
+
+    # Use authenticated user ID or provided user_id
+    user_id = user.id if user else payload.user_id
+
+    try:
+        # Call chat_with_scaffolding method
+        scaffolded_response = ai_service.chat_with_scaffolding(
+            user_id=user_id,
+            message=payload.message,
+            language=effective_language,
+            context=payload.context,
+        )
+
+        # Save to chat history if user is authenticated
+        if user:
+            now_ms = int(datetime.now().timestamp() * 1000)
+            chats, _ = _get_persisted_chats(user)
+            chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
+            chat["updatedAt"] = _now_iso()
+            chat_messages = chat.get("messages") or []
+            chat_messages.extend([
+                {
+                    "id": f"{now_ms}_u",
+                    "sender": "user",
+                    "text": payload.message,
+                    "timestamp": _now_iso(),
+                },
+                {
+                    "id": f"{now_ms}_a",
+                    "sender": "ai",
+                    "text": scaffolded_response.response,
+                    "timestamp": _now_iso(),
+                },
+            ])
+            chat["messages"] = chat_messages[-200:]
+            _save_persisted_chats(user, chats, resolved_chat_id, service)
+
+        return ScaffoldedChatResponse(
+            response=scaffolded_response.response,
+            timestamp=scaffolded_response.timestamp,
+            scaffolding_applied=scaffolded_response.scaffolding_applied,
+            request_type=scaffolded_response.request_type.value,
+            rules_applied=scaffolded_response.rules_applied,
+            validation_passed=scaffolded_response.validation_result.passed,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="AI service with scaffolding temporarily unavailable"
+        )
+
+
+@router.get("/scaffolding/status", response_model=ScaffoldingStatusResponse)
+def get_scaffolding_status(
+    ai_service: AIService = Depends(get_ai_service),
+):
+    """
+    Get current scaffolding configuration status
+
+    Returns the current scaffolding configuration including:
+    - Whether scaffolding is enabled
+    - List of active scaffolding rules with descriptions
+    - Preview of the system prompt with scaffolding constraints
+
+    This endpoint is useful for demonstration and debugging purposes.
+    """
+    try:
+        status = ai_service.get_scaffolding_status()
+        return ScaffoldingStatusResponse(
+            enabled=status.enabled,
+            rules=status.rules,
+            system_prompt_preview=status.system_prompt_preview,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve scaffolding status"
+        )
+
+
+@router.get("/scaffolding/logs", response_model=ValidationLogsResponse)
+def get_scaffolding_logs(
+    user_id: Optional[str] = Query(default=None, description="Filter logs by user ID"),
+    limit: int = Query(default=100, ge=1, le=500, description="Maximum number of logs to return"),
+    ai_service: AIService = Depends(get_ai_service),
+):
+    """
+    Get validation logs for scaffolding interactions
+
+    Returns a list of validation log entries showing:
+    - Request type classification
+    - Validation results (passed/failed)
+    - Rules applied and violated
+    - Metadata about the response (code lines, questions, etc.)
+
+    Optionally filter by user_id to see logs for a specific user.
+    Useful for verification and demonstration of scaffolding implementation.
+    """
+    try:
+        # Get logs from validation logger
+        if user_id:
+            log_entries = ai_service.validation_logger.get_user_logs(user_id, limit=limit)
+        else:
+            log_entries = ai_service.validation_logger.get_recent_logs(limit=limit)
+
+        # Convert to response format
+        logs = [
+            ValidationLogEntry(
+                timestamp=entry.timestamp,
+                user_id=entry.user_id,
+                request_type=entry.request_type,
+                validation_passed=entry.validation_passed,
+                rules_applied=entry.rules_applied,
+                rules_violated=entry.rules_violated,
+                code_line_count=entry.code_line_count,
+                has_leading_question=entry.has_leading_question,
+                is_complete_solution=entry.is_complete_solution,
+                confidence_score=entry.confidence_score,
+            )
+            for entry in log_entries
+        ]
+
+        return ValidationLogsResponse(
+            logs=logs,
+            total_count=len(logs),
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve validation logs"
+        )
 
 
 @router.post("/generate-quiz", response_model=QuizGenerateResponse, tags=["AI Chat"])

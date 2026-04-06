@@ -8,11 +8,18 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   type?: 'text' | 'hint' | 'error';
+  scaffoldingMetadata?: {
+    requestType?: string;
+    rulesApplied?: string[];
+    validationPassed?: boolean;
+  };
 }
 
 interface AIChatProps {
     embedded?: boolean;
     context?: AIChatContext;
+    showScaffoldingStatus?: boolean;
+    enableDemonstration?: boolean;
 }
 
 const buildContextSummary = (context?: AIChatContext) => {
@@ -33,7 +40,7 @@ const buildContextSummary = (context?: AIChatContext) => {
     return items;
 };
 
-export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => {
+export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context, showScaffoldingStatus = false, enableDemonstration = false }) => {
     const isKz = APP_LANGUAGE === 'kz';
     const lt = {
         fallbackError: isKz ? 'Кешіріңіз, қате орын алды. Қайтадан көріңіз!' : 'Извини, произошла ошибка. Попробуй еще раз!',
@@ -116,49 +123,95 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => 
 
     try {
             let streamedText = '';
-            const response = await aiChat.sendMessageStream(
-                text,
-                CURRENT_USER.id,
-                undefined,
-                undefined,
-                context,
-                (chunk) => {
-                    streamedText += chunk;
-                    setMessages(prev => prev.map((msg) =>
-                        msg.id === assistantMessageId
-                            ? { ...msg, text: streamedText }
-                            : msg
-                    ));
+            
+            // Use scaffolding endpoint if demonstration mode is enabled
+            if (enableDemonstration) {
+                const response = await aiChat.sendMessageWithScaffolding(
+                    text,
+                    CURRENT_USER.id,
+                    undefined,
+                    undefined,
+                    context
+                );
+                
+                // Determine message type based on keywords and scaffolding metadata
+                let msgType: 'text' | 'hint' | 'error' = 'text';
+                const lower = text.toLowerCase();
+                
+                if (lower.includes(lt.bugWord) || lower.includes('не так') || lower.includes('bug')) {
+                    msgType = 'error';
+                    setOracleState('alert');
+                    setTimeout(() => setOracleState('idle'), 5000);
+                } else if (lower.includes(lt.hintWord) || lower.includes('hint') || response.request_type === 'hint') {
+                    msgType = 'hint';
+                    if (energy > 0) {
+                        setEnergy(e => e - 1);
+                    }
                 }
-            );
-      
-      // Determine message type based on keywords
-      let msgType: 'text' | 'hint' | 'error' = 'text';
-      const lower = text.toLowerCase();
-      
-            if (lower.includes(lt.bugWord) || lower.includes('не так') || lower.includes('bug')) {
-        msgType = 'error';
-        setOracleState('alert');
-        setTimeout(() => setOracleState('idle'), 5000);
-            } else if (lower.includes(lt.hintWord) || lower.includes('hint')) {
-        msgType = 'hint';
-        if (energy > 0) {
-          setEnergy(e => e - 1);
-        }
-      }
 
-      const aiMsg: Message = { 
-                id: assistantMessageId, 
-        text: response.response, 
-        sender: 'ai', 
-        type: msgType 
-      };
-      
-            setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? aiMsg : msg));
-      setIsTyping(false);
-      if (msgType === 'text') {
-        setOracleState('idle');
-      }
+                const aiMsg: Message = { 
+                    id: assistantMessageId, 
+                    text: response.response, 
+                    sender: 'ai', 
+                    type: msgType,
+                    scaffoldingMetadata: {
+                        requestType: response.request_type,
+                        rulesApplied: response.rules_applied,
+                        validationPassed: response.validation_passed,
+                    }
+                };
+                
+                setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? aiMsg : msg));
+                setIsTyping(false);
+                if (msgType === 'text') {
+                    setOracleState('idle');
+                }
+            } else {
+                // Use standard streaming endpoint
+                const response = await aiChat.sendMessageStream(
+                    text,
+                    CURRENT_USER.id,
+                    undefined,
+                    undefined,
+                    context,
+                    (chunk) => {
+                        streamedText += chunk;
+                        setMessages(prev => prev.map((msg) =>
+                            msg.id === assistantMessageId
+                                ? { ...msg, text: streamedText }
+                                : msg
+                        ));
+                    }
+                );
+          
+                // Determine message type based on keywords
+                let msgType: 'text' | 'hint' | 'error' = 'text';
+                const lower = text.toLowerCase();
+                
+                if (lower.includes(lt.bugWord) || lower.includes('не так') || lower.includes('bug')) {
+                    msgType = 'error';
+                    setOracleState('alert');
+                    setTimeout(() => setOracleState('idle'), 5000);
+                } else if (lower.includes(lt.hintWord) || lower.includes('hint')) {
+                    msgType = 'hint';
+                    if (energy > 0) {
+                        setEnergy(e => e - 1);
+                    }
+                }
+
+                const aiMsg: Message = { 
+                    id: assistantMessageId, 
+                    text: response.response, 
+                    sender: 'ai', 
+                    type: msgType 
+                };
+                
+                setMessages(prev => prev.map((msg) => msg.id === assistantMessageId ? aiMsg : msg));
+                setIsTyping(false);
+                if (msgType === 'text') {
+                    setOracleState('idle');
+                }
+            }
     } catch (error) {
       console.error('AI chat error:', error);
       // Fallback to mock response on error
@@ -234,6 +287,16 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => 
                             </div>
                         </div>
                         
+                        {/* Scaffolding Status Indicator */}
+                        {showScaffoldingStatus && enableDemonstration && (
+                            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 px-3 py-1 rounded-lg">
+                                <span className="size-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                                    {isKz ? 'Ментор режимі' : 'Режим ментора'}
+                                </span>
+                            </div>
+                        )}
+                        
                         {/* Energy Bar */}
                         <div className={`flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5 ${embedded ? 'mr-10' : ''}`}>
                             <Zap size={12} className={energy > 0 ? "text-yellow-400 fill-yellow-400" : "text-gray-600 dark:text-gray-400"} />
@@ -280,20 +343,51 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context }) => 
                                         {msg.type === 'error' ? <AlertCircle size={16} className="text-orange-500" /> : <Bot size={16} />}
                                     </div>
                                 )}
-                                <div className={`
-                                    max-w-[80%] rounded-2xl p-3 text-sm font-medium leading-relaxed shadow-lg
-                                    ${msg.sender === 'user' 
-                                        ? 'bg-cyan-600 text-white rounded-tr-none' 
-                                        : msg.type === 'error'
-                                            ? 'bg-orange-100 dark:bg-orange-900/20 border border-orange-500/30 text-orange-900 dark:text-orange-100 rounded-tl-none'
-                                            : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-100 rounded-tl-none'
-                                    }
-                                `}>
-                                    {msg.sender === 'ai' ? (
-                                        <div dangerouslySetInnerHTML={formatMessage(msg.text)} />
-                                    ) : (
-                                        msg.text
+                                <div className="flex flex-col gap-2 max-w-[80%]">
+                                    {/* Scaffolding badges for AI responses */}
+                                    {msg.sender === 'ai' && msg.scaffoldingMetadata && showScaffoldingStatus && (
+                                        <div className="flex flex-wrap gap-1.5 ml-1">
+                                            {msg.scaffoldingMetadata.requestType && (
+                                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                                                    {msg.scaffoldingMetadata.requestType === 'hint' ? (isKz ? 'Кеңес' : 'Подсказка') :
+                                                     msg.scaffoldingMetadata.requestType === 'error_help' ? (isKz ? 'Қате көмегі' : 'Помощь с ошибкой') :
+                                                     msg.scaffoldingMetadata.requestType === 'explanation' ? (isKz ? 'Түсіндірме' : 'Объяснение') :
+                                                     msg.scaffoldingMetadata.requestType}
+                                                </span>
+                                            )}
+                                            {msg.scaffoldingMetadata.validationPassed !== undefined && (
+                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                                    msg.scaffoldingMetadata.validationPassed 
+                                                        ? 'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400'
+                                                        : 'bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-400'
+                                                }`}>
+                                                    {msg.scaffoldingMetadata.validationPassed ? (isKz ? '✓ Тексерілді' : '✓ Проверено') : (isKz ? '⚠ Ескерту' : '⚠ Предупреждение')}
+                                                </span>
+                                            )}
+                                            {msg.scaffoldingMetadata.rulesApplied && msg.scaffoldingMetadata.rulesApplied.length > 0 && (
+                                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                                                    {msg.scaffoldingMetadata.rulesApplied.length} {isKz ? 'ереже' : 'правил'}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
+                                    <div className={`
+                                        rounded-2xl p-3 text-sm font-medium leading-relaxed shadow-lg
+                                        ${msg.sender === 'user' 
+                                            ? 'bg-cyan-600 text-white rounded-tr-none' 
+                                            : msg.type === 'error'
+                                                ? 'bg-orange-100 dark:bg-orange-900/20 border border-orange-500/30 text-orange-900 dark:text-orange-100 rounded-tl-none'
+                                                : msg.type === 'hint'
+                                                    ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-500/30 text-blue-900 dark:text-blue-100 rounded-tl-none'
+                                                    : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-100 rounded-tl-none'
+                                        }
+                                    `}>
+                                        {msg.sender === 'ai' ? (
+                                            <div dangerouslySetInnerHTML={formatMessage(msg.text)} />
+                                        ) : (
+                                            msg.text
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

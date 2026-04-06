@@ -1,0 +1,549 @@
+[
+  {
+    "timestamp": "2026-04-06T16:56:43.677685",
+    "user_id": "test_user",
+    "request_type": "solution",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T16:59:51.799425",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule4"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": false,
+    "is_complete_solution": false,
+    "confidence_score": 0.85
+  },
+  {
+    "timestamp": "2026-04-06T16:59:52.141772",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule4"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": false,
+    "is_complete_solution": false,
+    "confidence_score": 0.85
+  },
+  {
+    "timestamp": "2026-04-06T16:59:52.164758",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule4"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": false,
+    "is_complete_solution": false,
+    "confidence_score": 0.85
+  },
+  {
+    "timestamp": "2026-04-06T17:00:29.053967",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule4"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": false,
+    "is_complete_solution": false,
+    "confidence_score": 0.85
+  },
+  {
+    "timestamp": "2026-04-06T17:01:27.817616",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule4"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": false,
+    "is_complete_solution": false,
+    "confidence_score": 0.85
+  },
+  {
+    "timestamp": "2026-04-06T17:02:01.025676",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule4"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": false,
+    "is_complete_solution": false,
+    "confidence_score": 0.85
+  },
+  {
+    "timestamp": "2026-04-06T17:02:56.206421",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 1,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:02:56.222740",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule1",
+      "rule4"
+    ],
+    "code_line_count": 5,
+    "has_leading_question": false,
+    "is_complete_solution": true,
+    "confidence_score": 0.29999999999999993
+  },
+  {
+    "timestamp": "2026-04-06T17:02:56.243896",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:03:22.410215",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 1,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:03:22.427701",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule1",
+      "rule4"
+    ],
+    "code_line_count": 5,
+    "has_leading_question": false,
+    "is_complete_solution": true,
+    "confidence_score": 0.29999999999999993
+  },
+  {
+    "timestamp": "2026-04-06T17:03:22.447846",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:07:21.221811",
+    "user_id": "test_user",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule2"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": true,
+    "confidence_score": 0.65
+  },
+  {
+    "timestamp": "2026-04-06T17:07:44.593446",
+    "user_id": "test_user",
+    "request_type": "hint",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule2"
+    ],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": true,
+    "confidence_score": 0.65
+  },
+  {
+    "timestamp": "2026-04-06T17:10:38.324296",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 1,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:10:38.339507",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule1",
+      "rule4"
+    ],
+    "code_line_count": 5,
+    "has_leading_question": false,
+    "is_complete_solution": true,
+    "confidence_score": 0.29999999999999993
+  },
+  {
+    "timestamp": "2026-04-06T17:10:38.364628",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:13:20.994262",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 1,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:13:21.041621",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule1",
+      "rule4"
+    ],
+    "code_line_count": 5,
+    "has_leading_question": false,
+    "is_complete_solution": true,
+    "confidence_score": 0.29999999999999993
+  },
+  {
+    "timestamp": "2026-04-06T17:13:21.065242",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:31:36.568981",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 1,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:31:36.602904",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule1",
+      "rule4"
+    ],
+    "code_line_count": 5,
+    "has_leading_question": false,
+    "is_complete_solution": true,
+    "confidence_score": 0.29999999999999993
+  },
+  {
+    "timestamp": "2026-04-06T17:31:36.650624",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:33:45.329533",
+    "user_id": "user-3",
+    "request_type": "explanation",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 1,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  },
+  {
+    "timestamp": "2026-04-06T17:33:45.351701",
+    "user_id": "user-4",
+    "request_type": "solution",
+    "validation_passed": false,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [
+      "rule1",
+      "rule4"
+    ],
+    "code_line_count": 5,
+    "has_leading_question": false,
+    "is_complete_solution": true,
+    "confidence_score": 0.29999999999999993
+  },
+  {
+    "timestamp": "2026-04-06T17:33:45.378471",
+    "user_id": "user-5",
+    "request_type": "theory",
+    "validation_passed": true,
+    "rules_applied": [
+      "rule1",
+      "rule2",
+      "rule3",
+      "rule4",
+      "rule5",
+      "rule6"
+    ],
+    "rules_violated": [],
+    "code_line_count": 0,
+    "has_leading_question": true,
+    "is_complete_solution": false,
+    "confidence_score": 1.0
+  }
+]
