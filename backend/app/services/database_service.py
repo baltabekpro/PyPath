@@ -1003,8 +1003,8 @@ class DatabaseService:
             1: [
                 {"ru": {"title": "Приветствие и print", "description": "Выведи приветствие и имя ученика на экран."}, "kz": {"title": "Сәлем және print", "description": "Экранға сәлемдесу мен оқушының атын шығар."}},
                 {"ru": {"title": "Переменные name и age", "description": "Создай строковую и числовую переменные."}, "kz": {"title": "name және age айнымалылары", "description": "Жолдық және сандық айнымалыларды жаса."}},
-                {"ru": {"title": "Строки и пробел", "description": "Собери полное имя из двух строк."}, "kz": {"title": "Жолдарды біріктіру", "description": "Екі жолдан толық атты құрастыр."}},
-                {"ru": {"title": "Числа и сумма", "description": "Сложи два числа и сохрани результат."}, "kz": {"title": "Сандар қосындысы", "description": "Екі санды қосып, нәтижені сақта."}},
+                {"ru": {"title": "Проверка портов", "description": "Создайте список ports, пройдитесь циклом for и выведите проверку каждого порта."}, "kz": {"title": "Порттарды тексеру", "description": "ports тізімін жасаңыз, for циклі арқылы әр портты тексеріп, нәтижесін шығарыңыз."}},
+                {"ru": {"title": "Сканер сервиса", "description": "Проверьте список ports и выведите статус сервиса для каждого значения."}, "kz": {"title": "Сервис сканері", "description": "ports тізімін тексеріп, әр мән үшін сервистің күйін (статусын) шығарыңыз."}},
                 {"ru": {"title": "type() и str()", "description": "Проверь тип и преобразуй число в строку."}, "kz": {"title": "type() және str()", "description": "Түрді тексеріп, санды жолға айналдыр."}},
                 {"ru": {"title": "Мини-калькулятор", "description": "Считай два значения через input и выведи сумму."}, "kz": {"title": "Шағын калькулятор", "description": "input арқылы екі мәнді сұрап, қосындысын шығар."}},
             ],
@@ -1069,7 +1069,7 @@ class DatabaseService:
             theory_lines = theory_details_by_course.get(course_id, {})
             default_theory = str(course.get("description") or "").strip() or "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
             default_kz_theory = str(course.get("description") or "").strip() or "Тақырыптың негізгі теориясын оқып, содан кейін практикаға өтіңіз."
-            default_next_step = "Келесі қадам - практика" if language_key == "kz" else "Следующий шаг - практика"
+            default_next_step = "Келесі қадам - тәжірибе" if language_key == "kz" else "Следующий шаг - практика"
             default_reinforce = "Тапсырмалар арқылы бекітіңіз" if language_key == "kz" else "Закрепите тему через задания"
             default_hint = "Теорияны оқып, бірден кодтаңыз" if language_key == "kz" else "Прочитайте теорию и сразу закрепите кодом"
 
@@ -1099,7 +1099,7 @@ class DatabaseService:
 
             practices = []
             for index, mission in enumerate(related, start=1):
-                title = str(mission.get("title") or f"Практика {index}")
+                title = str(mission.get("title") or (f"Тәжірибе {index}" if language_key == "kz" else f"Практика {index}"))
                 description = str(mission.get("description") or "").rstrip(".")
                 practice_line = f"{index}. {title}"
                 if description:
@@ -1109,7 +1109,7 @@ class DatabaseService:
             if not practices:
                 for index, practice in enumerate(practice_catalog_by_course.get(course_id, []), start=1):
                     locale_practice = practice.get(language_key) or practice.get("ru") or {}
-                    title = str(locale_practice.get("title") or f"Практика {index}")
+                    title = str(locale_practice.get("title") or (f"Тәжірибе {index}" if language_key == "kz" else f"Практика {index}"))
                     description = str(locale_practice.get("description") or "")
                     practice_line = f"{index}. {title}"
                     if description:

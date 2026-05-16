@@ -28,13 +28,13 @@ const VIEW_LABELS_KZ: Record<string, string> = {
     DASHBOARD: 'Басты бет',
     COURSES: 'Курстар',
     COURSE_JOURNEY: 'Оқу',
-    SIMPLE_LEARNING: 'Практика',
+    SIMPLE_LEARNING: 'Тәжірибе',
     AI_CHAT: 'Оракул',
     PROFILE: 'Профиль',
     LEADERBOARD: 'Рейтинг',
     ACHIEVEMENTS: 'Жетістіктер',
     SETTINGS: 'Баптаулар',
-    ADMIN: 'Әкімдік',
+    ADMIN: 'Әкімшілік',
 };
 
 const KZ_TEXT_OVERRIDES = {

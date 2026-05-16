@@ -32,7 +32,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
   const isKz = APP_LANGUAGE === 'kz';
   const text = {
     backToCourses: isKz ? 'Курстарға оралу' : 'К курсам',
-    openPractice: isKz ? 'Практикаға өту' : 'Перейти к практике',
+    openPractice: isKz ? 'Тәжірибеге өту' : 'Перейти к практике',
     fullCourse: isKz ? 'Толық курс' : 'Полный курс',
     preTab: isKz ? '8/9 дейін' : 'До 8/9',
     classLabel: isKz ? 'сынып' : 'класс',
@@ -42,17 +42,17 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     syncLater: isKz ? 'Теория ашылды, прогресс кейін синхрондалады' : 'Теория открыта, прогресс сохранится при следующей синхронизации',
     syncFail: isKz ? 'Теория жергілікті ашылды, сервер уақытша жауап бермеді' : 'Теория открыта локально, но сервер пока не ответил',
     theory: isKz ? 'Теория' : 'Теория',
-    practicePage: isKz ? 'Практика' : 'Практика',
+    practicePage: isKz ? 'Тәжірибе' : 'Практика',
     theoryOpened: isKz ? 'Теория ашық' : 'Теория открыта',
     unlockPracticeHint: isKz ? 'Алдымен теорияны ашыңыз, содан кейін практикалық тапсырмалар белсенді болады.' : 'Сначала откройте теорию, после этого практические задания станут активными.',
-    practiceOrderHint: isKz ? 'Практика ретімен ашылады: алдымен 1-тапсырма, кейін 2 және ары қарай.' : 'Практика открывается по порядку: сначала 1 задание, затем 2 и далее.',
+    practiceOrderHint: isKz ? 'Тәжірибе ретімен ашылады: алдымен 1-тапсырма, кейін 2 және ары қарай.' : 'Практика открывается по порядку: сначала 1 задание, затем 2 и далее.',
     oracleChat: isKz ? 'Оракул чаты' : 'Чат с Оракулом',
     stage: isKz ? 'Курс кезеңі' : 'Этап курса',
     stageTheory: isKz ? 'Теорияны ашу' : 'Открыть теорию',
-    stagePractice: isKz ? 'Практиканы аяқтау' : 'Завершить практику',
+    stagePractice: isKz ? 'Тәжірибені аяқтау' : 'Завершить практику',
     stageQuiz: isKz ? 'Финалдық тест' : 'Финальный тест',
     stageDone: isKz ? 'Курс аяқталды' : 'Курс завершен',
-    progressInTopic: isKz ? 'Осы курс прогресі' : 'Прогресс этого курса',
+    progressInTopic: isKz ? 'Курс прогресі' : 'Прогресс этого курса',
     nextStep: isKz ? 'Келесі қадам' : 'Что дальше',
     nextTopicUnlocked: isKz ? 'Келесі курс ашылды:' : 'Следующий курс открыт:',
     noNextTopic: isKz ? 'Бұл деңгейдегі соңғы курс аяқталды. Енді профиль мен жетістіктер бөлімін тексеріңіз.' : 'Это последний курс в уровне. Теперь можно проверить профиль и достижения.',
@@ -325,7 +325,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
     const completedPractices = topicProgress.completedPractices.length;
     const totalPractices = selectedTopic.practices.length;
     const stage = activePage === 'practice'
-      ? 'Практика'
+      ? (isKz ? 'Тәжірибе' : 'Практика')
       : 'Теория';
 
     return {
@@ -339,7 +339,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
         ? (isKz ? 'Теория ашылмаған' : 'Теория не открыта')
         : completedPractices >= totalPractices
           ? (selectedTopic.quizBank?.length ? (isKz ? 'Тестке дайын' : 'Готов к тесту') : (isKz ? 'Курс аяқталды' : 'Курс завершён'))
-          : (isKz ? 'Практика жалғасып жатыр' : 'Практика продолжается'),
+          : (isKz ? 'Тәжірибе жалғасып жатыр' : 'Практика продолжается'),
       theoryOpened: topicProgress.theoryOpened,
       completedPractices,
       totalPractices,
@@ -477,7 +477,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                   <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {allPracticesCompleted
-                        ? (isKz ? 'Практика аяқталды. Енді финалдық тест ашылады.' : 'Практика завершена. Финальный тест готов к открытию.')
+                        ? (isKz ? 'Тәжірибе аяқталды. Енді финалдық тест ашылады.' : 'Практика завершена. Финальный тест готов к открытию.')
                         : (isKz ? 'Тест барлық практикалық қадамдардан кейін ашылады.' : 'Тест откроется после завершения всех практических шагов.')}
                     </p>
                     <button

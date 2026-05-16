@@ -26,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isAdmin 
         ...baseItems,
         {
           view: View.ADMIN,
-          label: isKz ? 'Әкімдік' : 'Админка',
+          label: isKz ? 'Әкімшілік' : 'Админка',
           icon: 'ShieldAlert',
           mobile: false,
           Icon: getIconComponent('ShieldAlert'),

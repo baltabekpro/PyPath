@@ -22,7 +22,7 @@ interface AIChatProps {
     enableDemonstration?: boolean;
 }
 
-const buildContextSummary = (context?: AIChatContext) => {
+const buildContextSummary = (context?: AIChatContext, isKz: boolean = false) => {
     if (!context) return [] as Array<{ label: string; value: string }>;
     const items: Array<{ label: string; value: string }> = [];
 
@@ -32,7 +32,7 @@ const buildContextSummary = (context?: AIChatContext) => {
     if (context.courseStatus) items.push({ label: 'Статус', value: context.courseStatus });
     if (typeof context.theoryOpened === 'boolean') items.push({ label: 'Теория', value: context.theoryOpened ? 'Открыта' : 'Не открыта' });
     if (typeof context.completedPractices === 'number' && typeof context.totalPractices === 'number') {
-        items.push({ label: 'Практика', value: `${context.completedPractices}/${context.totalPractices}` });
+        items.push({ label: isKz ? 'Тәжірибе' : 'Практика', value: `${context.completedPractices}/${context.totalPractices}` });
     }
     if (context.practiceName) items.push({ label: 'Задание', value: context.practiceName });
     if (context.lastError) items.push({ label: 'Ошибка', value: context.lastError });
@@ -60,7 +60,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context, showS
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-    const contextSummary = buildContextSummary(context);
+    const contextSummary = buildContextSummary(context, isKz);
 
     const escapeHtml = (value: string) =>
         value
@@ -433,7 +433,7 @@ export const AIChat: React.FC<AIChatProps> = ({ embedded = false, context, showS
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyPress} 
                                 placeholder={AI_CHAT_DATA?.inputPlaceholder || text.inputPlaceholder} 
-                                className="w-full bg-transparent border-b border-slate-300 dark:border-white/10 py-3 pl-2 pr-10 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-arcade-primary outline-none transition-colors font-mono text-sm"
+                                className="w-full bg-transparent border-b border-slate-300 dark:border-white/10 py-3 pl-2 pr-10 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-arcade-primary outline-none transition-colors font-sans text-sm"
                             />
                             <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500 w-0 group-focus-within:w-full transition-all duration-500"></div>
                             <button 

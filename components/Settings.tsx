@@ -17,7 +17,7 @@ const getDefaultSettingsTabs = (isKz: boolean) => [
 const getDefaultNotificationOptions = (isKz: boolean) => [
     { label: isKz ? 'Push хабарламалар' : 'Push уведомления', enabled: true },
     { label: isKz ? 'Email хабарламалар' : 'Email уведомления', enabled: false },
-    { label: isKz ? 'Практика еске салғыштары' : 'Напоминания о практике', enabled: true },
+    { label: isKz ? 'Тәжірибе еске салғыштары' : 'Напоминания о практике', enabled: true },
 ];
 
 const normalizeNotificationOptions = (options: any[] | undefined | null, fallback: any[]) => {
