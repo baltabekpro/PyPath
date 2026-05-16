@@ -9,14 +9,12 @@ interface CoursesProps {
 }
 
 const localizeCourseMeta = (course: Course, isKz: boolean) => {
-    const genericTitle = course.title || (isKz ? 'Курс' : 'Курс');
-    const genericDescription = course.description || '';
-    const genericDifficulty = course.difficulty || (isKz ? 'Белгісіз' : 'Неизвестно');
-
+    // Курсы уже приходят локализованными с бэкенда
+    // Просто возвращаем данные как есть
     return {
-        title: genericTitle,
-        description: genericDescription,
-        difficulty: genericDifficulty,
+        title: course.title || (isKz ? 'Курс' : 'Курс'),
+        description: course.description || '',
+        difficulty: course.difficulty || (isKz ? 'Белгісіз' : 'Неизвестно'),
     };
 };
 

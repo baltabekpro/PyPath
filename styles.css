@@ -17,6 +17,18 @@ body, input, textarea, button {
   font-feature-settings: "locl" 1;
 }
 
+/* Word breaking for long Kazakh words on mobile */
+h1, h2, h3, h4, h5, h6, .font-display {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Ensure consistent font rendering for all headings and display text */
+.font-display {
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #94a3b8 transparent;

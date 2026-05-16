@@ -49,6 +49,12 @@ const App: React.FC = () => {
   }, [theme]);
 
   useEffect(() => {
+    // Update HTML lang attribute for accessibility
+    const htmlElement = document.getElementById('app-root') || document.documentElement;
+    htmlElement.setAttribute('lang', language === 'kz' ? 'kk' : 'ru');
+  }, [language]);
+
+  useEffect(() => {
     const onThemeChanged = () => {
       const stored = localStorage.getItem('theme');
       setTheme(stored === 'dark' ? 'dark' : 'light');

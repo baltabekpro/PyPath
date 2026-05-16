@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     openrouter_referer: str = "https://py-path.vercel.app"
     openrouter_title: str = "PyPath"
 
+    # Google Gemini AI
+    google_api_key: str = ""
+    google_model: str = "gemini-3.1-flash-lite"
+
     # Bootstrap admin account
     admin_username: str = "admin_pypath"
     admin_email: str = "admin@pypath.local"

@@ -1,4 +1,4 @@
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || 'http://94.131.92.125:8000';
+const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || 'http://94.131.90.78:8001';
 
 const hopByHopHeaders = new Set([
   'connection',
