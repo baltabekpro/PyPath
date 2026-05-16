@@ -34,7 +34,7 @@ const VIEW_LABELS_KZ: Record<string, string> = {
     LEADERBOARD: 'Рейтинг',
     ACHIEVEMENTS: 'Жетістіктер',
     SETTINGS: 'Баптаулар',
-    ADMIN: 'Әкімдік',
+    ADMIN: 'Әкімшілік',
 };
 
 const KZ_TEXT_OVERRIDES = {
