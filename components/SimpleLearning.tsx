@@ -91,11 +91,11 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
     title: isKz ? 'Менің оқу жолым' : 'Моё обучение',
     subtitle: isKz ? 'Python негіздерін қадамдап үйрен' : 'Изучай основы Python шаг за шагом',
     theory: isKz ? 'Теория' : 'Теория',
-    practice: isKz ? 'Практика' : 'Практика',
+    practice: isKz ? 'Тәжірибе' : 'Практика',
     completed: isKz ? 'Аяқталды' : 'Завершено',
     overall: isKz ? 'Жалпы прогресс' : 'Общий прогресс',
     runCode: isKz ? 'Кодты тексеру' : 'Проверить код',
-    yourCode: isKz ? 'Сенің кодың' : 'Твой код',
+    yourCode: isKz ? 'Сенің кодыңыз' : 'Твой код',
     result: isKz ? 'Нәтиже' : 'Результат',
     success: isKz ? 'Дұрыс! Тапсырма орындалды' : 'Правильно! Задание выполнено',
     nextTask: isKz ? 'Келесі' : 'Далее',
@@ -311,7 +311,7 @@ export const SimpleLearning: React.FC<SimpleLearningProps> = ({ setView }) => {
       gradeBand: selectedTopic.grade,
       courseStatus: !topicProgress.theoryOpened
         ? (isKz ? 'Теория ашылмаған' : 'Теория не открыта')
-        : (selectedPracticeIndex < selectedTopic.practices.length ? (isKz ? 'Практика ашық' : 'Практика открыта') : (isKz ? 'Курс аяқталды' : 'Курс завершён')),
+        : (selectedPracticeIndex < selectedTopic.practices.length ? (isKz ? 'Тәжірибе ашық' : 'Практика открыта') : (isKz ? 'Курс аяқталды' : 'Курс завершён')),
       theoryOpened: topicProgress.theoryOpened,
       practiceIndex: selectedPracticeIndex,
       practiceName: currentPracticeName,

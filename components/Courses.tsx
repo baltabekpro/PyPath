@@ -31,7 +31,7 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
         gradeClass: isKz ? 'сынып' : 'класс',
         progress: isKz ? 'Прогресс' : 'Прогресс',
         lessons: isKz ? 'Сабақтар' : 'Уроки',
-        topicPractice: isKz ? 'Тақырып практикасы' : 'Практика темы',
+        topicPractice: isKz ? 'Тақырып тәжірибесі' : 'Практика темы',
     };
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedLevel, setSelectedLevel] = useState<Course | null>(null);
@@ -64,11 +64,11 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
         } else if (practiceCompleted) {
             label = isKz ? 'Теория аяқталды' : 'Теория завершена';
             tone = 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30';
-            progressText = isKz ? 'Практика кезеңі дайын' : 'Этап практики готов';
+            progressText = isKz ? 'Тәжірибе кезеңі дайын' : 'Этап практики готов';
         } else if (theoryOpened) {
             label = isKz ? 'Теория ашық' : 'Теория открыта';
             tone = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30';
-            progressText = isKz ? 'Практика әлі аяқталмады' : 'Практика ещё не завершена';
+            progressText = isKz ? 'Тәжірибе әлі аяқталмады' : 'Практика ещё не завершена';
         } else if (!course.locked) {
             label = isKz ? 'Ашық' : 'Открыт';
             tone = 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30';

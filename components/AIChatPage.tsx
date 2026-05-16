@@ -508,7 +508,7 @@ export const AIChatPage: React.FC = () => {
                               onChange={(e) => setInputValue(e.target.value)}
                               onKeyDown={handleKeyPress}
                               placeholder={AI_CHAT_PAGE_DATA?.inputPlaceholder || text.inputPlaceholder} 
-                              className="w-full bg-transparent border-none text-slate-900 dark:text-cyan-100 placeholder-slate-500 dark:placeholder-cyan-700/50 focus:ring-0 outline-none h-10 font-mono text-sm"
+                              className="w-full bg-transparent border-none text-slate-900 dark:text-cyan-100 placeholder-slate-500 dark:placeholder-cyan-700/50 focus:ring-0 outline-none h-10 font-sans text-sm"
                           />
                           <button 
                               onClick={() => handleSend()}
