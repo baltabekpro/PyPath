@@ -244,7 +244,7 @@ export const AIChatPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 font-mono overflow-hidden relative">
+    <div className="flex h-full bg-slate-50 dark:bg-[#0c120e] text-slate-900 dark:text-slate-100 font-sans overflow-hidden relative">
       
       {/* Background Grid & Effects */}
     <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.25)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(15,23,42,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.9)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-60 dark:opacity-50"></div>
