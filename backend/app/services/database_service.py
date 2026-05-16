@@ -1069,19 +1069,31 @@ class DatabaseService:
             theory_lines = theory_details_by_course.get(course_id, {})
             default_theory = str(course.get("description") or "").strip() or "Изучите базовую теорию темы и затем переходите к практике шаг за шагом."
             default_kz_theory = str(course.get("description") or "").strip() or "Тақырыптың негізгі теориясын оқып, содан кейін практикаға өтіңіз."
-            theory = theory_content.get("intro") or theory_entry.get(language_key) or theory_entry.get("ru") or (default_kz_theory if language_key == "kz" else default_theory)
+            default_next_step = "Келесі қадам - практика" if language_key == "kz" else "Следующий шаг - практика"
+            default_reinforce = "Тапсырмалар арқылы бекітіңіз" if language_key == "kz" else "Закрепите тему через задания"
+            default_hint = "Теорияны оқып, бірден кодтаңыз" if language_key == "kz" else "Прочитайте теорию и сразу закрепите кодом"
 
-            details = theory_content.get("sections") or theory_lines.get(language_key) or theory_lines.get("ru") or [
-                default_kz_theory if language_key == "kz" else default_theory,
-                ("Келесі қадам - практика" if language_key == "kz" else "Следующий шаг - практика"),
-                ("Тапсырмалар арқылы бекітіңіз" if language_key == "kz" else "Закрепите тему через задания"),
-            ]
+            if language_key == "kz":
+                theory = theory_entry.get("kz") or theory_content.get("intro") or theory_entry.get("ru") or default_kz_theory
+                details = theory_lines.get("kz") or theory_content.get("sections") or theory_lines.get("ru") or [
+                    default_kz_theory,
+                    default_next_step,
+                    default_reinforce,
+                ]
+            else:
+                theory = theory_content.get("intro") or theory_entry.get("ru") or default_theory
+                details = theory_content.get("sections") or theory_lines.get("ru") or [
+                    default_theory,
+                    default_next_step,
+                    default_reinforce,
+                ]
             example = theory_content.get("example") or theory_lines.get("example", {}).get(language_key) or theory_lines.get("example", {}).get("ru") or (
                 "print('Тақырыпты меңгеру')" if language_key == "kz" else "print('Разбор темы')"
             )
-            hint = (theory_content.get("takeaways") or [None])[0] or theory_lines.get("hint", {}).get(language_key) or theory_lines.get("hint", {}).get("ru") or (
-                "Теорияны оқып, бірден кодтаңыз" if language_key == "kz" else "Прочитайте теорию и сразу закрепите кодом"
-            )
+            if language_key == "kz":
+                hint = theory_lines.get("hint", {}).get("kz") or (theory_content.get("takeaways") or [None])[0] or theory_lines.get("hint", {}).get("ru") or default_hint
+            else:
+                hint = (theory_content.get("takeaways") or [None])[0] or theory_lines.get("hint", {}).get("ru") or default_hint
 
             related = [m for m in missions if self._parse_course_id_from_chapter(m.get("chapter")) == course_id]
 

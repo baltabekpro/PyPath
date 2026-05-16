@@ -269,9 +269,9 @@ export const Courses: React.FC<CoursesProps> = ({ setView }) => {
                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-400 block mb-0.5">
                                        {course.isBoss ? text.bossLabel : `${text.chapterPrefix} ${course.id}`}
                                    </span>
-                                   <span className={`text-xs font-bold leading-tight block ${isLocked ? 'blur-[1px] text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                                       {localizedMeta.title}
-                                   </span>
+                                    <span className={`text-xs font-bold leading-tight break-words block ${isLocked ? 'blur-[1px] text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>
+                                        {localizedMeta.title}
+                                    </span>
                                    {course.gradeBand && (
                                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-wider mt-1 block">
                                            {course.gradeBand === 'pre' ? lt.gradePre : `${course.gradeBand} ${lt.gradeClass}`}

@@ -402,7 +402,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 md:p-6 space-y-6">
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{selectedTopic.section}</p>
-            <h1 className="text-2xl md:text-3xl font-black mb-2">{selectedTopic.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-black mb-2 break-words">{selectedTopic.title}</h1>
             {(isSaving || saveNote) && <p className="text-xs text-slate-500 dark:text-slate-400">{saveNote || text.saving}</p>}
             <div className="mt-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/40 p-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -527,7 +527,7 @@ export const CourseJourney: React.FC<CourseJourneyProps> = ({ setView }) => {
                       onClick={() => openPracticeInEditor(index)}
                       className={`w-full p-3 rounded-xl border text-left flex items-center justify-between ${!unlocked ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : done ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                     >
-                      <span className="text-sm">{task}</span>
+                      <span className="text-sm break-words">{task}</span>
                       {done && <CheckCircle2 size={18} className="text-emerald-600" />}
                     </button>
                   );
