@@ -210,37 +210,38 @@ def chat_with_ai(
             language=effective_language,
             context=payload.context,
         )
-        if user:
-            now_ms = int(datetime.now().timestamp() * 1000)
-            chats, _ = _get_persisted_chats(user)
-            chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
-            chat["updatedAt"] = _now_iso()
-            chat_messages = chat.get("messages") or []
-            chat_messages.extend([
-                {
-                    "id": f"{now_ms}_u",
-                    "sender": "user",
-                    "text": payload.message,
-                    "timestamp": _now_iso(),
-                },
-                {
-                    "id": f"{now_ms}_a",
-                    "sender": "ai",
-                    "text": response_text,
-                    "timestamp": _now_iso(),
-                },
-            ])
-            chat["messages"] = chat_messages[-200:]
-            _save_persisted_chats(user, chats, resolved_chat_id, service)
-        return ChatResponse(
-            response=response_text,
-            timestamp=datetime.now().isoformat()
-        )
     except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail="AI service temporarily unavailable"
-        )
+        response_text = ""
+
+    if user:
+        now_ms = int(datetime.now().timestamp() * 1000)
+        chats, _ = _get_persisted_chats(user)
+        chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
+        chat["updatedAt"] = _now_iso()
+        chat_messages = chat.get("messages") or []
+        chat_messages.append({
+            "id": f"{now_ms}_u",
+            "sender": "user",
+            "text": payload.message,
+            "timestamp": _now_iso(),
+        })
+        if response_text:
+            chat_messages.append({
+                "id": f"{now_ms}_a",
+                "sender": "ai",
+                "text": response_text,
+                "timestamp": _now_iso(),
+            })
+        chat["messages"] = chat_messages[-200:]
+        _save_persisted_chats(user, chats, resolved_chat_id, service)
+
+    if not response_text:
+        raise HTTPException(status_code=500, detail="AI service temporarily unavailable")
+
+    return ChatResponse(
+        response=response_text,
+        timestamp=datetime.now().isoformat()
+    )
 
 
 @router.post("/chat/stream")
@@ -264,39 +265,40 @@ def chat_with_ai_stream(
 
     def stream_with_persistence():
         collected_chunks: list[str] = []
-        for chunk in ai_service.stream_chat(
-            session_key,
-            payload.message,
-            language=effective_language,
-            context=payload.context,
-        ):
-            collected_chunks.append(chunk)
-            yield chunk
+        try:
+            for chunk in ai_service.stream_chat(
+                session_key,
+                payload.message,
+                language=effective_language,
+                context=payload.context,
+            ):
+                collected_chunks.append(chunk)
+                yield chunk
+        except Exception:
+            pass
 
         if user:
             response_text = "".join(collected_chunks).strip()
+            now_ms = int(datetime.now().timestamp() * 1000)
+            chats, _ = _get_persisted_chats(user)
+            chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
+            chat["updatedAt"] = _now_iso()
+            chat_messages = chat.get("messages") or []
+            chat_messages.append({
+                "id": f"{now_ms}_u",
+                "sender": "user",
+                "text": payload.message,
+                "timestamp": _now_iso(),
+            })
             if response_text:
-                now_ms = int(datetime.now().timestamp() * 1000)
-                chats, _ = _get_persisted_chats(user)
-                chat, resolved_chat_id = _find_or_create_chat(chats, payload.chat_id, payload.message)
-                chat["updatedAt"] = _now_iso()
-                chat_messages = chat.get("messages") or []
-                chat_messages.extend([
-                    {
-                        "id": f"{now_ms}_u",
-                        "sender": "user",
-                        "text": payload.message,
-                        "timestamp": _now_iso(),
-                    },
-                    {
-                        "id": f"{now_ms}_a",
-                        "sender": "ai",
-                        "text": response_text,
-                        "timestamp": _now_iso(),
-                    },
-                ])
-                chat["messages"] = chat_messages[-200:]
-                _save_persisted_chats(user, chats, resolved_chat_id, service)
+                chat_messages.append({
+                    "id": f"{now_ms}_a",
+                    "sender": "ai",
+                    "text": response_text,
+                    "timestamp": _now_iso(),
+                })
+            chat["messages"] = chat_messages[-200:]
+            _save_persisted_chats(user, chats, resolved_chat_id, service)
 
     return StreamingResponse(stream_with_persistence(), media_type="text/plain; charset=utf-8")
 

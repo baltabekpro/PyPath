@@ -205,8 +205,11 @@ export const AIChatPage: React.FC = () => {
 
             try {
                 const history = await aiChat.getHistory(CURRENT_USER.id, currentChatId);
-                setChats(history.chats || []);
-                setActiveChatId(history.active_chat_id || currentChatId);
+                const serverChats = history.chats || [];
+                if (serverChats.length > 0) {
+                    setChats(serverChats);
+                    setActiveChatId(history.active_chat_id || currentChatId);
+                }
             } catch {
             }
     } catch (error) {
