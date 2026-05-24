@@ -115,9 +115,17 @@ export const AIChatPage: React.FC = () => {
   const handleSend = async (text: string = inputValue) => {
     if (!text.trim()) return;
 
+        const isNewChat = !activeChatId;
         const currentChatId = activeChatId || `chat_${Date.now()}`;
-        if (!activeChatId) {
+        if (isNewChat) {
             setActiveChatId(currentChatId);
+            const newChat: ChatSummary = {
+                id: currentChatId,
+                title: text.trim().slice(0, 40) || lt.newChat,
+                updatedAt: new Date().toISOString(),
+                lastMessage: '',
+            };
+            setChats((prev) => [newChat, ...prev]);
         }
 
                 const assistantMessageId = (Date.now() + 1).toString();
