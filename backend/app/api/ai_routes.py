@@ -468,7 +468,7 @@ def ai_status(ai_service: AIService = Depends(get_ai_service)):
     settings = get_settings()
     return {
         "status": "online",
-        "model": settings.openrouter_model,
+        "model": settings.gemini_model,
         "active_sessions": len(ai_service.message_history),
     }
 

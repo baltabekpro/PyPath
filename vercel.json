@@ -3,8 +3,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "http://94.131.90.78:8001/api/$1" },
-    { "source": "/api-proxy/(.*)", "destination": "http://94.131.90.78:8001/api/$1" },
+    { "source": "/api/(.*)", "destination": "http://172.207.57.215:8001/api/$1" },
+    { "source": "/api-proxy/(.*)", "destination": "http://172.207.57.215:8001/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
