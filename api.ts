@@ -298,6 +298,12 @@ export const aiChat = {
   resetSession: (userId: string, chatId?: string) =>
     apiPost<{ message: string; user_id: string }>('/ai/reset-session', { user_id: userId, chat_id: chatId }),
 
+  deleteChat: (chatId: string) =>
+    apiDelete<{ message: string; active_chat_id: string | null }>(`/ai/chat/${chatId}`),
+
+  renameChat: (chatId: string, title: string) =>
+    apiPut<{ id: string; title: string; updatedAt: string }>(`/ai/chat/${chatId}`, { title }),
+
   getHistory: (userId?: string, chatId?: string) => {
     const params = new URLSearchParams();
     if (userId) params.set('user_id', userId);

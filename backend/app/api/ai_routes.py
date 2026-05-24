@@ -9,6 +9,7 @@ from app.models.models import User
 from app.api.dependencies import get_current_user_optional, get_db_service, get_request_language
 from app.schemas.ai_schemas import (
     ChatMessage,
+    ChatRenameRequest,
     ChatResponse,
     QuickActionRequest,
     QuizGenerateRequest,
@@ -392,6 +393,74 @@ def reset_chat_session(
     return {"message": "Chat session reset successfully", "user_id": user_id}
 
 
+@router.delete("/chat/{chat_id}")
+def delete_chat(
+    chat_id: str,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service),
+    ai_service: AIService = Depends(get_ai_service),
+):
+    """Delete a specific chat by ID"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    identity = user.id
+    _enforce_rate_limit(request, key=f"ai:delete:{identity}", limit=30, window_seconds=60)
+
+    chats, active_chat_id = _get_persisted_chats(user)
+    chat_index = next((i for i, c in enumerate(chats) if c.get("id") == chat_id), None)
+
+    if chat_index is None:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    chats.pop(chat_index)
+
+    # Clear in-memory session for this chat
+    session_key = f"{user.id}:{chat_id}"
+    ai_service.reset_session(session_key)
+
+    # If deleted chat was active, switch to the first remaining chat
+    if active_chat_id == chat_id:
+        active_chat_id = chats[0]["id"] if chats else None
+
+    _save_persisted_chats(user, chats, active_chat_id, service)
+
+    return {"message": "Chat deleted successfully", "active_chat_id": active_chat_id}
+
+
+@router.put("/chat/{chat_id}")
+def rename_chat(
+    chat_id: str,
+    payload: ChatRenameRequest,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service),
+):
+    """Rename a specific chat"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    identity = user.id
+    _enforce_rate_limit(request, key=f"ai:rename:{identity}", limit=30, window_seconds=60)
+
+    chats, active_chat_id = _get_persisted_chats(user)
+    chat = next((c for c in chats if c.get("id") == chat_id), None)
+
+    if chat is None:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    chat["title"] = payload.title.strip()[:100]
+    chat["updatedAt"] = _now_iso()
+    _save_persisted_chats(user, chats, active_chat_id, service)
+
+    return {
+        "id": chat["id"],
+        "title": chat["title"],
+        "updatedAt": chat["updatedAt"],
+    }
+
+
 @router.get("/status")
 def ai_status(ai_service: AIService = Depends(get_ai_service)):
     """Check AI service status - Model name, active sessions count"""
@@ -457,6 +526,62 @@ def ai_history(
         and str(item.get("text") or "").strip()
     ]
     return {"items": in_memory, "active_chat_id": None, "chats": []}
+
+
+@router.delete("/chat/{chat_id}")
+def delete_chat(
+    chat_id: str,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service),
+):
+    """Delete a specific chat by ID"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    chats, active_chat_id = _get_persisted_chats(user)
+    chat_index = next((i for i, c in enumerate(chats) if c.get("id") == chat_id), None)
+
+    if chat_index is None:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    chats.pop(chat_index)
+
+    new_active = active_chat_id
+    if active_chat_id == chat_id:
+        new_active = chats[0]["id"] if chats else None
+
+    _save_persisted_chats(user, chats, new_active, service)
+    return {"message": "Chat deleted successfully", "active_chat_id": new_active}
+
+
+@router.put("/chat/{chat_id}")
+def rename_chat(
+    chat_id: str,
+    payload: ChatRenameRequest,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional),
+    service: DatabaseService = Depends(get_db_service),
+):
+    """Rename a specific chat"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    chats, active_chat_id = _get_persisted_chats(user)
+    chat = next((c for c in chats if c.get("id") == chat_id), None)
+
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    chat["title"] = payload.title.strip()
+    chat["updatedAt"] = _now_iso()
+    _save_persisted_chats(user, chats, active_chat_id, service)
+
+    return {
+        "id": chat["id"],
+        "title": chat["title"],
+        "updatedAt": chat["updatedAt"],
+    }
 
 
 @router.post("/generate-quiz", response_model=QuizGenerateResponse, tags=["AI Chat"])

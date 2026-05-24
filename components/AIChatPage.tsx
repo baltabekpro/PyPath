@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Plus, Code } from 'lucide-react';
+import { Send, Bot, Cpu, Zap, Activity, Terminal, Clock, Hash, ChevronRight, Sparkles, Plus, Code, Search, Pencil, Trash2, Check, X } from 'lucide-react';
 import { AI_CHAT_PAGE_DATA, APP_LANGUAGE, CURRENT_USER, UI_TEXTS, getIconComponent } from '../constants';
 import { aiChat } from '../api';
 import { DemonstrationPanel } from './DemonstrationPanel';
@@ -33,6 +33,11 @@ export const AIChatPage: React.FC = () => {
         noChats: isKz ? 'Чаттар әлі жоқ. Бастау үшін + басыңыз.' : 'Чатов пока нет. Нажмите + чтобы начать.',
         demoPanel: isKz ? 'Демонстрация' : 'Демонстрация',
         mentorMode: isKz ? 'Ментор режимі' : 'Режим ментора',
+        searchPlaceholder: isKz ? 'Чаттарды іздеу...' : 'Поиск чатов...',
+        rename: isKz ? 'Атауын өзгерту' : 'Переименовать',
+        deleteChat: isKz ? 'Чатты жою' : 'Удалить чат',
+        deleteConfirm: isKz ? 'Чатты жою керек пе?' : 'Удалить чат?',
+        noResults: isKz ? 'Ештеңе табылмады' : 'Ничего не найдено',
     };
   const [messages, setMessages] = useState<Message[]>([]);
     const [chats, setChats] = useState<ChatSummary[]>([]);
@@ -42,19 +47,29 @@ export const AIChatPage: React.FC = () => {
   const [coreState, setCoreState] = useState<'idle' | 'processing' | 'active'>('idle');
     const [enableScaffolding, setEnableScaffolding] = useState(false);
     const [showDemoPanel, setShowDemoPanel] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [editingChatId, setEditingChatId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
     const abilities = AI_CHAT_PAGE_DATA?.abilities ?? [];
     const responses = AI_CHAT_PAGE_DATA?.responses ?? {};
         const text = UI_TEXTS?.aiChatPage ?? {};
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const chatHistoryLogs = chats.map((chat) => ({
-        id: chat.id,
-        code: chat.id === activeChatId ? 'ACTIVE' : 'CHAT',
-        status: 'success' as const,
-        msg: chat.title,
-        time: new Date(chat.updatedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
-        preview: chat.lastMessage,
-    }));
+    const chatHistoryLogs = chats
+        .filter((chat) => {
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase();
+            return chat.title.toLowerCase().includes(q) || chat.lastMessage.toLowerCase().includes(q);
+        })
+        .map((chat) => ({
+            id: chat.id,
+            code: chat.id === activeChatId ? 'ACTIVE' : 'CHAT',
+            status: 'success' as const,
+            msg: chat.title,
+            time: new Date(chat.updatedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+            preview: chat.lastMessage,
+        }));
 
     const escapeHtml = (value: string) =>
         value
@@ -236,6 +251,54 @@ export const AIChatPage: React.FC = () => {
         }
     };
 
+    const handleDeleteChat = async (chatId: string) => {
+        try {
+            await aiChat.deleteChat(chatId);
+            setChats((prev) => prev.filter((c) => c.id !== chatId));
+            if (activeChatId === chatId) {
+                const remaining = chats.filter((c) => c.id !== chatId);
+                if (remaining.length > 0) {
+                    handleSelectChat(remaining[0].id);
+                } else {
+                    setActiveChatId(null);
+                    setMessages([]);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to delete chat:', e);
+        }
+        setDeletingChatId(null);
+    };
+
+    const handleStartRename = (chatId: string, currentTitle: string) => {
+        setEditingChatId(chatId);
+        setEditTitle(currentTitle);
+    };
+
+    const handleRenameChat = async (chatId: string) => {
+        const trimmed = editTitle.trim();
+        if (!trimmed) {
+            setEditingChatId(null);
+            return;
+        }
+        try {
+            await aiChat.renameChat(chatId, trimmed);
+            setChats((prev) => prev.map((c) => c.id === chatId ? { ...c, title: trimmed } : c));
+        } catch (e) {
+            console.error('Failed to rename chat:', e);
+        }
+        setEditingChatId(null);
+    };
+
+    const handleRenameKeyDown = (e: React.KeyboardEvent, chatId: string) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleRenameChat(chatId);
+        } else if (e.key === 'Escape') {
+            setEditingChatId(null);
+        }
+    };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -266,26 +329,95 @@ export const AIChatPage: React.FC = () => {
               </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+          {/* Search */}
+          <div className="px-4 pt-3 pb-1">
+              <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-cyan-700/50" />
+                  <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={lt.searchPlaceholder}
+                      className="w-full bg-slate-100 dark:bg-[#0B1121] border border-slate-200 dark:border-cyan-900/30 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-cyan-700/50 focus:outline-none focus:border-indigo-400 dark:focus:border-cyan-500/50"
+                  />
+              </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-2">
               {chatHistoryLogs.map((log: any, index: number) => (
-                  <button key={`${log?.id ?? log?.code ?? 'log'}-${index}`} onClick={() => handleSelectChat(log.id)} className={`w-full text-left group p-3 rounded bg-slate-50 dark:bg-[#0B1121] border transition-all cursor-pointer ${log.id === activeChatId ? 'border-indigo-500/60 dark:border-cyan-500/60' : 'border-slate-200 dark:border-cyan-900/20 hover:border-indigo-500/40 dark:hover:border-cyan-500/30'}`}>
-                      <div className="flex justify-between items-center mb-1">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                              log.status === 'success' ? 'bg-green-500/10 text-green-400' :
-                              log.status === 'warning' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400'
-                          }`}>
-                              {log.code}
-                          </span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
-                              <Clock size={10} /> {log.time}
-                          </span>
-                      </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium group-hover:text-indigo-700 dark:group-hover:text-cyan-200 truncate">{log.msg}</p>
-                      {log.preview ? <p className="text-[10px] text-slate-500 dark:text-slate-500 dark:text-slate-400 truncate mt-1">{log.preview}</p> : null}
-                  </button>
+                  <div key={`${log?.id ?? log?.code ?? 'log'}-${index}`} className={`group relative rounded bg-slate-50 dark:bg-[#0B1121] border transition-all ${log.id === activeChatId ? 'border-indigo-500/60 dark:border-cyan-500/60' : 'border-slate-200 dark:border-cyan-900/20 hover:border-indigo-500/40 dark:hover:border-cyan-500/30'}`}>
+                      {deletingChatId === log.id ? (
+                          <div className="p-3">
+                              <p className="text-xs text-red-500 font-bold mb-2">{lt.deleteConfirm}</p>
+                              <div className="flex gap-2">
+                                  <button onClick={() => handleDeleteChat(log.id)} className="flex-1 text-xs font-bold py-1.5 rounded bg-red-500/20 text-red-500 hover:bg-red-500/30 border border-red-500/30">
+                                      <Check size={12} className="inline mr-1" />{isKz ? 'Иә' : 'Да'}
+                                  </button>
+                                  <button onClick={() => setDeletingChatId(null)} className="flex-1 text-xs font-bold py-1.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600">
+                                      <X size={12} className="inline mr-1" />{isKz ? 'Жоқ' : 'Нет'}
+                                  </button>
+                              </div>
+                          </div>
+                      ) : (
+                          <button onClick={() => handleSelectChat(log.id)} className="w-full text-left p-3 cursor-pointer">
+                              <div className="flex justify-between items-center mb-1">
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                      log.status === 'success' ? 'bg-green-500/10 text-green-400' :
+                                      log.status === 'warning' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400'
+                                  }`}>
+                                      {log.code}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
+                                      <Clock size={10} /> {log.time}
+                                  </span>
+                              </div>
+                              {editingChatId === log.id ? (
+                                  <div className="flex items-center gap-1 mt-1">
+                                      <input
+                                          value={editTitle}
+                                          onChange={(e) => setEditTitle(e.target.value)}
+                                          onKeyDown={(e) => handleRenameKeyDown(e, log.id)}
+                                          onBlur={() => handleRenameChat(log.id)}
+                                          autoFocus
+                                          className="flex-1 bg-white dark:bg-[#0c120e] border border-indigo-400 dark:border-cyan-500/50 rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 focus:outline-none"
+                                          onClick={(e) => e.stopPropagation()}
+                                      />
+                                      <button onClick={(e) => { e.stopPropagation(); handleRenameChat(log.id); }} className="p-1 text-green-500 hover:text-green-400">
+                                          <Check size={12} />
+                                      </button>
+                                  </div>
+                              ) : (
+                                  <>
+                                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium group-hover:text-indigo-700 dark:group-hover:text-cyan-200 truncate">{log.msg}</p>
+                                      {log.preview ? <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-1">{log.preview}</p> : null}
+                                  </>
+                              )}
+                          </button>
+                      )}
+                      {/* Action buttons */}
+                      {deletingChatId !== log.id && editingChatId !== log.id && (
+                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                  onClick={(e) => { e.stopPropagation(); handleStartRename(log.id, log.msg); }}
+                                  className="p-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-cyan-400 hover:bg-slate-300 dark:hover:bg-slate-600"
+                                  title={lt.rename}
+                              >
+                                  <Pencil size={10} />
+                              </button>
+                              <button
+                                  onClick={(e) => { e.stopPropagation(); setDeletingChatId(log.id); }}
+                                  className="p-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-500/10"
+                                  title={lt.deleteChat}
+                              >
+                                  <Trash2 size={10} />
+                              </button>
+                          </div>
+                      )}
+                  </div>
               ))}
               {chatHistoryLogs.length === 0 ? (
-                                <div className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400">{lt.noChats}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {searchQuery.trim() ? lt.noResults : lt.noChats}
+                  </div>
               ) : null}
           </div>
 

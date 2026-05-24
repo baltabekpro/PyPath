@@ -26,6 +26,11 @@ class QuickActionRequest(BaseModel):
     language: str | None = Field(default=None, description="Preferred response language: 'ru' or 'kz'")
 
 
+class ChatRenameRequest(BaseModel):
+    """Rename a chat"""
+    title: str = Field(..., min_length=1, max_length=100, description="New chat title")
+
+
 class SessionResetRequest(BaseModel):
     """Reset chat session"""
     user_id: str = Field(..., description="User ID to reset session")
